@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2020,2021 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2018,2020 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -16,27 +16,46 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#if !defined(DEFINES_H)
-#define  DEFINES_H
+#ifndef	GPSD_H
+#define	GPSD_H
 
-const unsigned int CODEC_SAMPLE_RATE = 8000U;
-const unsigned int CODEC_BLOCK_SIZE  = CODEC_SAMPLE_RATE / 25U;
+#if defined(USE_GPSD)
 
-const unsigned char MODE_M17   = 7U;
+#include "APRSWriter.h"
+#include "DMRNetwork.h"
+#include "Timer.h"
 
-const unsigned char TAG_HEADER = 0x00U;
-const unsigned char TAG_DATA1  = 0x01U;
-const unsigned char TAG_DATA2  = 0x02U;
-const unsigned char TAG_LOST   = 0x03U;
-const unsigned char TAG_EOT    = 0x04U;
+#include <string>
+#include <vector>
 
-enum RPT_RF_STATE {
-	RS_RF_LISTENING,
-	RS_RF_LATE_ENTRY,
-	RS_RF_AUDIO,
-	RS_RF_DATA,
-	RS_RF_REJECTED,
-	RS_RF_INVALID
+#include <gps.h>
+
+class CGPSD {
+public:
+	CGPSD(const std::string& address, const std::string& port);
+	~CGPSD();
+
+	void addNetwork(CDMRNetwork* network);
+
+	void setAPRS(CAPRSWriter* aprs);
+
+	bool open();
+
+	void clock(unsigned int ms);
+
+	void close();
+
+private:
+	std::string               m_gpsdAddress;
+	std::string               m_gpsdPort;
+	struct gps_data_t         m_gpsdData;
+	CTimer                    m_idTimer;
+	std::vector<CDMRNetwork*> m_networks;
+	CAPRSWriter*              m_aprs;
+
+	void sendReport();
 };
+
+#endif
 
 #endif

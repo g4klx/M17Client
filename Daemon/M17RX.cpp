@@ -54,9 +54,9 @@ const unsigned char BIT_MASK_TABLE[] = { 0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04
 #define WRITE_BIT(p,i,b) p[(i)>>3] = (b) ? (p[(i)>>3] | BIT_MASK_TABLE[(i)&7]) : (p[(i)>>3] & ~BIT_MASK_TABLE[(i)&7])
 #define READ_BIT(p,i)    (p[(i)>>3] & BIT_MASK_TABLE[(i)&7])
 
-CM17RX::CM17RX(const std::string& callsign, unsigned int can, CRSSIInterpolator* rssiMapper) :
+CM17RX::CM17RX(const std::string& callsign, CRSSIInterpolator* rssiMapper) :
 m_callsign(callsign),
-m_can(can),
+m_can(0U),
 m_rfState(RS_RF_LISTENING),
 m_elapsed(),
 m_rfFrames(0U),
@@ -75,6 +75,11 @@ m_rssiCount(0U)
 
 CM17RX::~CM17RX()
 {
+}
+
+void CM17RX::setCAN(unsigned int can)
+{
+	m_can = can;
 }
 
 bool CM17RX::writeModem(unsigned char* data, unsigned int len)

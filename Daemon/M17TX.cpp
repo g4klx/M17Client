@@ -54,26 +54,54 @@ const unsigned char BIT_MASK_TABLE[] = { 0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04
 #define WRITE_BIT(p,i,b) p[(i)>>3] = (b) ? (p[(i)>>3] | BIT_MASK_TABLE[(i)&7]) : (p[(i)>>3] & ~BIT_MASK_TABLE[(i)&7])
 #define READ_BIT(p,i)    (p[(i)>>3] & BIT_MASK_TABLE[(i)&7])
 
-CM17TX::CM17TX(const std::string& callsign, unsigned int can, const std::string& text) :
+CM17TX::CM17TX(const std::string& callsign, const std::string& text) :
+m_source(callsign),
+m_destination(),
+m_can(0U),
 m_transmit(false),
 m_queue(5000U, "M17 TX"),
 m_frames(0U),
-m_emptyLSF(),
-m_textLSF(),
-m_gpsLSF(),
+m_currLSF(NULL),
+m_textLSF(NULL),
+m_gpsLSF(NULL),
 m_lsfN(0U)
 {
-	m_emptyLSF.setSource(callsign);
-	m_textLSF.setSource(callsign);
-	m_gpsLSF.setSource(callsign);
-	
-	m_emptyLSF.setCAN(can);
-	m_textLSF.setCAN(can);
-	m_gpsLSF.setCAN(can);
+	m_textLSF = new CM17LSF;
+	m_textLSF->setSource(callsign);
+	m_textLSF->setPacketStream(M17_STREAM_TYPE);
+	m_textLSF->setDataType(M17_DATA_TYPE_VOICE);
+	m_textLSF->setEncryptionType(M17_ENCRYPTION_TYPE_NONE);
+	m_textLSF->setEncryptionSubType(M17_ENCRYPTION_SUB_TYPE_TEXT);
+	m_textLSF->setMeta(M17_NULL_NONCE);
+
+	if (!text.empty()) {
+		std::string temp = text;
+		temp.resize(M17_META_LENGTH_BYTES, ' ');
+
+		m_textLSF->setMeta((const unsigned char*)temp.c_str());
+	}
+
+	m_currLSF = m_textLSF;
 }
 
 CM17TX::~CM17TX()
 {
+	delete m_textLSF;
+	delete m_gpsLSF;
+}
+
+void CM17TX::setCAN(unsigned int can)
+{
+	m_can = can;
+	
+	m_textLSF->setCAN(can);
+}
+
+void CM17TX::setDestination(const std::string& callsign)
+{
+	m_destination = callsign;
+	
+	m_textLSF->setDest(callsign);
 }
 
 unsigned int CM17TX::read(unsigned char* data)
@@ -96,8 +124,9 @@ void CM17TX::write(const unsigned char* audio, bool end)
 	assert(audio != NULL);
 
 	if (!m_transmit) {
-		m_frames = 0U;
-		m_lsfN   = 0U;
+		m_currLSF = m_textLSF;
+		m_frames  = 0U;
+		m_lsfN    = 0U;
 
 		// Create a dummy start message
 		unsigned char start[M17_FRAME_LENGTH_BYTES + 2U];
@@ -109,7 +138,7 @@ void CM17TX::write(const unsigned char* audio, bool end)
 		addLinkSetupSync(start + 2U);
 
 		unsigned char setup[M17_LSF_LENGTH_BYTES];
-		m_emptyLSF.getLinkSetup(setup);
+		m_currLSF->getLinkSetup(setup);
 
 		// Add the convolution FEC
 		CM17Convolution conv;
@@ -135,7 +164,7 @@ void CM17TX::write(const unsigned char* audio, bool end)
 
 		// Add the fragment LICH
 		unsigned char lich[M17_LICH_FRAGMENT_LENGTH_BYTES];
-		m_emptyLSF.getFragment(lich, m_lsfN);
+		m_currLSF->getFragment(lich, m_lsfN);
 
 		// Add the fragment number
 		lich[5U] = (m_lsfN & 0x07U) << 5;
@@ -175,8 +204,21 @@ void CM17TX::write(const unsigned char* audio, bool end)
 		writeQueue(data);
 
 		m_lsfN++;
-		if (m_lsfN >= 6U)
+		if (m_lsfN >= 6U) {
 			m_lsfN = 0U;
+
+			// We only send a GPS frame once
+			if (m_currLSF == m_gpsLSF) {
+				delete m_gpsLSF;
+				m_gpsLSF = NULL;
+				
+				m_currLSF = m_textLSF;
+			}
+
+			// Do a round-robin of the different LSF contents
+			if (m_currLSF == m_textLSF && m_gpsLSF != NULL)
+				m_currLSF = m_gpsLSF;
+		}
 
 		m_frames++;
 

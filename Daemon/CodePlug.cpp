@@ -116,7 +116,7 @@ bool CCodePlug::read()
 
 	::fclose(fp);
 
-	return true;
+	return !m_data.empty();
 }
 
 std::vector<CCodePlugData> CCodePlug::getData() const

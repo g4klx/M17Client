@@ -29,20 +29,27 @@
 
 class CM17TX {
 public:
-	CM17TX(const std::string& callsign, unsigned int can, const std::string& text);
+	CM17TX(const std::string& callsign, const std::string& text);
 	~CM17TX();
+
+	void setCAN(unsigned int can);
+
+	void setDestination(const std::string& callsign);
 
 	void write(const unsigned char* audio, bool end);
 
 	unsigned int read(unsigned char* data);
 
 private:
+	std::string                m_source;
+	std::string                m_destination;
+	unsigned int               m_can;
 	bool                       m_transmit;
 	CRingBuffer<unsigned char> m_queue;
 	uint16_t                   m_frames;
-	CM17LSF                    m_emptyLSF;
-	CM17LSF                    m_textLSF;
-	CM17LSF                    m_gpsLSF;
+	CM17LSF*                   m_currLSF;
+	CM17LSF*                   m_textLSF;
+	CM17LSF*                   m_gpsLSF;
 	unsigned int               m_lsfN;
 
 	void writeQueue(const unsigned char* data);

@@ -30,8 +30,10 @@
 
 class CM17RX {
 public:
-	CM17RX(const std::string& callsign, unsigned int can, CRSSIInterpolator* rssiMapper);
+	CM17RX(const std::string& callsign, CRSSIInterpolator* rssiMapper);
 	~CM17RX();
+
+	void setCAN(unsigned int can);
 
 	bool writeModem(unsigned char* data, unsigned int len);
 

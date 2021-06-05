@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2020,2021 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2015,2016,2017,2019,2020,2021 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -16,27 +16,29 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#if !defined(DEFINES_H)
-#define  DEFINES_H
+#if !defined(M17Client_H)
+#define	M17Client_H
 
-const unsigned int CODEC_SAMPLE_RATE = 8000U;
-const unsigned int CODEC_BLOCK_SIZE  = CODEC_SAMPLE_RATE / 25U;
+#include "Conf.h"
+#include "CodePlug.h"
+#include "M17RX.h"
+#include "M17TX.h"
 
-const unsigned char MODE_M17   = 7U;
+#include <string>
 
-const unsigned char TAG_HEADER = 0x00U;
-const unsigned char TAG_DATA1  = 0x01U;
-const unsigned char TAG_DATA2  = 0x02U;
-const unsigned char TAG_LOST   = 0x03U;
-const unsigned char TAG_EOT    = 0x04U;
+class CM17Client
+{
+public:
+	CM17Client(const std::string& confFile);
+	~CM17Client();
 
-enum RPT_RF_STATE {
-	RS_RF_LISTENING,
-	RS_RF_LATE_ENTRY,
-	RS_RF_AUDIO,
-	RS_RF_DATA,
-	RS_RF_REJECTED,
-	RS_RF_INVALID
+	int run();
+
+private:
+	CConf      m_conf;
+	CCodePlug* m_codePlug;
+	CM17RX*    m_rx;
+	CM17TX*    m_tx;
 };
 
 #endif
