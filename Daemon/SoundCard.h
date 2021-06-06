@@ -68,7 +68,7 @@ public:
 	CSoundCard(const std::string& readDevice, const std::string& writeDevice, unsigned int sampleRate, unsigned int blockSize);
 	~CSoundCard();
 
-	void setCallback(IAudioCallback* callback, int id);
+	void setCallback(IAudioCallback* callback, int id = 0);
 	bool open();
 	void close();
 

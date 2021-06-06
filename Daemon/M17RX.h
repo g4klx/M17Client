@@ -38,7 +38,7 @@ public:
 
 	bool write(unsigned char* data, unsigned int len);
 
-	unsigned int read(short* audio);
+	unsigned int read(short* audio, unsigned int len);
 
 private:
 	CCodec2&           m_codec2;
@@ -56,7 +56,7 @@ private:
 	unsigned int       m_aveRSSI;
 	unsigned int       m_rssiCount;
 
-	void writeQueue(const short *audio);
+	void writeQueue(const short *audio, unsigned int len);
 
 	bool processHeader(bool lateEntry);
 

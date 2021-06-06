@@ -32,6 +32,16 @@ void CM17Utils::encodeCallsign(const std::string& callsign, unsigned char* encod
 {
 	assert(encoded != NULL);
 
+	if (callsign == "ALL") {
+		encoded[0U] = 0xFFU;
+		encoded[1U] = 0xFFU;
+		encoded[2U] = 0xFFU;
+		encoded[3U] = 0xFFU;
+		encoded[4U] = 0xFFU;
+		encoded[5U] = 0xFFU;
+		return;
+	}
+
 	unsigned int len = callsign.size();
 	if (len > 9U)
 		len = 9U;
@@ -58,7 +68,14 @@ void CM17Utils::decodeCallsign(const unsigned char* encoded, std::string& callsi
 {
 	assert(encoded != NULL);
 
+	if (encoded[0U] == 0xFFU && encoded[1U] == 0xFFU && encoded[2U] == 0xFFU &&
+	    encoded[3U] == 0xFFU && encoded[4U] == 0xFFU && encoded[5U] == 0xFFU) {
+		callsign = "ALL";
+		return;
+	}
+
 	callsign.clear();
+
 
 	uint64_t enc =
 			(uint64_t(encoded[0U]) << 40) +

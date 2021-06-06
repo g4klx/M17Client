@@ -19,26 +19,42 @@
 #if !defined(M17Client_H)
 #define	M17Client_H
 
-#include "Conf.h"
+#include "AudioCallback.h"
+#include "UDPSocket.h"
 #include "CodePlug.h"
 #include "M17RX.h"
 #include "M17TX.h"
+#include "Conf.h"
 
 #include <string>
 
-class CM17Client
+class CM17Client : public IAudioCallback
 {
 public:
 	CM17Client(const std::string& confFile);
-	~CM17Client();
+	virtual ~CM17Client();
 
 	int run();
 
+	virtual void readCallback(const short* input, unsigned int nSamples, int id);
+	virtual void writeCallback(short* output, int& nSamples, int id);
+
 private:
-	CConf      m_conf;
-	CCodePlug* m_codePlug;
-	CM17RX*    m_rx;
-	CM17TX*    m_tx;
+	CConf            m_conf;
+	CCodePlug*       m_codePlug;
+	CM17RX*          m_rx;
+	CM17TX*          m_tx;
+	CUDPSocket*      m_socket;
+	sockaddr_storage m_sockaddr;
+	unsigned int     m_sockaddrLen;
+	bool             m_transmit;
+
+	void parseCommand(char* command);
+
+	void sendChannelList();
+	void sendDestinationList();
+
+	bool processChannelRequest(const char* channel);
 };
 
 #endif

@@ -20,6 +20,7 @@
 #include "UARTController.h"
 #include "codec2/codec2.h"
 #include "GitVersion.h"
+#include "UDPSocket.h"
 #include "SoundCard.h"
 #include "StopWatch.h"
 #include "Version.h"
@@ -37,6 +38,8 @@
 #include <pwd.h>
 
 const char* DEFAULT_INI_FILE = "/etc/M17Client.ini";
+
+const char* DELIMITER = ":";
 
 static bool m_killed = false;
 static int  m_signal = 0;
@@ -104,12 +107,36 @@ CM17Client::CM17Client(const std::string& confFile) :
 m_conf(confFile),
 m_codePlug(NULL),
 m_rx(NULL),
-m_tx(NULL)
+m_tx(NULL),
+m_socket(NULL),
+m_sockaddr(),
+m_sockaddrLen(0U),
+m_transmit(false)
 {
 }
 
 CM17Client::~CM17Client()
 {
+}
+
+void CM17Client::readCallback(const short* input, unsigned int nSamples, int id)
+{
+	assert(m_tx != NULL);
+
+	if (m_transmit)
+		m_tx->write(input, nSamples);
+}
+
+void CM17Client::writeCallback(short* output, int& nSamples, int id)
+{
+	assert(m_rx != NULL);
+
+	if (m_transmit) {
+		// File with silence if transmitting
+		::memset(output, 0x00U, nSamples * sizeof(short));
+	} else {
+		nSamples = m_rx->read(output, nSamples);
+	}
 }
 
 int CM17Client::run()
@@ -201,7 +228,7 @@ int CM17Client::run()
 	LogMessage("Built %s %s (GitID #%.7s)", __TIME__, __DATE__, gitversion);
 
 	CSoundCard sound(m_conf.getAudioInputDevice(), m_conf.getAudioOutputDevice(), CODEC_SAMPLE_RATE, CODEC_BLOCK_SIZE);
-	// XXX FIXME
+	sound.setCallback(this);
 	ret = sound.open();
 	if (!ret) {
 		LogError("Unable to open the sound card");
@@ -223,6 +250,18 @@ int CM17Client::run()
 		return 1;
 	}
 
+	if (CUDPSocket::lookup(m_conf.getControlRemoteAddress(), m_conf.getControlRemotePort(), m_sockaddr, m_sockaddrLen) != 0) {
+		LogError("Could not lookup the remote address");
+		return 1;
+	}
+
+	m_socket = new CUDPSocket(m_conf.getControlLocalAddress(), m_conf.getControlLocalPort());
+	ret = m_socket->open();
+	if (!ret) {
+		LogError("Unable to open the command socket");
+		return 1;
+	}
+
 	CCodec2 codec2(true);
 
 	CRSSIInterpolator* rssi = new CRSSIInterpolator;
@@ -231,6 +270,8 @@ int CM17Client::run()
 
 	m_tx = new CM17TX(m_conf.getCallsign(), m_conf.getText(), codec2);
 	m_rx = new CM17RX(m_conf.getCallsign(), rssi, m_conf.getBleep(), codec2);
+
+	m_tx->setDestination("ALL");
 
 	// By default use the first entry in the code plug file
 	m_rx->setCAN(m_codePlug->getData().at(0U).m_can);
@@ -243,14 +284,26 @@ int CM17Client::run()
 
 	while (!m_killed) {
 		unsigned char data[100U];
-		unsigned int len = modem.readData(data);
-		if (len > 0U)
-			m_rx->write(data, len);
 
-		if (modem.hasSpace()) {
-			len = m_tx->read(data);
+		if (m_transmit) {
+			if (modem.hasSpace()) {
+				unsigned int len = m_tx->read(data);
+				if (len > 0U)
+					modem.writeData(data, len);
+			}
+		} else {
+			unsigned int len = modem.readData(data);
 			if (len > 0U)
-				modem.writeData(data, len);
+				m_rx->write(data, len);
+		}
+
+		char command[100U];
+		sockaddr_storage sockaddr;
+		unsigned int sockaddrLen = 0U;
+		int ret = m_socket->read(command, 100U, sockaddr, sockaddrLen);
+		if (ret > 0) {
+			command[ret] = '\0';
+			parseCommand(command);
 		}
 
 		unsigned int ms = stopWatch.elapsed();
@@ -262,13 +315,118 @@ int CM17Client::run()
 			CThread::sleep(10U);
 	}
 
+	m_socket->close();
 	modem.close();
 	sound.close();
 
 	delete m_codePlug;
 	delete m_tx;
 	delete m_rx;
+	delete m_socket;
 
 	return 0;
+}
+
+void CM17Client::parseCommand(char* command)
+{
+	assert(command != NULL);
+	assert(m_tx != NULL);
+
+	LogDebug("Command received: %s", command);
+
+	std::vector<char *> ptrs;
+
+	char* s = command;
+	char* p;
+	while ((p = ::strtok(s, DELIMITER)) != NULL) {
+		s = NULL;
+		ptrs.push_back(p);
+	}
+
+	if (::strcmp(ptrs.at(0U), "TX") == 0) {
+		if (::strcmp(ptrs.at(1U), "0") == 0) {
+			LogDebug("\tTransmitter off");
+			m_transmit = false;
+		} else if (::strcmp(ptrs.at(1U), "1") == 0) {
+			LogDebug("\tTransmitter on");
+			m_transmit = true;
+		} else {
+			LogWarning("\tUnknown TX command");
+		}
+	} else if (::strcmp(ptrs.at(0U), "CHAN") == 0) {
+		if (::strcmp(ptrs.at(1U), "?") == 0) {
+			LogDebug("\tChannel list request");
+			sendChannelList();
+		} else {
+			LogDebug("\tChannel set");
+			bool ret = processChannelRequest(ptrs.at(1U));
+			if (!ret)
+				LogWarning("\tInvalid channel request");
+		}
+	} else if (::strcmp(ptrs.at(0U), "DEST") == 0) {
+		if (::strcmp(ptrs.at(1U), "?") == 0) {
+			LogDebug("\tDestination list request");
+			sendDestinationList();
+		} else {
+			LogDebug("\tDestination set");
+			m_tx->setDestination(ptrs.at(1U));
+		}
+	} else if (::strcmp(ptrs.at(0U), "VOL") == 0) {
+		LogDebug("\tVolume set");
+	} else if (::strcmp(ptrs.at(0U), "MIC") == 0) {
+		LogDebug("\tMic gain set");
+	} else {
+		LogWarning("\tUnknown command");
+	}
+}
+
+void CM17Client::sendChannelList()
+{
+	assert(m_codePlug != NULL);
+	assert(m_socket != NULL);
+
+	char buffer[1000U];
+	::strcpy(buffer, "CHAN");
+
+	for (const auto& chan : m_codePlug->getData()) {
+		::strcat(buffer, DELIMITER);
+		::strcat(buffer, chan.m_name.c_str());		
+	}
+
+	m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
+}
+
+bool CM17Client::processChannelRequest(const char* channel)
+{
+	assert(channel != NULL);
+	assert(m_tx != NULL);
+	assert(m_rx != NULL);
+
+	for (const auto& chan : m_codePlug->getData()) {
+		if (chan.m_name == channel) {
+			m_rx->setCAN(chan.m_can);
+			m_tx->setCAN(chan.m_can);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void CM17Client::sendDestinationList()
+{
+	assert(m_socket != NULL);
+
+	char buffer[1000U];
+	::strcpy(buffer, "DEST");
+	::strcat(buffer, DELIMITER);
+	::strcat(buffer, "ALL");
+
+	for (const auto& dest : m_conf.getDestinations()) {
+		::strcat(buffer, DELIMITER);
+		::strcat(buffer, dest.c_str());		
+	}
+
+	m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
 }
 

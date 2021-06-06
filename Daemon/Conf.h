@@ -37,6 +37,9 @@ public:
 	bool         getDaemon() const;
 	bool         getDebug() const;
 
+	// The Destinations sections
+	std::vector<std::string> getDestinations() const;
+
 	// The Audio section
 	std::string  getAudioInputDevice() const;
 	std::string  getAudioOutputDevice() const;
@@ -89,6 +92,8 @@ private:
 	bool         m_bleep;
 	bool         m_daemon;
 	bool         m_debug;
+
+	std::vector<std::string> m_destinations;
 
 	std::string  m_audioInputDevice;
 	std::string  m_audioOutputDevice;

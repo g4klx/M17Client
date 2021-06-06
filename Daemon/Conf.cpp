@@ -29,6 +29,7 @@ const int BUFFER_SIZE = 500;
 enum SECTION {
 	SECTION_NONE,
 	SECTION_GENERAL,
+	SECTION_DESTINATIONS,
 	SECTION_AUDIO,
 	SECTION_MODEM,
 	SECTION_LOG,
@@ -44,6 +45,7 @@ m_text(),
 m_bleep(true),
 m_daemon(false),
 m_debug(false),
+m_destinations(),
 m_audioInputDevice(),
 m_audioOutputDevice(),
 m_audioMicGain(100U),
@@ -102,6 +104,8 @@ bool CConf::read()
 		if (buffer[0U] == '[') {
 			if (::strncmp(buffer, "[General]", 9U) == 0)
 				section = SECTION_GENERAL;
+			else if (::strncmp(buffer, "[Destinations]", 14U) == 0)
+				section = SECTION_DESTINATIONS;
 			else if (::strncmp(buffer, "[Audio]", 7U) == 0)
 				section = SECTION_AUDIO;
 			else if (::strncmp(buffer, "[Modem]", 7U) == 0)
@@ -152,6 +156,9 @@ bool CConf::read()
 				m_daemon = ::atoi(value) == 1;
 			else if (::strcmp(key, "Debug") == 0)
 				m_debug = ::atoi(value) == 1;
+		} else if (section == SECTION_DESTINATIONS) {
+			if (::strcmp(key, "Name") == 0)
+				m_destinations.push_back(value);
 		} else if (section == SECTION_AUDIO) {
 			if (::strcmp(key, "InputDevice") == 0)
 				m_audioInputDevice = value;
@@ -255,6 +262,11 @@ bool CConf::getDaemon() const
 bool CConf::getDebug() const
 {
 	return m_debug;
+}
+
+std::vector<std::string> CConf::getDestinations() const
+{
+	return m_destinations;
 }
 
 std::string CConf::getAudioInputDevice() const

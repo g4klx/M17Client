@@ -81,15 +81,14 @@ void CM17RX::setCAN(unsigned int can)
 	m_can = can;
 }
 
-unsigned int CM17RX::read(short* audio)
+unsigned int CM17RX::read(short* audio, unsigned int len)
 {
 	assert(audio != NULL);
+	assert(len > 0U);
 
-	if (m_queue.isEmpty())
-		return 0U;
-
-	short len = 0;
-	m_queue.getData(&len, 1U);
+	unsigned int amt = m_queue.dataSize();
+	if (len > amt)
+		len = amt;
 
 	m_queue.getData(audio, len);
 
@@ -99,6 +98,7 @@ unsigned int CM17RX::read(short* audio)
 bool CM17RX::write(unsigned char* data, unsigned int len)
 {
 	assert(data != NULL);
+	assert(len > 0U);
 
 	unsigned char type = data[0U];
 
@@ -239,7 +239,7 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 		short audio[320U];
 		m_codec2.codec2_decode(audio + 0U,   frame + 2U);
 		m_codec2.codec2_decode(audio + 160U, frame + 2U + 8U);
-		writeQueue(audio);
+		writeQueue(audio, 320U);
 
 		m_frames++;
 
@@ -267,19 +267,16 @@ void CM17RX::end()
 	m_lsf.reset();
 }
 
-void CM17RX::writeQueue(const short *audio)
+void CM17RX::writeQueue(const short *audio, unsigned int len)
 {
 	assert(audio != NULL);
-
-	const short len = 320;
+	assert(len > 0U);
 
 	unsigned int space = m_queue.freeSpace();
-	if (space < (len + 1)) {
+	if (space < len) {
 		LogError("Overflow in the M17 RX queue");
 		return;
 	}
-
-	m_queue.addData(&len, 1U);
 
 	m_queue.addData(audio, len);
 }

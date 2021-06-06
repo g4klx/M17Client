@@ -24,7 +24,7 @@
 
 #include "Log.h"
 
-CUDPSocket::CUDPSocket(const std::string& address, unsigned int port) :
+CUDPSocket::CUDPSocket(const std::string& address, unsigned short port) :
 m_address_save(address),
 m_port_save(port),
 m_counter(0U)
@@ -54,7 +54,7 @@ CUDPSocket::~CUDPSocket()
 {
 }
 
-int CUDPSocket::lookup(const std::string& hostname, unsigned int port, sockaddr_storage& addr, unsigned int& address_length)
+int CUDPSocket::lookup(const std::string& hostname, unsigned short port, sockaddr_storage& addr, unsigned int& address_length)
 {
 	struct addrinfo hints;
 	::memset(&hints, 0, sizeof(hints));
@@ -62,7 +62,7 @@ int CUDPSocket::lookup(const std::string& hostname, unsigned int port, sockaddr_
 	return lookup(hostname, port, addr, address_length, hints);
 }
 
-int CUDPSocket::lookup(const std::string& hostname, unsigned int port, sockaddr_storage& addr, unsigned int& address_length, struct addrinfo& hints)
+int CUDPSocket::lookup(const std::string& hostname, unsigned short port, sockaddr_storage& addr, unsigned int& address_length, struct addrinfo& hints)
 {
 	std::string portstr = std::to_string(port);
 	struct addrinfo *res;
@@ -145,7 +145,7 @@ bool CUDPSocket::open(unsigned int af)
 	return open(0, af, m_address_save, m_port_save);
 }
 
-bool CUDPSocket::open(const unsigned int index, const unsigned int af, const std::string& address, const unsigned int port)
+bool CUDPSocket::open(const unsigned int index, const unsigned int af, const std::string& address, unsigned short port)
 {
 	sockaddr_storage addr;
 	unsigned int addrlen;
@@ -193,7 +193,7 @@ bool CUDPSocket::open(const unsigned int index, const unsigned int af, const std
 	return true;
 }
 
-int CUDPSocket::read(unsigned char* buffer, unsigned int length, sockaddr_storage& address, unsigned int &address_length)
+int CUDPSocket::read(char* buffer, unsigned int length, sockaddr_storage& address, unsigned int &address_length)
 {
 	assert(buffer != NULL);
 	assert(length > 0U);
@@ -250,7 +250,7 @@ int CUDPSocket::read(unsigned char* buffer, unsigned int length, sockaddr_storag
 	return len;
 }
 
-bool CUDPSocket::write(const unsigned char* buffer, unsigned int length, const sockaddr_storage& address, unsigned int address_length)
+bool CUDPSocket::write(const char* buffer, unsigned int length, const sockaddr_storage& address, unsigned int address_length)
 {
 	assert(buffer != NULL);
 	assert(length > 0U);
