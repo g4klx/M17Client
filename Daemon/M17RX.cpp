@@ -63,6 +63,7 @@ m_can(0U),
 m_state(RS_RF_LISTENING),
 m_frames(0U),
 m_lsf(),
+m_running(),
 m_queue(5000U, "M17 RX"),
 m_rssiMapper(rssiMapper),
 m_rssi(0U),
@@ -187,9 +188,10 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 
 			if (m_callback != NULL) {
 				m_callback->statusCallback(m_lsf.getSource(), m_lsf.getDest(), false);
-				processLSF();
+				processLSF(m_lsf);
 			}
 
+			m_running.reset();
 			m_frames = 0U;
 			m_minRSSI = m_rssi;
 			m_maxRSSI = m_rssi;
@@ -234,9 +236,10 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 
 			if (m_callback != NULL) {
 				m_callback->statusCallback(m_lsf.getSource(), m_lsf.getDest(), false);
-				processLSF();
+				processLSF(m_lsf);
 			}
 
+			m_running.reset();
 			m_frames = 0U;
 			m_minRSSI = m_rssi;
 			m_maxRSSI = m_rssi;
@@ -250,6 +253,8 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 	}
 
 	if (m_state == RS_RF_AUDIO && data[0U] == TAG_DATA1) {
+		processRunningLSF(data + 2U + M17_SYNC_LENGTH_BYTES);
+
 		CM17Convolution conv;
 		unsigned char frame[M17_FN_LENGTH_BYTES + M17_PAYLOAD_LENGTH_BYTES];
 		conv.decodeData(data + 2U + M17_SYNC_LENGTH_BYTES + M17_LICH_FRAGMENT_FEC_LENGTH_BYTES, frame);
@@ -288,6 +293,7 @@ void CM17RX::end()
 
 	m_state = RS_RF_LISTENING;
 
+	m_running.reset();
 	m_lsf.reset();
 }
 
@@ -365,14 +371,16 @@ void CM17RX::decorrelator(const unsigned char* in, unsigned char* out) const
 		out[i] = in[i] ^ SCRAMBLER[i];
 }
 
-void CM17RX::processLSF() const
+void CM17RX::processLSF(const CM17LSF& lsf) const
 {
-	if (m_lsf.getEncryptionType() == M17_ENCRYPTION_TYPE_NONE) {
+	if (lsf.getEncryptionType() == M17_ENCRYPTION_TYPE_NONE) {
 		char meta[20U];
-		m_lsf.getMeta((unsigned char *)meta);
+		lsf.getMeta((unsigned char *)meta);
 
-		switch (m_lsf.getEncryptionSubType()) {
+		switch (lsf.getEncryptionSubType()) {
 			case M17_ENCRYPTION_SUB_TYPE_TEXT:
+				CUtils::dump(1U, "LSF Text Data", (unsigned char *)meta, M17_META_LENGTH_BYTES);
+
 				meta[M17_META_LENGTH_BYTES] = '\0';
 
 				// Make sure that the text is valid, or at least interesting
@@ -381,9 +389,55 @@ void CM17RX::processLSF() const
 
 				break;
 
+			case M17_ENCRYPTION_SUB_TYPE_GPS:
+				CUtils::dump(1U, "LSF GPS Data", (unsigned char *)meta, M17_META_LENGTH_BYTES);
+				break;
+
 			default:
+				LogDebug("Unhandled LSF Data Type: %u", lsf.getEncryptionSubType());
+				CUtils::dump(1U, "LSF Meta Data", (unsigned char *)meta, M17_META_LENGTH_BYTES);
 				break;
 		}
+	} else {
+		char meta[20U];
+		lsf.getMeta((unsigned char *)meta);
+
+		switch (lsf.getEncryptionSubType()) {
+			case M17_ENCRYPTION_TYPE_AES:
+				CUtils::dump(1U, "AES Encryption", (unsigned char *)meta, M17_META_LENGTH_BYTES);
+				break;
+			case M17_ENCRYPTION_TYPE_SCRAMBLE:
+				CUtils::dump(1U, "Scrambling", (unsigned char *)meta, M17_META_LENGTH_BYTES);
+				break;
+			default:
+				LogDebug("Unhandled Encryption Type: %u", lsf.getEncryptionType());
+				CUtils::dump(1U, "LSF Meta Data", (unsigned char *)meta, M17_META_LENGTH_BYTES);
+				break;
+		}
+	}
+}
+
+void CM17RX::processRunningLSF(const unsigned char* fragment)
+{
+	unsigned int lich1, lich2, lich3, lich4;
+	bool valid1 = CGolay24128::decode24128((unsigned char *)(fragment + 0U), lich1);
+	bool valid2 = CGolay24128::decode24128((unsigned char *)(fragment + 3U), lich2);
+	bool valid3 = CGolay24128::decode24128((unsigned char *)(fragment + 6U), lich3);
+	bool valid4 = CGolay24128::decode24128((unsigned char *)(fragment + 9U), lich4);
+
+	if (!valid1 || !valid2 || !valid3 || !valid4)
+		return;
+
+	unsigned char lich[M17_LICH_FRAGMENT_LENGTH_BYTES];
+	CM17Utils::combineFragmentLICH(lich1, lich2, lich3, lich4, lich);
+
+	unsigned int n = (lich4 >> 5) & 0x07U;
+	m_running.setFragment(lich, n);
+
+	bool valid = m_running.isValid();
+	if (valid) {
+		processLSF(m_running);
+		m_running.reset();
 	}
 }
 

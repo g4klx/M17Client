@@ -52,6 +52,7 @@ private:
 	RPT_RF_STATE       m_state;
 	unsigned int       m_frames;
 	CM17LSF            m_lsf;
+	CM17LSF            m_running;
 	CRingBuffer<short> m_queue;
 	CRSSIInterpolator* m_rssiMapper;
 	unsigned char      m_rssi;
@@ -67,7 +68,8 @@ private:
 	void interleaver(const unsigned char* in, unsigned char* out) const;
 	void decorrelator(const unsigned char* in, unsigned char* out) const;
 
-	void processLSF() const;
+	void processRunningLSF(const unsigned char* fragment);
+	void processLSF(const CM17LSF& lsf) const;
 
 	void end();
 };
