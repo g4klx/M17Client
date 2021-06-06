@@ -53,17 +53,16 @@ public:
 
 	unsigned int getVersion() const;
 
-	unsigned int readM17Data(unsigned char* data);
+	unsigned int readData(unsigned char* data);
 
-	bool hasM17Space() const;
+	bool hasSpace() const;
 
 	bool hasTX() const;
 	bool hasCD() const;
 
 	bool hasError() const;
 
-	bool writeConfig();
-	bool writeM17Data(const unsigned char* data, unsigned int length);
+	bool writeData(const unsigned char* data, unsigned int length);
 
 	void clock(unsigned int ms);
 
@@ -90,12 +89,12 @@ private:
 	unsigned int               m_offset;
 	SERIAL_STATE               m_state;
 	unsigned char              m_type;
-	CRingBuffer<unsigned char> m_rxM17Data;
-	CRingBuffer<unsigned char> m_txM17Data;
+	CRingBuffer<unsigned char> m_rxData;
+	CRingBuffer<unsigned char> m_txData;
 	CTimer                     m_statusTimer;
 	CTimer                     m_inactivityTimer;
 	CTimer                     m_playoutTimer;
-	unsigned int               m_m17Space;
+	unsigned int               m_space;
 	bool                       m_tx;
 	bool                       m_cd;
 	bool                       m_error;
@@ -106,6 +105,8 @@ private:
 	bool setConfig1();
 	bool setConfig2();
 	bool setFrequency();
+
+	bool writeConfig();
 
 	void printDebug();
 

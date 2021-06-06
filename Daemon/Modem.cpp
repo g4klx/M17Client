@@ -59,16 +59,6 @@ const unsigned int MAX_RESPONSES = 30U;
 
 const unsigned int BUFFER_LENGTH = 2000U;
 
-const unsigned char CAP1_DSTAR  = 0x01U;
-const unsigned char CAP1_DMR    = 0x02U;
-const unsigned char CAP1_YSF    = 0x04U;
-const unsigned char CAP1_P25    = 0x08U;
-const unsigned char CAP1_NXDN   = 0x10U;
-const unsigned char CAP1_M17    = 0x20U;
-const unsigned char CAP1_FM     = 0x40U;
-const unsigned char CAP2_POCSAG = 0x01U;
-const unsigned char CAP2_AX25   = 0x02U;
-
 
 CModem::CModem(bool rxInvert, bool txInvert, bool pttInvert, unsigned int txDelay, bool trace, bool debug) :
 m_protocolVersion(0U),
@@ -91,12 +81,12 @@ m_length(0U),
 m_offset(0U),
 m_state(SS_START),
 m_type(0U),
-m_rxM17Data(1000U, "Modem RX M17"),
-m_txM17Data(1000U, "Modem TX M17"),
+m_rxData(1000U, "Modem RX"),
+m_txData(1000U, "Modem TX"),
 m_statusTimer(1000U, 0U, 250U),
 m_inactivityTimer(1000U, 2U),
 m_playoutTimer(1000U, 0U, 10U),
-m_m17Space(0U),
+m_space(0U),
 m_tx(false),
 m_cd(false),
 m_error(false)
@@ -119,11 +109,11 @@ void CModem::setPort(IModemPort* port)
 
 void CModem::setRFParams(unsigned int rxFrequency, int rxOffset, unsigned int txFrequency, int txOffset, int txDCOffset, int rxDCOffset, float rfLevel)
 {
-	m_rxFrequency     = rxFrequency + rxOffset;
-	m_txFrequency     = txFrequency + txOffset;
-	m_txDCOffset      = txDCOffset;
-	m_rxDCOffset      = rxDCOffset;
-	m_rfLevel         = rfLevel;
+	m_rxFrequency = rxFrequency + rxOffset;
+	m_txFrequency = txFrequency + txOffset;
+	m_txDCOffset  = txDCOffset;
+	m_rxDCOffset  = rxDCOffset;
+	m_rfLevel     = rfLevel;
 }
 
 void CModem::setLevels(float rxLevel, float txLevel)
@@ -212,12 +202,12 @@ void CModem::clock(unsigned int ms)
 					CUtils::dump(1U, "RX M17 Link Setup", m_buffer, m_length);
 
 				unsigned char data = m_length - 2U;
-				m_rxM17Data.addData(&data, 1U);
+				m_rxData.addData(&data, 1U);
 
 				data = TAG_HEADER;
-				m_rxM17Data.addData(&data, 1U);
+				m_rxData.addData(&data, 1U);
 
-				m_rxM17Data.addData(m_buffer + 3U, m_length - 3U);
+				m_rxData.addData(m_buffer + 3U, m_length - 3U);
 			}
 			break;
 
@@ -226,12 +216,12 @@ void CModem::clock(unsigned int ms)
 					CUtils::dump(1U, "RX M17 Stream Data", m_buffer, m_length);
 
 				unsigned char data = m_length - 2U;
-				m_rxM17Data.addData(&data, 1U);
+				m_rxData.addData(&data, 1U);
 
 				data = TAG_DATA1;
-				m_rxM17Data.addData(&data, 1U);
+				m_rxData.addData(&data, 1U);
 
-				m_rxM17Data.addData(m_buffer + 3U, m_length - 3U);
+				m_rxData.addData(m_buffer + 3U, m_length - 3U);
 			}
 			break;
 
@@ -240,12 +230,12 @@ void CModem::clock(unsigned int ms)
 					CUtils::dump(1U, "RX M17 Packet Data", m_buffer, m_length);
 
 				unsigned char data = m_length - 2U;
-				m_rxM17Data.addData(&data, 1U);
+				m_rxData.addData(&data, 1U);
 
 				data = TAG_DATA2;
-				m_rxM17Data.addData(&data, 1U);
+				m_rxData.addData(&data, 1U);
 
-				m_rxM17Data.addData(m_buffer + 3U, m_length - 3U);
+				m_rxData.addData(m_buffer + 3U, m_length - 3U);
 			}
 			break;
 
@@ -254,10 +244,10 @@ void CModem::clock(unsigned int ms)
 					CUtils::dump(1U, "RX M17 Lost", m_buffer, m_length);
 
 				unsigned char data = 1U;
-				m_rxM17Data.addData(&data, 1U);
+				m_rxData.addData(&data, 1U);
 
 				data = TAG_LOST;
-				m_rxM17Data.addData(&data, 1U);
+				m_rxData.addData(&data, 1U);
 			}
 			break;
 
@@ -284,10 +274,10 @@ void CModem::clock(unsigned int ms)
 							LogError("MMDVM DAC levels have overflowed");
 						m_cd = (m_buffer[m_offset + 2U] & 0x40U) == 0x40U;
 
-						m_m17Space    = 0U;
+						m_space = 0U;
 
 						if (m_length > (m_offset + 10U))
-							m_m17Space    = m_buffer[m_offset + 10U];
+							m_space = m_buffer[m_offset + 10U];
 					}
 					break;
 
@@ -309,12 +299,12 @@ void CModem::clock(unsigned int ms)
 							LogError("MMDVM DAC levels have overflowed");
 						m_cd = (m_buffer[m_offset + 1U] & 0x40U) == 0x40U;
 
-						m_m17Space    = m_buffer[m_offset + 9U];
+						m_space = m_buffer[m_offset + 9U];
 					}
 					break;
 
 				default:
-					m_m17Space    = 0U;
+					m_space = 0U;
 					break;
 				}
 
@@ -352,10 +342,10 @@ void CModem::clock(unsigned int ms)
 	if (!m_playoutTimer.hasExpired())
 		return;
 
-	if (m_m17Space > 1U && !m_txM17Data.isEmpty()) {
+	if (m_space > 1U && !m_txData.isEmpty()) {
 		unsigned char len = 0U;
-		m_txM17Data.getData(&len, 1U);
-		m_txM17Data.getData(m_buffer, len);
+		m_txData.getData(&len, 1U);
+		m_txData.getData(m_buffer, len);
 
 		if (m_trace) {
 			switch (m_buffer[2U]) {
@@ -377,7 +367,7 @@ void CModem::clock(unsigned int ms)
 
 		m_playoutTimer.start();
 
-		m_m17Space--;
+		m_space--;
 	}
 }
 
@@ -390,28 +380,28 @@ void CModem::close()
 	m_port->close();
 }
 
-unsigned int CModem::readM17Data(unsigned char* data)
+unsigned int CModem::readData(unsigned char* data)
 {
 	assert(data != NULL);
 
-	if (m_rxM17Data.isEmpty())
+	if (m_rxData.isEmpty())
 		return 0U;
 
 	unsigned char len = 0U;
-	m_rxM17Data.getData(&len, 1U);
-	m_rxM17Data.getData(data, len);
+	m_rxData.getData(&len, 1U);
+	m_rxData.getData(data, len);
 
 	return len;
 }
 
-bool CModem::hasM17Space() const
+bool CModem::hasSpace() const
 {
-	unsigned int space = m_txM17Data.freeSpace() / (M17_FRAME_LENGTH_BYTES + 4U);
+	unsigned int space = m_txData.freeSpace() / (M17_FRAME_LENGTH_BYTES + 4U);
 
 	return space > 1U;
 }
 
-bool CModem::writeM17Data(const unsigned char* data, unsigned int length)
+bool CModem::writeData(const unsigned char* data, unsigned int length)
 {
 	assert(data != NULL);
 	assert(length > 0U);
@@ -432,8 +422,8 @@ bool CModem::writeM17Data(const unsigned char* data, unsigned int length)
 	::memcpy(buffer + 3U, data + 1U, length - 1U);
 
 	unsigned char len = length + 2U;
-	m_txM17Data.addData(&len, 1U);
-	m_txM17Data.addData(buffer, len);
+	m_txData.addData(&len, 1U);
+	m_txData.addData(buffer, len);
 
 	return true;
 }
@@ -567,7 +557,7 @@ bool CModem::setConfig1()
 
 	buffer[2U] = MMDVM_SET_CONFIG;
 
-	buffer[3U] = 0x00U;
+	buffer[3U] = 0x80U;
 	if (m_rxInvert)
 		buffer[3U] |= 0x01U;
 	if (m_txInvert)
@@ -576,10 +566,8 @@ bool CModem::setConfig1()
 		buffer[3U] |= 0x04U;
 	if (m_debug)
 		buffer[3U] |= 0x10U;
-	buffer[3U] |= 0x80U;
 
-	buffer[4U] = 0x00U;
-	buffer[4U] |= 0x40U;
+	buffer[4U] = 0x40U;
 
 	buffer[5U] = m_txDelay / 10U;		// In 10ms units
 
@@ -640,7 +628,7 @@ bool CModem::setConfig2()
 
 	buffer[2U] = MMDVM_SET_CONFIG;
 
-	buffer[3U] = 0x00U;
+	buffer[3U] = 0x80U;
 	if (m_rxInvert)
 		buffer[3U] |= 0x01U;
 	if (m_txInvert)
@@ -649,10 +637,8 @@ bool CModem::setConfig2()
 		buffer[3U] |= 0x04U;
 	if (m_debug)
 		buffer[3U] |= 0x10U;
-	buffer[3U] |= 0x80U;
 
-	buffer[4U] = 0x00U;
-	buffer[4U] |= 0x40U;
+	buffer[4U] = 0x40U;
 
 	buffer[6U] = m_txDelay / 10U;		// In 10ms units
 

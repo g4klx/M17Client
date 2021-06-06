@@ -17,11 +17,14 @@
  */
 
 #include "M17Client.h"
+#include "UARTController.h"
+#include "codec2/codec2.h"
 #include "GitVersion.h"
 #include "SoundCard.h"
 #include "StopWatch.h"
 #include "Version.h"
 #include "Thread.h"
+#include "Modem.h"
 #include "Log.h"
 
 #include <cstdio>
@@ -205,10 +208,29 @@ int CM17Client::run()
 		return 1;
 	}
 
-	CRSSIInterpolator* interpolator = NULL;	// XXX FIXME
+	CModem modem(m_conf.getModemRXInvert(), m_conf.getModemTXInvert(), m_conf.getModemPTTInvert(), m_conf.getModemTXDelay(), m_conf.getModemTrace(), m_conf.getModemDebug());
+	modem.setPort(new CUARTController(m_conf.getModemPort(), m_conf.getModemSpeed()));
+	modem.setLevels(m_conf.getModemRXLevel(), m_conf.getModemTXLevel());
 
-	m_tx = new CM17TX(m_conf.getCallsign(), m_conf.getText());
-	m_rx = new CM17RX(m_conf.getCallsign(), interpolator);
+	// By default use the first entry in the code plug file
+	modem.setRFParams(m_codePlug->getData().at(0U).m_rxFrequency, m_conf.getModemRXOffset(),
+			  m_codePlug->getData().at(0U).m_txFrequency, m_conf.getModemTXOffset(),
+			  m_conf.getModemRXDCOffset(), m_conf.getModemTXDCOffset(), m_conf.getModemRFLevel());
+
+	ret = modem.open();
+	if (!ret) {
+		LogError("Unable to open the MMDVM");
+		return 1;
+	}
+
+	CCodec2 codec2(true);
+
+	CRSSIInterpolator* rssi = new CRSSIInterpolator;
+	if (!m_conf.getModemRSSIMappingFile().empty())
+		rssi->load(m_conf.getModemRSSIMappingFile());
+
+	m_tx = new CM17TX(m_conf.getCallsign(), m_conf.getText(), codec2);
+	m_rx = new CM17RX(m_conf.getCallsign(), rssi, m_conf.getBleep(), codec2);
 
 	// By default use the first entry in the code plug file
 	m_rx->setCAN(m_codePlug->getData().at(0U).m_can);
@@ -220,13 +242,27 @@ int CM17Client::run()
 	LogMessage("M17Client-%s is running", VERSION);
 
 	while (!m_killed) {
+		unsigned char data[100U];
+		unsigned int len = modem.readData(data);
+		if (len > 0U)
+			m_rx->write(data, len);
+
+		if (modem.hasSpace()) {
+			len = m_tx->read(data);
+			if (len > 0U)
+				modem.writeData(data, len);
+		}
+
 		unsigned int ms = stopWatch.elapsed();
 		stopWatch.start();
+
+		modem.clock(ms);
 
 		if (ms < 10U)
 			CThread::sleep(10U);
 	}
 
+	modem.close();
 	sound.close();
 
 	delete m_codePlug;

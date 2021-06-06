@@ -20,8 +20,9 @@
 #define	M17RX_H
 
 #include "RSSIInterpolator.h"
+#include "codec2/codec2.h"
+#include "RingBuffer.h"
 #include "M17Defines.h"
-#include "StopWatch.h"
 #include "Defines.h"
 #include "M17LSF.h"
 #include "Modem.h"
@@ -30,36 +31,39 @@
 
 class CM17RX {
 public:
-	CM17RX(const std::string& callsign, CRSSIInterpolator* rssiMapper);
+	CM17RX(const std::string& callsign, CRSSIInterpolator* rssiMapper, bool bleep, CCodec2& codec2);
 	~CM17RX();
 
 	void setCAN(unsigned int can);
 
-	bool writeModem(unsigned char* data, unsigned int len);
+	bool write(unsigned char* data, unsigned int len);
+
+	unsigned int read(short* audio);
 
 private:
-	std::string                m_callsign;
-	unsigned int               m_can;
-	RPT_RF_STATE               m_rfState;
-	CStopWatch                 m_elapsed;
-	unsigned int               m_rfFrames;
-	unsigned int               m_rfErrs;
-	unsigned int               m_rfBits;
-	CM17LSF                    m_rfLSF;
-	unsigned int               m_rfLSFn;
-	CRSSIInterpolator*         m_rssiMapper;
-	unsigned char              m_rssi;
-	unsigned char              m_maxRSSI;
-	unsigned char              m_minRSSI;
-	unsigned int               m_aveRSSI;
-	unsigned int               m_rssiCount;
+	CCodec2&           m_codec2;
+	std::string        m_callsign;
+	bool               m_bleep;
+	unsigned int       m_can;
+	RPT_RF_STATE       m_state;
+	unsigned int       m_frames;
+	CM17LSF            m_lsf;
+	CRingBuffer<short> m_queue;
+	CRSSIInterpolator* m_rssiMapper;
+	unsigned char      m_rssi;
+	unsigned char      m_maxRSSI;
+	unsigned char      m_minRSSI;
+	unsigned int       m_aveRSSI;
+	unsigned int       m_rssiCount;
 
-	bool processRFHeader(bool lateEntry);
+	void writeQueue(const short *audio);
+
+	bool processHeader(bool lateEntry);
 
 	void interleaver(const unsigned char* in, unsigned char* out) const;
 	void decorrelator(const unsigned char* in, unsigned char* out) const;
 
-	void writeEndRF();
+	void end();
 };
 
 #endif

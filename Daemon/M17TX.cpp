@@ -54,7 +54,8 @@ const unsigned char BIT_MASK_TABLE[] = { 0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04
 #define WRITE_BIT(p,i,b) p[(i)>>3] = (b) ? (p[(i)>>3] | BIT_MASK_TABLE[(i)&7]) : (p[(i)>>3] & ~BIT_MASK_TABLE[(i)&7])
 #define READ_BIT(p,i)    (p[(i)>>3] & BIT_MASK_TABLE[(i)&7])
 
-CM17TX::CM17TX(const std::string& callsign, const std::string& text) :
+CM17TX::CM17TX(const std::string& callsign, const std::string& text, CCodec2& codec2) :
+m_codec2(codec2),
 m_source(callsign),
 m_destination(),
 m_can(0U),
@@ -119,7 +120,7 @@ unsigned int CM17TX::read(unsigned char* data)
 	return len;
 }
 
-void CM17TX::write(const unsigned char* audio, bool end)
+void CM17TX::write(const short* audio, bool end)
 {
 	assert(audio != NULL);
 
@@ -191,7 +192,8 @@ void CM17TX::write(const unsigned char* audio, bool end)
 		payload[1U] = (fn >> 0) & 0xFFU;
 
 		// Add the data/audio
-		::memcpy(payload + M17_FN_LENGTH_BYTES, audio, M17_PAYLOAD_LENGTH_BYTES);
+		m_codec2.codec2_encode(payload + M17_FN_LENGTH_BYTES + 0U, audio + 0U);
+		m_codec2.codec2_encode(payload + M17_FN_LENGTH_BYTES + 8U, audio + 160U);
 
 		// Add the Convolution FEC
 		CM17Convolution conv;
@@ -235,7 +237,7 @@ void CM17TX::writeQueue(const unsigned char *data)
 
 	unsigned int space = m_queue.freeSpace();
 	if (space < (len + 1U)) {
-		LogError("M17, overflow in the M17 RF queue");
+		LogError("Overflow in the M17 TX queue");
 		return;
 	}
 

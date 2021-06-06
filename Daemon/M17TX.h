@@ -19,6 +19,7 @@
 #if !defined(M17TX_H)
 #define	M17TX_H
 
+#include "codec2/codec2.h"
 #include "M17Defines.h"
 #include "RingBuffer.h"
 #include "Defines.h"
@@ -29,18 +30,19 @@
 
 class CM17TX {
 public:
-	CM17TX(const std::string& callsign, const std::string& text);
+	CM17TX(const std::string& callsign, const std::string& text, CCodec2& codec2);
 	~CM17TX();
 
 	void setCAN(unsigned int can);
 
 	void setDestination(const std::string& callsign);
 
-	void write(const unsigned char* audio, bool end);
+	void write(const short* audio, bool end);
 
 	unsigned int read(unsigned char* data);
 
 private:
+	CCodec2&                   m_codec2;
 	std::string                m_source;
 	std::string                m_destination;
 	unsigned int               m_can;
