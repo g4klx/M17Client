@@ -269,9 +269,10 @@ int CM17Client::run()
 		rssi->load(m_conf.getModemRSSIMappingFile());
 
 	m_tx = new CM17TX(m_conf.getCallsign(), m_conf.getText(), codec2);
-	m_rx = new CM17RX(m_conf.getCallsign(), rssi, m_conf.getBleep(), codec2);
-
 	m_tx->setDestination("ALL");
+
+	m_rx = new CM17RX(m_conf.getCallsign(), rssi, m_conf.getBleep(), codec2);
+	m_rx->setStatusCallback(this);
 
 	// By default use the first entry in the code plug file
 	m_rx->setCAN(m_codePlug->getData().at(0U).m_can);
@@ -429,4 +430,50 @@ void CM17Client::sendDestinationList()
 
 	m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
 }
+
+void CM17Client::statusCallback(const std::string& source, const std::string& dest, bool end)
+{
+	assert(m_socket != NULL);
+
+	char buffer[50U];
+	::strcpy(buffer, "RX");
+	::strcat(buffer, DELIMITER);
+	::strcat(buffer, end ? "1" : "0");
+	::strcat(buffer, DELIMITER);
+	::strcat(buffer, source.c_str());
+	::strcat(buffer, DELIMITER);
+	::strcat(buffer, dest.c_str());
+
+	m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
+}
+
+void CM17Client::textCallback(const char* text)
+{
+	assert(m_socket != NULL);
+
+	char buffer[50U];
+	::strcpy(buffer, "TEXT");
+	::strcat(buffer, DELIMITER);
+	::strcat(buffer, text);
+
+	m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
+}
+
+void CM17Client::rssiCallback(int rssi)
+{
+	assert(m_socket != NULL);
+
+	char buffer[50U];
+	::strcpy(buffer, "RSSI");
+	::strcat(buffer, DELIMITER);
+	::sprintf(buffer + ::strlen(buffer), "%d", rssi);
+
+	m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
+}
+
+void CM17Client::gpsCallback()
+{
+	assert(m_socket != NULL);
+}
+
 

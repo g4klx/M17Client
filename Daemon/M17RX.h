@@ -20,6 +20,7 @@
 #define	M17RX_H
 
 #include "RSSIInterpolator.h"
+#include "StatusCallback.h"
 #include "codec2/codec2.h"
 #include "RingBuffer.h"
 #include "M17Defines.h"
@@ -34,6 +35,8 @@ public:
 	CM17RX(const std::string& callsign, CRSSIInterpolator* rssiMapper, bool bleep, CCodec2& codec2);
 	~CM17RX();
 
+	void setStatusCallback(IStatusCallback* callback);
+
 	void setCAN(unsigned int can);
 
 	bool write(unsigned char* data, unsigned int len);
@@ -44,6 +47,7 @@ private:
 	CCodec2&           m_codec2;
 	std::string        m_callsign;
 	bool               m_bleep;
+	IStatusCallback*   m_callback;
 	unsigned int       m_can;
 	RPT_RF_STATE       m_state;
 	unsigned int       m_frames;
@@ -62,6 +66,8 @@ private:
 
 	void interleaver(const unsigned char* in, unsigned char* out) const;
 	void decorrelator(const unsigned char* in, unsigned char* out) const;
+
+	void processLSF() const;
 
 	void end();
 };

@@ -58,6 +58,7 @@ CM17RX::CM17RX(const std::string& callsign, CRSSIInterpolator* rssiMapper, bool 
 m_codec2(codec2),
 m_callsign(callsign),
 m_bleep(bleep),
+m_callback(NULL),
 m_can(0U),
 m_state(RS_RF_LISTENING),
 m_frames(0U),
@@ -74,6 +75,13 @@ m_rssiCount(0U)
 
 CM17RX::~CM17RX()
 {
+}
+
+void CM17RX::setStatusCallback(IStatusCallback* callback)
+{
+	assert(callback != NULL);
+
+	m_callback = callback;
 }
 
 void CM17RX::setCAN(unsigned int can)
@@ -138,8 +146,11 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 
 		// Convert the raw RSSI to dBm
 		int rssi = m_rssiMapper->interpolate(raw);
-		if (rssi != 0)
+		if (rssi != 0) {
 			LogDebug("Raw RSSI: %u, reported RSSI: %d dBm", raw, rssi);
+			if (m_callback != NULL)
+				m_callback->rssiCallback(rssi);
+		}
 
 		// RSSI is always reported as positive
 		m_rssi = (rssi >= 0) ? rssi : -rssi;
@@ -172,6 +183,11 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 			if (!ret) {
 				m_lsf.reset();
 				return false;
+			}
+
+			if (m_callback != NULL) {
+				m_callback->statusCallback(m_lsf.getSource(), m_lsf.getDest(), false);
+				processLSF();
 			}
 
 			m_frames = 0U;
@@ -214,6 +230,11 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 			if (!ret) {
 				m_lsf.reset();
 				return false;
+			}
+
+			if (m_callback != NULL) {
+				m_callback->statusCallback(m_lsf.getSource(), m_lsf.getDest(), false);
+				processLSF();
 			}
 
 			m_frames = 0U;
@@ -262,6 +283,9 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 
 void CM17RX::end()
 {
+	if (m_state == RS_RF_AUDIO && m_callback != NULL)
+		m_callback->statusCallback(m_lsf.getSource(), m_lsf.getDest(), true);
+
 	m_state = RS_RF_LISTENING;
 
 	m_lsf.reset();
@@ -339,5 +363,27 @@ void CM17RX::decorrelator(const unsigned char* in, unsigned char* out) const
 
 	for (unsigned int i = M17_SYNC_LENGTH_BYTES; i < M17_FRAME_LENGTH_BYTES; i++)
 		out[i] = in[i] ^ SCRAMBLER[i];
+}
+
+void CM17RX::processLSF() const
+{
+	if (m_lsf.getEncryptionType() == M17_ENCRYPTION_TYPE_NONE) {
+		char meta[20U];
+		m_lsf.getMeta((unsigned char *)meta);
+
+		switch (m_lsf.getEncryptionSubType()) {
+			case M17_ENCRYPTION_SUB_TYPE_TEXT:
+				meta[M17_META_LENGTH_BYTES] = '\0';
+
+				// Make sure that the text is valid, or at least interesting
+				if (meta[0U] != 0x00U && ::strcmp(meta, "              ") != 0)
+					m_callback->textCallback(meta);
+
+				break;
+
+			default:
+				break;
+		}
+	}
 }
 

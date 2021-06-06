@@ -19,6 +19,7 @@
 #if !defined(M17Client_H)
 #define	M17Client_H
 
+#include "StatusCallback.h"
 #include "AudioCallback.h"
 #include "UDPSocket.h"
 #include "CodePlug.h"
@@ -28,7 +29,7 @@
 
 #include <string>
 
-class CM17Client : public IAudioCallback
+class CM17Client : public IAudioCallback, public IStatusCallback
 {
 public:
 	CM17Client(const std::string& confFile);
@@ -38,6 +39,11 @@ public:
 
 	virtual void readCallback(const short* input, unsigned int nSamples, int id);
 	virtual void writeCallback(short* output, int& nSamples, int id);
+
+	virtual void statusCallback(const std::string& source, const std::string& dest, bool end);
+	virtual void textCallback(const char* text);
+	virtual void rssiCallback(int rssi);
+	virtual void gpsCallback();
 
 private:
 	CConf            m_conf;
