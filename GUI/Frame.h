@@ -41,6 +41,9 @@ public:
 
 	virtual void onTransmit(wxCommandEvent& event);
 
+	virtual void onVolume(wxScrollEvent& event);
+	virtual void onMicGain(wxScrollEvent& event);
+
 	virtual void onTimer(wxTimerEvent& event);
 
 	virtual void setChannels(const wxArrayString& channels);
@@ -59,13 +62,14 @@ public:
 	virtual void onText(wxEvent& event);
 	virtual void onError(wxEvent& event);
 
-
 private:
 	wxChoice*       m_channels;
 	wxChoice*       m_destinations;
 	wxChoice*       m_modules;
 	wxToggleButton* m_transmit;
 	wxStaticText*   m_status;
+	wxSlider*       m_volume;
+	wxSlider*       m_micGain;
 	wxStaticText*   m_hrdSource;
 	wxStaticText*   m_hrdDestination;
 	wxStaticText*   m_hrdText;

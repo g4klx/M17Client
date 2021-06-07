@@ -56,6 +56,9 @@ public:
 	virtual bool setDestination(const wxString& destination);
 	virtual bool setTransmit(bool on);
 
+	virtual bool setVolume(unsigned int volume);
+	virtual bool setMicGain(unsigned int micGain);
+
 	virtual void error(const wxString& text) const;
 
 private:

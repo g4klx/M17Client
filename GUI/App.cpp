@@ -163,6 +163,16 @@ bool CApp::setTransmit(bool on)
 	return m_thread->setTransmit(on);
 }
 
+bool CApp::setVolume(unsigned int volume)
+{
+	return m_thread->setVolume(volume);
+}
+
+bool CApp::setMicGain(unsigned int micGain)
+{
+	return m_thread->setMicGain(micGain);
+}
+
 void CApp::createThread()
 {
 	m_thread = new CThread;
