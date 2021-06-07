@@ -58,6 +58,7 @@ CM17RX::CM17RX(const std::string& callsign, CRSSIInterpolator* rssiMapper, bool 
 m_codec2(codec2),
 m_callsign(callsign),
 m_bleep(bleep),
+m_volume(1.0F),
 m_callback(NULL),
 m_can(0U),
 m_state(RS_RF_LISTENING),
@@ -88,6 +89,11 @@ void CM17RX::setStatusCallback(IStatusCallback* callback)
 void CM17RX::setCAN(unsigned int can)
 {
 	m_can = can;
+}
+
+void CM17RX::setVolume(unsigned int percentage)
+{
+	m_volume = float(percentage) / 100.0F;
 }
 
 unsigned int CM17RX::read(short* audio, unsigned int len)
@@ -265,6 +271,9 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 		short audio[320U];
 		m_codec2.codec2_decode(audio + 0U,   frame + 2U);
 		m_codec2.codec2_decode(audio + 160U, frame + 2U + 8U);
+		// Adjust the volume
+		for (unsigned int i = 0U; i < 320U; i++)
+			audio[i] = short(float(audio[i]) * m_volume + 0.5F);
 		writeQueue(audio, 320U);
 
 		m_frames++;

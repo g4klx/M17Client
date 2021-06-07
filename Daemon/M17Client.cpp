@@ -297,9 +297,11 @@ int CM17Client::run()
 		rssi->load(m_conf.getModemRSSIMappingFile());
 
 	m_tx = new CM17TX(m_conf.getCallsign(), m_conf.getText(), codec2);
+	m_tx->setMicGain(m_conf.getAudioMicGain());
 	m_tx->setDestination("ALL");
 
 	m_rx = new CM17RX(m_conf.getCallsign(), rssi, m_conf.getBleep(), codec2);
+	m_rx->setVolume(m_conf.getAudioVolume());
 	m_rx->setStatusCallback(this);
 
 	// By default use the first entry in the code plug file
@@ -380,6 +382,7 @@ void CM17Client::parseCommand(char* command)
 {
 	assert(command != NULL);
 	assert(m_tx != NULL);
+	assert(m_rx != NULL);
 
 	LogDebug("Command received: %s", command);
 
@@ -422,8 +425,10 @@ void CM17Client::parseCommand(char* command)
 		}
 	} else if (::strcmp(ptrs.at(0U), "VOL") == 0) {
 		LogDebug("\tVolume set");
+		m_rx->setVolume(std::stoi(ptrs.at(1U)));
 	} else if (::strcmp(ptrs.at(0U), "MIC") == 0) {
 		LogDebug("\tMic gain set");
+		m_tx->setMicGain(std::stoi(ptrs.at(1U)));
 	} else {
 		LogWarning("\tUnknown command");
 	}

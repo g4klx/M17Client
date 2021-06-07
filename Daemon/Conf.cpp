@@ -162,8 +162,11 @@ bool CConf::read()
 			else if (::strcmp(key, "Debug") == 0)
 				m_debug = ::atoi(value) == 1;
 		} else if (section == SECTION_DESTINATIONS) {
-			if (::strcmp(key, "Name") == 0)
+			if (::strcmp(key, "Name") == 0) {
+				for (unsigned int i = 0U; value[i] != 0; i++)
+					value[i] = ::toupper(value[i]);
 				m_destinations.push_back(value);
+			}
 		} else if (section == SECTION_AUDIO) {
 			if (::strcmp(key, "InputDevice") == 0)
 				m_audioInputDevice = value;

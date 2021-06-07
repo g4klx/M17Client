@@ -37,6 +37,8 @@ public:
 
 	void setDestination(const std::string& callsign);
 
+	void setMicGain(unsigned int percentage);
+
 	void write(const short* audio, bool end);
 
 	unsigned int read(unsigned char* data);
@@ -45,6 +47,7 @@ private:
 	CCodec2&                   m_codec2;
 	std::string                m_source;
 	std::string                m_destination;
+	float                      m_micGain;
 	unsigned int               m_can;
 	bool                       m_transmit;
 	CRingBuffer<unsigned char> m_queue;

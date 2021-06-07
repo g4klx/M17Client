@@ -58,6 +58,7 @@ CM17TX::CM17TX(const std::string& callsign, const std::string& text, CCodec2& co
 m_codec2(codec2),
 m_source(callsign),
 m_destination(),
+m_micGain(1.0F),
 m_can(0U),
 m_transmit(false),
 m_queue(5000U, "M17 TX"),
@@ -105,6 +106,11 @@ void CM17TX::setDestination(const std::string& callsign)
 	m_textLSF->setDest(callsign);
 }
 
+void CM17TX::setMicGain(unsigned int percentage)
+{
+	m_micGain = float(percentage) / 100.0F;
+}
+
 unsigned int CM17TX::read(unsigned char* data)
 {
 	assert(data != NULL);
@@ -120,9 +126,14 @@ unsigned int CM17TX::read(unsigned char* data)
 	return len;
 }
 
-void CM17TX::write(const short* audio, bool end)
+void CM17TX::write(const short* input, bool end)
 {
-	assert(audio != NULL);
+	assert(input != NULL);
+
+	// Adjust the mic gain
+	short audio[320U];
+	for (unsigned int i = 0U; i < 320U; i++)
+		audio[i] = short(float(input[i]) * m_micGain + 0.5F);
 
 	if (!m_transmit) {
 		m_currLSF = m_textLSF;

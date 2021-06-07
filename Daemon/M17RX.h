@@ -39,6 +39,8 @@ public:
 
 	void setCAN(unsigned int can);
 
+	void setVolume(unsigned int percentage);
+
 	bool write(unsigned char* data, unsigned int len);
 
 	unsigned int read(short* audio, unsigned int len);
@@ -47,6 +49,7 @@ private:
 	CCodec2&           m_codec2;
 	std::string        m_callsign;
 	bool               m_bleep;
+	float              m_volume;
 	IStatusCallback*   m_callback;
 	unsigned int       m_can;
 	RPT_RF_STATE       m_state;
