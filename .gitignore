@@ -1,6 +1,7 @@
 *.o
 *.a
 M17CLI
+M17GUI
 M17Client
 GitVersion.h
 
