@@ -109,6 +109,12 @@ m_codePlug(NULL),
 m_rx(NULL),
 m_tx(NULL),
 m_socket(NULL),
+#if defined(USE_HAMLIB)
+m_hamLib(NULL),
+#endif
+#if defined(USE_GPSD)
+m_gpsd(NULL),
+#endif
 m_sockaddr(),
 m_sockaddrLen(0U),
 m_transmit(false)
@@ -262,6 +268,28 @@ int CM17Client::run()
 		return 1;
 	}
 
+#if defined(USE_HAMLIB)
+	if (m_conf.getHamLibEnabled()) {
+		m_hamLib = new CHamLib(m_conf.getHamLibRadioType());
+		ret = m_hamLib->open();
+		if (!ret) {
+			LogError("Unable to open HamLib");
+			return 1;
+		}
+	}
+#endif
+
+#if defined(USE_GPSD)
+	if (m_conf.getGPSDEnabled()) {
+		m_gpsd = new CGPSD(m_conf.getGPSDAddress(), m_conf.getGPSDPort());
+		ret = m_gpsd->open();
+		if (!ret) {
+			LogError("Unable to open GPSD");
+			return 1;
+		}
+	}
+#endif
+
 	CCodec2 codec2(true);
 
 	CRSSIInterpolator* rssi = new CRSSIInterpolator;
@@ -275,6 +303,12 @@ int CM17Client::run()
 	m_rx->setStatusCallback(this);
 
 	// By default use the first entry in the code plug file
+#if defined(USE_HAMLIB)
+	if (m_hamLib != NULL) {
+		m_hamLib->setRXFrequency(m_codePlug->getData().at(0U).m_rxFrequency);
+		m_hamLib->setTXFrequency(m_codePlug->getData().at(0U).m_txFrequency);
+	}
+#endif
 	m_rx->setCAN(m_codePlug->getData().at(0U).m_can);
 	m_tx->setCAN(m_codePlug->getData().at(0U).m_can);
 
@@ -315,6 +349,20 @@ int CM17Client::run()
 		if (ms < 10U)
 			CThread::sleep(10U);
 	}
+
+#if defined(USE_HAMLIB)
+	if (m_hamLib != NULL) {
+		m_hamLib->close();
+		delete m_hamLib;
+	}
+#endif
+
+#if defined(USE_GPSD)
+	if (m_gpsd != NULL) {
+		m_gpsd->close();
+		delete m_gpsd;
+	}
+#endif
 
 	m_socket->close();
 	modem.close();
@@ -405,6 +453,12 @@ bool CM17Client::processChannelRequest(const char* channel)
 
 	for (const auto& chan : m_codePlug->getData()) {
 		if (chan.m_name == channel) {
+#if defined(USE_HAMLIB)
+			if (m_hamLib != NULL) {
+				m_hamLib->setRXFrequency(chan.m_rxFrequency);
+				m_hamLib->setTXFrequency(chan.m_txFrequency);
+			}
+#endif
 			m_rx->setCAN(chan.m_can);
 			m_tx->setCAN(chan.m_can);
 			return true;
@@ -475,5 +529,4 @@ void CM17Client::gpsCallback()
 {
 	assert(m_socket != NULL);
 }
-
 

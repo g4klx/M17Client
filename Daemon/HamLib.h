@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2018,2020 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2018,2020,2021 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -16,32 +16,33 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#if defined(USE_GPSD)
+#if defined(USE_HAMLIB)
 
-#if !defined(GPSD.h)
-#define	GPSD_H
+#if !defined(HamLib_H)
+#define	HanLib_H
+
+#include <hamlib/rig.h>
 
 #include <string>
 
-#include <gps.h>
-
-class CGPSD {
+class CHamLib {
 public:
-	CGPSD(const std::string& address, const std::string& port);
-	~CGPSD();
+	CHamLib(const std::string& type);
+	~CHamLib();
 
 	bool open();
 
-	void clock(unsigned int ms);
+	void setRXFrequency(unsigned int hz);
+	void setTXFrequency(unsigned int hz);
 
 	void close();
 
 private:
-	std::string       m_gpsdAddress;
-	std::string       m_gpsdPort;
-	struct gps_data_t m_gpsdData;
+	std::string m_type;
+	RIG*        m_rig;
 };
 
 #endif
 
 #endif
+

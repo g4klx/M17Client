@@ -74,6 +74,10 @@ public:
 	// The CodePlug section
 	std::string  getCodePlugFile() const;
 
+	// The HamLib section
+	bool	     getHamLibEnabled() const;
+	std::string  getHamLibRadioType() const;
+
 	// The GPSD section
 	bool         getGPSDEnabled() const;
 	std::string  getGPSDAddress() const;
@@ -124,6 +128,9 @@ private:
 	bool         m_logFileRotate;
 
 	std::string  m_codePlugFile;
+
+	bool         m_hamLibEnabled;
+	std::string  m_hamLibRadioType;
 
 	bool         m_gpsdEnabled;
 	std::string  m_gpsdAddress;

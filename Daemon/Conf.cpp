@@ -34,6 +34,7 @@ enum SECTION {
 	SECTION_MODEM,
 	SECTION_LOG,
 	SECTION_CODE_PLUG,
+	SECTION_HAMLIB,
 	SECTION_GPSD,
 	SECTION_CONTROL
 };
@@ -72,6 +73,8 @@ m_logFilePath(),
 m_logFileRoot(),
 m_logFileRotate(true),
 m_codePlugFile("CodePlug.ini"),
+m_hamLibEnabled(false),
+m_hamLibRadioType(),
 m_gpsdEnabled(false),
 m_gpsdAddress("127.0.0.1"),
 m_gpsdPort(),
@@ -114,6 +117,8 @@ bool CConf::read()
 				section = SECTION_LOG;
 			else if (::strncmp(buffer, "[Code Plug]", 11U) == 0)
 				section = SECTION_CODE_PLUG;
+			else if (::strncmp(buffer, "[HamLib]", 8U) == 0)
+				section = SECTION_HAMLIB;
 			else if (::strncmp(buffer, "[GPSD]", 6U) == 0)
 				section = SECTION_GPSD;
 			else if (::strncmp(buffer, "[Control]", 9U) == 0)
@@ -215,6 +220,11 @@ bool CConf::read()
 		} else if (section == SECTION_CODE_PLUG) {
 			if (::strcmp(key, "File") == 0)
 				m_codePlugFile = value;
+		} else if (section == SECTION_HAMLIB) {
+			if (::strcmp(key, "Enable") == 0)
+				m_hamLibEnabled = ::atoi(value) == 1;
+			else if (::strcmp(key, "RadioType") == 0)
+				m_hamLibRadioType = value;
 		} else if (section == SECTION_GPSD) {
 			if (::strcmp(key, "Enable") == 0)
 				m_gpsdEnabled = ::atoi(value) == 1;
@@ -397,6 +407,16 @@ bool CConf::getLogFileRotate() const
 std::string CConf::getCodePlugFile() const
 {
 	return m_codePlugFile;
+}
+
+bool CConf::getHamLibEnabled() const
+{
+	return m_hamLibEnabled;
+}
+
+std::string CConf::getHamLibRadioType() const
+{
+	return m_hamLibRadioType;
 }
 
 bool CConf::getGPSDEnabled() const

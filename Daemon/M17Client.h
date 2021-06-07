@@ -22,6 +22,12 @@
 #include "StatusCallback.h"
 #include "AudioCallback.h"
 #include "UDPSocket.h"
+#if defined(USE_HAMLIB)
+#include "HamLib.h"
+#endif
+#if defined(USE_GPSD)
+#include "GPSD.h"
+#endif
 #include "CodePlug.h"
 #include "M17RX.h"
 #include "M17TX.h"
@@ -51,6 +57,12 @@ private:
 	CM17RX*          m_rx;
 	CM17TX*          m_tx;
 	CUDPSocket*      m_socket;
+#if defined(USE_HAMLIB)
+	CHamLib*         m_hamLib;
+#endif
+#if defined(USE_GPSD)
+	CGPSD*           m_gpsd;
+#endif
 	sockaddr_storage m_sockaddr;
 	unsigned int     m_sockaddrLen;
 	bool             m_transmit;
@@ -64,3 +76,4 @@ private:
 };
 
 #endif
+
