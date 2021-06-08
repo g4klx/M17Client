@@ -1,5 +1,6 @@
 *.o
 *.a
+*.log
 M17CLI
 M17GUI
 M17Client

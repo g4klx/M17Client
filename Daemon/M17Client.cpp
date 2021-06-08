@@ -80,6 +80,16 @@ int main(int argc, char** argv)
 
 	int ret = 0;
 
+	printf("Audio Input Devices\n");
+	std::vector<std::string> readDevices = CSoundCard::getReadDevices();
+	for (const auto& it : readDevices)
+		printf("\t%s\n", it.c_str());
+
+	printf("Audio Output Devices\n");
+	std::vector<std::string> writeDevices = CSoundCard::getWriteDevices();
+	for (const auto& it : writeDevices)
+		printf("\t%s\n", it.c_str());
+
 	do {
 		m_signal = 0;
 
@@ -117,7 +127,8 @@ m_gpsd(NULL),
 #endif
 m_sockaddr(),
 m_sockaddrLen(0U),
-m_transmit(false)
+m_transmit(false),
+m_prevTransmit(false)
 {
 }
 
@@ -125,21 +136,28 @@ CM17Client::~CM17Client()
 {
 }
 
-void CM17Client::readCallback(const short* input, unsigned int nSamples, int id)
+void CM17Client::readCallback(const float* input, unsigned int nSamples, int id)
 {
 	assert(m_tx != NULL);
 
-	if (m_transmit)
-		m_tx->write(input, nSamples);
+	if (!m_transmit && m_prevTransmit) {
+		LogDebug("nSamples=%u", nSamples);
+		m_tx->write(input, true);
+		m_prevTransmit = false;
+	} else if (m_transmit) {
+		LogDebug("nSamples=%u", nSamples);
+		m_tx->write(input, false);
+		m_prevTransmit = true;
+	}
 }
 
-void CM17Client::writeCallback(short* output, int& nSamples, int id)
+void CM17Client::writeCallback(float* output, unsigned int nSamples, int id)
 {
 	assert(m_rx != NULL);
 
 	if (m_transmit) {
 		// File with silence if transmitting
-		::memset(output, 0x00U, nSamples * sizeof(short));
+		::memset(output, 0x00U, nSamples * sizeof(float));
 	} else {
 		nSamples = m_rx->read(output, nSamples);
 	}
@@ -233,14 +251,6 @@ int CM17Client::run()
 	LogMessage("M17Client-%s is starting", VERSION);
 	LogMessage("Built %s %s (GitID #%.7s)", __TIME__, __DATE__, gitversion);
 
-	CSoundCard sound(m_conf.getAudioInputDevice(), m_conf.getAudioOutputDevice(), CODEC_SAMPLE_RATE, CODEC_BLOCK_SIZE);
-	sound.setCallback(this);
-	ret = sound.open();
-	if (!ret) {
-		LogError("Unable to open the sound card");
-		return 1;
-	}
-
 	CModem modem(m_conf.getModemRXInvert(), m_conf.getModemTXInvert(), m_conf.getModemPTTInvert(), m_conf.getModemTXDelay(), m_conf.getModemTrace(), m_conf.getModemDebug());
 	modem.setPort(new CUARTController(m_conf.getModemPort(), m_conf.getModemSpeed()));
 	modem.setLevels(m_conf.getModemRXLevel(), m_conf.getModemTXLevel());
@@ -313,6 +323,14 @@ int CM17Client::run()
 #endif
 	m_rx->setCAN(m_codePlug->getData().at(0U).m_can);
 	m_tx->setCAN(m_codePlug->getData().at(0U).m_can);
+
+	CSoundCard sound(m_conf.getAudioInputDevice(), m_conf.getAudioOutputDevice(), CODEC_SAMPLE_RATE, CODEC_BLOCK_SIZE);
+	sound.setCallback(this);
+	ret = sound.open();
+	if (!ret) {
+		LogError("Unable to open the sound card");
+		return 1;
+	}
 
 	CStopWatch stopWatch;
 	stopWatch.start();

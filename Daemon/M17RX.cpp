@@ -100,7 +100,7 @@ void CM17RX::setVolume(unsigned int percentage)
 	m_volume = float(percentage) / 100.0F;
 }
 
-unsigned int CM17RX::read(short* audio, unsigned int len)
+unsigned int CM17RX::read(float* audio, unsigned int len)
 {
 	assert(audio != NULL);
 	assert(len > 0U);
@@ -272,13 +272,16 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 		unsigned int fn = ((frame[0U] << 8) + (frame[1U] << 0)) & 0x7FU;
 
 		// A valid M17 audio frame
-		short audio[320U];
-		m_codec2.codec2_decode(audio + 0U,   frame + 2U);
-		m_codec2.codec2_decode(audio + 160U, frame + 2U + 8U);
-		// Adjust the volume
+		short saudio[320U];
+		m_codec2.codec2_decode(saudio + 0U,   frame + 2U);
+		m_codec2.codec2_decode(saudio + 160U, frame + 2U + 8U);
+
+		// Adjust the volume, and convert to float
+		float faudio[320U];
 		for (unsigned int i = 0U; i < 320U; i++)
-			audio[i] = short(float(audio[i]) * m_volume + 0.5F);
-		writeQueue(audio, 320U);
+			faudio[i] = (float(saudio[i]) * m_volume) / 32768.0F;
+
+		writeQueue(faudio, 320U);
 
 		m_frames++;
 
@@ -315,7 +318,7 @@ void CM17RX::end()
 	m_lsf.reset();
 }
 
-void CM17RX::writeQueue(const short *audio, unsigned int len)
+void CM17RX::writeQueue(const float *audio, unsigned int len)
 {
 	assert(audio != NULL);
 	assert(len > 0U);
@@ -466,10 +469,10 @@ void CM17RX::addBleep()
 
 	float step = (2.0F * M_PI) / float(length);
 
-	short audio[total];
+	float audio[total];
 
 	for (unsigned int i = 0U; i < total; i++)
-		audio[i] = short(::sinf(float(i * step)) * BLEEP_AMPL * m_volume + 0.5F);
+		audio[i] = ::sinf(float(i) * step) * BLEEP_AMPL * m_volume;
 
 	writeQueue(audio, total);
 }

@@ -252,8 +252,8 @@ void CModem::clock(unsigned int ms)
 			break;
 
 			case MMDVM_GET_STATUS:
-				// if (m_trace)
-				//	CUtils::dump(1U, "GET_STATUS", m_buffer, m_length);
+				if (m_trace)
+					CUtils::dump(1U, "GET_STATUS", m_buffer, m_length);
 
 				switch (m_protocolVersion) {
 				case 1U: {
@@ -309,7 +309,7 @@ void CModem::clock(unsigned int ms)
 				}
 
 				m_inactivityTimer.start();
-				// LogMessage("status=%02X, tx=%d, space=%u,%u,%u,%u,%u,%u,%u,%u,%u,%u lockout=%d, cd=%d", m_buffer[m_offset + 2U], int(m_tx), m_dstarSpace, m_dmrSpace1, m_dmrSpace2, m_ysfSpace, m_p25Space, m_nxdnSpace, m_m17Space, m_pocsagSpace, m_fmSpace, m_ax25Space, int(m_lockout), int(m_cd));
+				// LogMessage("status=%02X, tx=%d, space=%u, cd=%d", m_buffer[m_offset + 2U], int(m_tx), m_space, int(m_cd));
 				break;
 
 			// These should not be received, but don't complain if we do

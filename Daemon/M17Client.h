@@ -43,8 +43,8 @@ public:
 
 	int run();
 
-	virtual void readCallback(const short* input, unsigned int nSamples, int id);
-	virtual void writeCallback(short* output, int& nSamples, int id);
+	virtual void readCallback(const float* input, unsigned int nSamples, int id);
+	virtual void writeCallback(float* output, unsigned int nSamples, int id);
 
 	virtual void statusCallback(const std::string& source, const std::string& dest, bool end);
 	virtual void textCallback(const char* text);
@@ -66,6 +66,7 @@ private:
 	sockaddr_storage m_sockaddr;
 	unsigned int     m_sockaddrLen;
 	bool             m_transmit;
+	bool             m_prevTransmit;
 
 	void parseCommand(char* command);
 

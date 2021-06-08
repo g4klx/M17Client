@@ -39,7 +39,7 @@ public:
 
 	void setMicGain(unsigned int percentage);
 
-	void write(const short* audio, bool end);
+	void write(const float* audio, bool end);
 
 	unsigned int read(unsigned char* data);
 

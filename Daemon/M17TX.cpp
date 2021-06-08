@@ -126,14 +126,14 @@ unsigned int CM17TX::read(unsigned char* data)
 	return len;
 }
 
-void CM17TX::write(const short* input, bool end)
+void CM17TX::write(const float* input, bool end)
 {
 	assert(input != NULL);
 
 	// Adjust the mic gain
 	short audio[320U];
 	for (unsigned int i = 0U; i < 320U; i++)
-		audio[i] = short(float(input[i]) * m_micGain + 0.5F);
+		audio[i] = short(input[i] * 32768.0F * m_micGain + 0.5F);
 
 	if (!m_transmit) {
 		m_currLSF = m_textLSF;

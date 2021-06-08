@@ -43,7 +43,7 @@ public:
 
 	bool write(unsigned char* data, unsigned int len);
 
-	unsigned int read(short* audio, unsigned int len);
+	unsigned int read(float* audio, unsigned int len);
 
 private:
 	CCodec2&           m_codec2;
@@ -56,7 +56,7 @@ private:
 	unsigned int       m_frames;
 	CM17LSF            m_lsf;
 	CM17LSF            m_running;
-	CRingBuffer<short> m_queue;
+	CRingBuffer<float> m_queue;
 	CRSSIInterpolator* m_rssiMapper;
 	unsigned char      m_rssi;
 	unsigned char      m_maxRSSI;
@@ -64,7 +64,7 @@ private:
 	unsigned int       m_aveRSSI;
 	unsigned int       m_rssiCount;
 
-	void writeQueue(const short *audio, unsigned int len);
+	void writeQueue(const float *audio, unsigned int len);
 
 	bool processHeader(bool lateEntry);
 
