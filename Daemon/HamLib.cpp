@@ -33,15 +33,19 @@ struct RigDesc {
 };
 
 const std::vector<RigDesc> RigNames = {
-	{"FT817",  RIG_MODEL_FT817},
+	{"FT-817",  RIG_MODEL_FT817},
 #if defined(RIG_MODEL_FT818)
-	{"FT818",  RIG_MODEL_FT818},
+	{"FT-818",  RIG_MODEL_FT818},
 #endif
 #if defined(RIG_MODEL_IC705)
-	{"IC705",  RIG_MODEL_IC705},
+	{"IC-705",  RIG_MODEL_IC705},
 #endif
-	{"IC7000", RIG_MODEL_IC7000},
-	{"IC7100", RIG_MODEL_IC7100}};
+	{"IC-7000", RIG_MODEL_IC7000},
+	{"IC-7100", RIG_MODEL_IC7100},
+	{"TM-D700", RIG_MODEL_TMD700},
+	{"TM-D710", RIG_MODEL_TMD710},
+	{"TM-V71",  RIG_MODEL_TMV71},
+	{"TM-V7",   RIG_MODEL_TMV7}};
 
 CHamLib::CHamLib(const std::string& type) :
 m_type(type)
