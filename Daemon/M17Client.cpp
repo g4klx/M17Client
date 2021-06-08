@@ -307,8 +307,8 @@ int CM17Client::run()
 	// By default use the first entry in the code plug file
 #if defined(USE_HAMLIB)
 	if (m_hamLib != NULL) {
-		m_hamLib->setRXFrequency(m_codePlug->getData().at(0U).m_rxFrequency);
-		m_hamLib->setTXFrequency(m_codePlug->getData().at(0U).m_txFrequency);
+		m_hamLib->setFrequency(m_codePlug->getData().at(0U).m_rxFrequency,
+					m_codePlug->getData().at(0U).m_txFrequency);
 	}
 #endif
 	m_rx->setCAN(m_codePlug->getData().at(0U).m_can);
@@ -459,10 +459,8 @@ bool CM17Client::processChannelRequest(const char* channel)
 	for (const auto& chan : m_codePlug->getData()) {
 		if (chan.m_name == channel) {
 #if defined(USE_HAMLIB)
-			if (m_hamLib != NULL) {
-				m_hamLib->setRXFrequency(chan.m_rxFrequency);
-				m_hamLib->setTXFrequency(chan.m_txFrequency);
-			}
+			if (m_hamLib != NULL)
+				m_hamLib->setFrequency(chan.m_rxFrequency, chan.m_txFrequency);
 #endif
 			m_rx->setCAN(chan.m_can);
 			m_tx->setCAN(chan.m_can);

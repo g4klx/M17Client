@@ -91,22 +91,23 @@ bool CHamLib::open()
 	return true;
 }
 
-void CHamLib::setRXFrequency(unsigned int hz)
+void CHamLib::setFrequency(unsigned int rx, unsigned int tx)
 {
 	assert(m_rig != NULL);
 
-	int ret = ::rig_set_freq(m_rig, RIG_VFO_RX, double(hz));
-	if (ret != RIG_OK)
-		LogError("Error when setting the RX frequency, returned %d", ret);
-}
+	if (rx == tx) {
+		int ret = ::rig_set_freq(m_rig, RIG_VFO_CURR, double(rx));
+		if (ret != RIG_OK)
+			LogError("Error when setting the frequency, returned %d", ret);
+	} else {
+		int ret = ::rig_set_freq(m_rig, RIG_VFO_RX, double(rx));
+		if (ret != RIG_OK)
+			LogError("Error when setting the RX frequency, returned %d", ret);
 
-void CHamLib::setTXFrequency(unsigned int hz)
-{
-	assert(m_rig != NULL);
-
-	int ret = ::rig_set_freq(m_rig, RIG_VFO_TX, double(hz));
-	if (ret != RIG_OK)
-		LogError("Error when setting the TX frequency, returned %d", ret);
+		ret = ::rig_set_freq(m_rig, RIG_VFO_TX, double(tx));
+		if (ret != RIG_OK)
+			LogError("Error when setting the TX frequency, returned %d", ret);
+	}
 }
 
 void CHamLib::close()

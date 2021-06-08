@@ -32,8 +32,7 @@ public:
 
 	bool open();
 
-	void setRXFrequency(unsigned int hz);
-	void setTXFrequency(unsigned int hz);
+	void setFrequency(unsigned int rx, unsigned int tx);
 
 	void close();
 
