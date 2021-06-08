@@ -75,6 +75,8 @@ private:
 	void processLSF(const CM17LSF& lsf) const;
 
 	void end();
+
+	void addBleep();
 };
 
 #endif

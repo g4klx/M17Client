@@ -24,6 +24,10 @@
 #include <cstring>
 #include <ctime>
 
+const unsigned int  BLEEP_FREQ   = 2000U;
+const unsigned int  BLEEP_LENGTH = 100U;
+const float         BLEEP_AMPL   = 0.1F;
+
 const unsigned int INTERLEAVER[] = {
 	0U, 137U, 90U, 227U, 180U, 317U, 270U, 39U, 360U, 129U, 82U, 219U, 172U, 309U, 262U, 31U, 352U, 121U, 74U, 211U, 164U,
 	301U, 254U, 23U, 344U, 113U, 66U, 203U, 156U, 293U, 246U, 15U, 336U, 105U, 58U, 195U, 148U, 285U, 238U, 7U, 328U, 97U,
@@ -297,8 +301,13 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 
 void CM17RX::end()
 {
-	if (m_state == RS_RF_AUDIO && m_callback != NULL)
-		m_callback->statusCallback(m_lsf.getSource(), m_lsf.getDest(), true);
+	if (m_state == RS_RF_AUDIO) {
+		if (m_bleep)
+			addBleep();
+
+		if (m_callback != NULL)
+			m_callback->statusCallback(m_lsf.getSource(), m_lsf.getDest(), true);
+	}
 
 	m_state = RS_RF_LISTENING;
 
@@ -448,5 +457,20 @@ void CM17RX::processRunningLSF(const unsigned char* fragment)
 		processLSF(m_running);
 		m_running.reset();
 	}
+}
+
+void CM17RX::addBleep()
+{
+	const unsigned int length = CODEC_SAMPLE_RATE / BLEEP_FREQ;
+	const unsigned int total  = (CODEC_SAMPLE_RATE * BLEEP_LENGTH) / 1000U;
+
+	float step = (2.0F * M_PI) / float(length);
+
+	short audio[total];
+
+	for (unsigned int i = 0U; i < total; i++)
+		audio[i] = short(::sinf(float(i * step)) * BLEEP_AMPL * m_volume + 0.5F);
+
+	writeQueue(audio, total);
 }
 
