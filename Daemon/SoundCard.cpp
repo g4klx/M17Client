@@ -53,25 +53,9 @@ bool CSoundCard::open()
 {
 	int err = 0;
 
-	char buf1[100];
-	char buf2[100];
-	char* ptr;
-
-	::strcpy(buf1, m_writeDevice.c_str());
-	::strcpy(buf2, m_readDevice.c_str());
-
-	ptr = ::strchr(buf1, ' ');
-	if (ptr) *ptr = 0;				// Get Device part of name
-
-	ptr = ::strchr(buf2, ' ');
-	if (ptr) *ptr = 0;				// Get Device part of name
-
-	std::string writeDevice = std::string(buf1);
-	std::string readDevice  = std::string(buf2);
-
 	snd_pcm_t* playHandle = NULL;
-	if ((err = ::snd_pcm_open(&playHandle, buf1, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
-		LogError("Cannot open playback audio device %s (%s)", writeDevice.c_str(), ::snd_strerror(err));
+	if ((err = ::snd_pcm_open(&playHandle, m_writeDevice.c_str(), SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
+		LogError("Cannot open playback audio device %s (%s)", m_writeDevice.c_str(), ::snd_strerror(err));
 		return false;
 	}
 
@@ -126,8 +110,8 @@ bool CSoundCard::open()
 
 	// Open Capture
 	snd_pcm_t* recHandle = NULL;
-	if ((err = ::snd_pcm_open(&recHandle, buf2, SND_PCM_STREAM_CAPTURE, 0)) < 0) {
-		LogError("Cannot open capture audio device %s (%s)", readDevice.c_str(), ::snd_strerror(err));
+	if ((err = ::snd_pcm_open(&recHandle, m_readDevice.c_str(), SND_PCM_STREAM_CAPTURE, 0)) < 0) {
+		LogError("Cannot open capture audio device %s (%s)", m_readDevice.c_str(), ::snd_strerror(err));
 		return false;
 	}
 
@@ -183,7 +167,7 @@ bool CSoundCard::open()
 	for (unsigned int i = 0U; i < 10U; ++i)
 		::snd_pcm_readi(recHandle, samples, 128);
 
-	LogMessage("Opened %s %s Rate %u", writeDevice.c_str(), readDevice.c_str(), m_sampleRate);
+	LogMessage("Opened %s %s Rate %u", m_writeDevice.c_str(), m_readDevice.c_str(), m_sampleRate);
 
 	m_reader = new CSoundCardReader(recHandle,  m_blockSize, recChannels,  m_callback, m_id);
 	m_writer = new CSoundCardWriter(playHandle, m_blockSize, playChannels, m_callback, m_id);
