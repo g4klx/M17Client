@@ -98,19 +98,19 @@ m_timer(this, Timer_Timer)
 	wxStaticText* channelsLabel = new wxStaticText(panel, -1, wxT("Channel"), wxDefaultPosition, wxSize(LABEL_WIDTH, -1), wxALIGN_RIGHT);
 	panelSizer->Add(channelsLabel, wxGBPosition(0, 0), wxDefaultSpan, wxALL, BORDER_SIZE);
 
-	m_channels = new wxChoice(panel, Choice_Channels, wxDefaultPosition, wxSize(CONTROL_WIDTH, -1));
+	m_channels = new wxChoice(panel, Choice_Channels, wxDefaultPosition, wxSize(CONTROL_WIDTH, CONTROL_HEIGHT));
 	panelSizer->Add(m_channels, wxGBPosition(0, 1), wxDefaultSpan, wxALL, BORDER_SIZE);
 
 	wxStaticText* destinationsLabel = new wxStaticText(panel, -1, wxT("Dest"), wxDefaultPosition, wxSize(LABEL_WIDTH, -1), wxALIGN_RIGHT);
 	panelSizer->Add(destinationsLabel, wxGBPosition(0, 2), wxDefaultSpan, wxALL, BORDER_SIZE);
 
-	m_destinations = new wxChoice(panel, -1, wxDefaultPosition, wxSize(CONTROL_WIDTH, -1));
+	m_destinations = new wxChoice(panel, -1, wxDefaultPosition, wxSize(CONTROL_WIDTH, CONTROL_HEIGHT));
 	panelSizer->Add(m_destinations, wxGBPosition(0, 3), wxDefaultSpan, wxALL, BORDER_SIZE);
 
 	wxStaticText* moduleLabel = new wxStaticText(panel, -1, wxT("Module"), wxDefaultPosition, wxSize(LABEL_WIDTH, -1), wxALIGN_RIGHT);
 	panelSizer->Add(moduleLabel, wxGBPosition(0, 4), wxDefaultSpan, wxALL, BORDER_SIZE);
 
-	m_modules = new wxChoice(panel, -1, wxDefaultPosition, wxSize(CONTROL_WIDTH, -1));
+	m_modules = new wxChoice(panel, -1, wxDefaultPosition, wxSize(CONTROL_WIDTH, CONTROL_HEIGHT));
 	m_modules->Append(' ');
 	for (wxChar c = wxT('A'); c <= wxT('Z'); c++)
 		m_modules->Append(c);
