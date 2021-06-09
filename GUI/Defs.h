@@ -23,7 +23,7 @@
 
 #if defined(__WINDOWS__)
 const unsigned int BORDER_SIZE    = 5U;
-const unsigned int LABEL_WIDTH    = 80U;
+const unsigned int LABEL_WIDTH    = 130U;
 const unsigned int CONTROL_WIDTH  = 130U;
 const unsigned int CONTROL_HEIGHT = 35U;
 const unsigned int DONGLE_WIDTH   = 190U;
@@ -37,7 +37,7 @@ const unsigned int MYCALLSIGN_WIDTH = 100U;
 const unsigned int MESSAGE_WIDTH    = 250U;
 #else
 const unsigned int BORDER_SIZE    = 5U;
-const unsigned int LABEL_WIDTH    = 80U;
+const unsigned int LABEL_WIDTH    = 150U;
 const unsigned int CONTROL_WIDTH  = 150U;
 const unsigned int CONTROL_HEIGHT = 35U;
 const unsigned int DONGLE_WIDTH   = 250U;
