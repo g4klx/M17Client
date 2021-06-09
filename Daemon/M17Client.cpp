@@ -80,16 +80,6 @@ int main(int argc, char** argv)
 
 	int ret = 0;
 
-	printf("Audio Input Devices\n");
-	std::vector<std::string> readDevices = CSoundCard::getReadDevices();
-	for (const auto& it : readDevices)
-		printf("\t%s\n", it.c_str());
-
-	printf("Audio Output Devices\n");
-	std::vector<std::string> writeDevices = CSoundCard::getWriteDevices();
-	for (const auto& it : writeDevices)
-		printf("\t%s\n", it.c_str());
-
 	do {
 		m_signal = 0;
 
@@ -151,7 +141,7 @@ void CM17Client::readCallback(const float* input, unsigned int nSamples, int id)
 	}
 }
 
-void CM17Client::writeCallback(float* output, unsigned int nSamples, int id)
+void CM17Client::writeCallback(float* output, int& nSamples, int id)
 {
 	assert(m_rx != NULL);
 
@@ -159,7 +149,7 @@ void CM17Client::writeCallback(float* output, unsigned int nSamples, int id)
 		// File with silence if transmitting
 		::memset(output, 0x00U, nSamples * sizeof(float));
 	} else {
-		nSamples = m_rx->read(output, nSamples);
+		nSamples = int(m_rx->read(output, nSamples));
 	}
 }
 

@@ -44,7 +44,7 @@ public:
 	int run();
 
 	virtual void readCallback(const float* input, unsigned int nSamples, int id);
-	virtual void writeCallback(float* output, unsigned int nSamples, int id);
+	virtual void writeCallback(float* output, int& nSamples, int id);
 
 	virtual void statusCallback(const std::string& source, const std::string& dest, bool end);
 	virtual void textCallback(const char* text);

@@ -1,5 +1,6 @@
 /*
  *   Copyright (C) 2006-2010,2015,2021 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2014 by John Wiseman, G8BPQ
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,21 +21,6 @@
 #include "Log.h"
 
 #include <cassert>
-#include <cstdio>
-
-std::string CSoundCard::m_openReadDevice;
-std::string CSoundCard::m_openWriteDevice;
-
-static int scrwCallback(const void* input, void* output, unsigned long nSamples, const PaStreamCallbackTimeInfo*, PaStreamCallbackFlags, void* userData)
-{
-	assert(userData != NULL);
-
-	CSoundCard* object = reinterpret_cast<CSoundCard*>(userData);
-
-	object->callback(static_cast<const float*>(input), static_cast<float*>(output), nSamples);
-
-	return paContinue;
-}
 
 CSoundCard::CSoundCard(const std::string& readDevice, const std::string& writeDevice, unsigned int sampleRate, unsigned int blockSize) :
 m_readDevice(readDevice),
@@ -43,88 +29,15 @@ m_sampleRate(sampleRate),
 m_blockSize(blockSize),
 m_callback(NULL),
 m_id(-1),
-m_stream(NULL)
+m_reader(NULL),
+m_writer(NULL)
 {
+    assert(sampleRate > 0U);
+    assert(blockSize > 0U);
 }
 
 CSoundCard::~CSoundCard()
 {
-}
-
-std::vector<std::string> CSoundCard::getReadDevices()
-{
-	std::vector<std::string> devices;
-
-	if (!m_openReadDevice.empty())
-		devices.push_back(m_openReadDevice);
-
-	PaError error = ::Pa_Initialize();
-	if (error != paNoError)
-		return devices;
-
-	PaHostApiIndex apiIndex = ::Pa_HostApiTypeIdToHostApiIndex(paALSA);
-	if (apiIndex == paHostApiNotFound) {
-		::Pa_Terminate();
-		return devices;
-	}
-
-	PaDeviceIndex n = ::Pa_GetDeviceCount();
-	if (n <= 0) {
-		::Pa_Terminate();
-		return devices;
-	}
-
-	for (PaDeviceIndex i = 0; i < n; i++) {
-		const PaDeviceInfo* device = ::Pa_GetDeviceInfo(i);
-
-		if (device->hostApi != apiIndex)
-			continue;
-
-		if (device->maxInputChannels > 0)
-			devices.push_back(device->name);
-	}
-
-	::Pa_Terminate();
-
-	return devices;
-}
-
-std::vector<std::string> CSoundCard::getWriteDevices()
-{
-	std::vector<std::string> devices;
-
-	if (!m_openWriteDevice.empty())
-		devices.push_back(m_openWriteDevice);
-
-	PaError error = ::Pa_Initialize();
-	if (error != paNoError)
-		return devices;
-
-	PaHostApiIndex apiIndex = ::Pa_HostApiTypeIdToHostApiIndex(paALSA);
-	if (apiIndex == paHostApiNotFound) {
-		::Pa_Terminate();
-		return devices;
-	}
-
-	PaDeviceIndex n = ::Pa_GetDeviceCount();
-	if (n <= 0) {
-		::Pa_Terminate();
-		return devices;
-	}
-
-	for (PaDeviceIndex i = 0; i < n; i++) {
-		const PaDeviceInfo* device = ::Pa_GetDeviceInfo(i);
-
-		if (device->hostApi != apiIndex)
-			continue;
-
-		if (device->maxOutputChannels > 0)
-			devices.push_back(device->name);
-	}
-
-	::Pa_Terminate();
-
-	return devices;
 }
 
 void CSoundCard::setCallback(IAudioCallback* callback, int id)
@@ -132,134 +45,266 @@ void CSoundCard::setCallback(IAudioCallback* callback, int id)
 	assert(callback != NULL);
 
 	m_callback = callback;
-	m_id       = id;
+
+	m_id = id;
 }
 
 bool CSoundCard::open()
 {
-	m_openReadDevice.clear();
-	m_openWriteDevice.clear();
+	int err = 0;
 
-	PaError error = ::Pa_Initialize();
-	if (error != paNoError) {
-		LogError("Cannot initialise PortAudio");
+	snd_pcm_t* playHandle = NULL;
+	if ((err = ::snd_pcm_open(&playHandle, m_writeDevice.c_str(), SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
+		LogError("Cannot open playback audio device %s (%s)", m_writeDevice.c_str(), ::snd_strerror(err));
 		return false;
 	}
 
-	PaStreamParameters* pParamsIn  = NULL;
-	PaStreamParameters* pParamsOut = NULL;
-
-	PaStreamParameters paramsIn;
-	PaStreamParameters paramsOut;
-
-	PaDeviceIndex inDev, outDev;
-	bool res = convertNameToDevices(inDev, outDev);
-	if (!res) {
-		LogError("Cannot convert name to device");
+	snd_pcm_hw_params_t* hw_params;
+	if ((err = ::snd_pcm_hw_params_malloc(&hw_params)) < 0) {
+		LogError("Cannot allocate hardware parameter structure (%s)", ::snd_strerror(err));
 		return false;
 	}
 
-	if (inDev != -1) {
-		const PaDeviceInfo* inInfo  = ::Pa_GetDeviceInfo(inDev);
-		if (inInfo == NULL) {
-			LogError("Cannot get device information for the input device");
+	if ((err = ::snd_pcm_hw_params_any(playHandle, hw_params)) < 0) {
+		LogError("Cannot initialize hardware parameter structure (%s)", ::snd_strerror(err));
+		return false;
+	}
+
+	if ((err = ::snd_pcm_hw_params_set_access(playHandle, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
+		LogError("Cannot set access type (%s)", ::snd_strerror(err));
+		return false;
+	}
+
+	if ((err = ::snd_pcm_hw_params_set_format(playHandle, hw_params, SND_PCM_FORMAT_FLOAT)) < 0) {
+		LogError("Cannot set sample format (%s)", ::snd_strerror(err));
+		return false;
+	}
+
+	if ((err = ::snd_pcm_hw_params_set_rate(playHandle, hw_params, m_sampleRate, 0)) < 0) {
+		LogError("Cannot set sample rate (%s)", ::snd_strerror(err));
+		return false;
+	}
+
+	unsigned int playChannels = 1U;
+
+	if ((err = ::snd_pcm_hw_params_set_channels(playHandle, hw_params, 1)) < 0) {
+		playChannels = 2U;
+
+		if ((err = ::snd_pcm_hw_params_set_channels(playHandle, hw_params, 2)) < 0) {
+			LogError("Cannot play set channel count (%s)", ::snd_strerror(err));
 			return false;
 		}
-
-		paramsIn.device                    = inDev;
-		paramsIn.channelCount              = 1;
-		paramsIn.sampleFormat              = paFloat32;
-		paramsIn.hostApiSpecificStreamInfo = NULL;
-		paramsIn.suggestedLatency          = inInfo->defaultLowInputLatency;
-
-		pParamsIn = &paramsIn;
 	}
 
-	if (outDev != -1) {
-		const PaDeviceInfo* outInfo = ::Pa_GetDeviceInfo(outDev);
-		if (outInfo == NULL) {
-			LogError("Cannot get device information for the output device");
+	if ((err = ::snd_pcm_hw_params(playHandle, hw_params)) < 0) {
+		LogError("Cannot set parameters (%s)", ::snd_strerror(err));
+		return false;
+	}
+
+	::snd_pcm_hw_params_free(hw_params);
+
+	if ((err = ::snd_pcm_prepare(playHandle)) < 0) {
+		LogError("Cannot prepare audio interface for use (%s)", ::snd_strerror(err));
+		return false;
+	}
+
+	// Open Capture
+	snd_pcm_t* recHandle = NULL;
+	if ((err = ::snd_pcm_open(&recHandle, m_readDevice.c_str(), SND_PCM_STREAM_CAPTURE, 0)) < 0) {
+		LogError("Cannot open capture audio device %s (%s)", m_readDevice.c_str(), ::snd_strerror(err));
+		return false;
+	}
+
+	if ((err = ::snd_pcm_hw_params_malloc(&hw_params)) < 0) {
+		LogError("Cannot allocate hardware parameter structure (%s)", ::snd_strerror(err));
+		return false;
+	}
+
+	if ((err = ::snd_pcm_hw_params_any(recHandle, hw_params)) < 0) {
+		LogError("Cannot initialize hardware parameter structure (%s)", ::snd_strerror(err));
+		return false;
+	}
+
+	if ((err = ::snd_pcm_hw_params_set_access(recHandle, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
+		LogError("Cannot set access type (%s)", ::snd_strerror(err));
+		return false;
+	}
+
+	if ((err = ::snd_pcm_hw_params_set_format(recHandle, hw_params, SND_PCM_FORMAT_FLOAT)) < 0) {
+		LogError("Cannot set sample format (%s)", ::snd_strerror(err));
+		return false;
+	}
+
+	if ((err = ::snd_pcm_hw_params_set_rate(recHandle, hw_params, m_sampleRate, 0)) < 0) {
+		LogError("Cannot set sample rate (%s)", ::snd_strerror(err));
+		return false;
+	}
+
+	unsigned int recChannels = 1U;
+
+	if ((err = ::snd_pcm_hw_params_set_channels(recHandle, hw_params, 1)) < 0) {
+		recChannels = 2U;
+
+		if ((err = ::snd_pcm_hw_params_set_channels (recHandle, hw_params, 2)) < 0) {
+			LogError("Cannot rec set channel count (%s)", ::snd_strerror(err));
 			return false;
 		}
-
-		paramsOut.device                    = outDev;
-		paramsOut.channelCount              = 1;
-		paramsOut.sampleFormat              = paFloat32;
-		paramsOut.hostApiSpecificStreamInfo = NULL;
-		paramsOut.suggestedLatency          = outInfo->defaultLowOutputLatency;
-
-		pParamsOut = &paramsOut;
 	}
 
-	error = ::Pa_OpenStream(&m_stream, pParamsIn, pParamsOut, double(m_sampleRate), m_blockSize, paNoFlag, &scrwCallback, this);
-	if (error != paNoError) {
-		LogError("Cannot open the audios stream(s)");
-		::Pa_Terminate();
+	if ((err = ::snd_pcm_hw_params(recHandle, hw_params)) < 0) {
+		LogError("Cannot set parameters (%s)", ::snd_strerror(err));
 		return false;
 	}
 
-	error = ::Pa_StartStream(m_stream);
-	if (error != paNoError) {
-		LogError("Cannot start the audio stream(s)");
-		::Pa_CloseStream(m_stream);
-		m_stream = NULL;
+	::snd_pcm_hw_params_free(hw_params);
 
-		::Pa_Terminate();
+	if ((err = ::snd_pcm_prepare(recHandle)) < 0) {
+		LogError("Cannot prepare audio interface for use (%s)", ::snd_strerror(err));
 		return false;
 	}
 
-	m_openReadDevice  = m_readDevice;
-	m_openWriteDevice = m_writeDevice;
+	short samples[256];
+	for (unsigned int i = 0U; i < 10U; ++i)
+		::snd_pcm_readi(recHandle, samples, 128);
 
-	return true;
+	LogMessage("Opened %s:%s Rate %u", m_writeDevice.c_str(), m_readDevice.c_str(), m_sampleRate);
+
+	m_reader = new CSoundCardReader(recHandle,  m_blockSize, recChannels,  m_callback, m_id);
+	m_writer = new CSoundCardWriter(playHandle, m_blockSize, playChannels, m_callback, m_id);
+
+	m_reader->run();
+	m_writer->run();
+
+ 	return true;
 }
 
 void CSoundCard::close()
 {
-	assert(m_stream != NULL);
+	m_reader->kill();
+	m_writer->kill();
 
-	::Pa_AbortStream(m_stream);
-
-	::Pa_CloseStream(m_stream);
-
-	::Pa_Terminate();
+	m_reader->wait();
+	m_writer->wait();
 }
 
-void CSoundCard::callback(const float* input, float* output, unsigned int nSamples)
+bool CSoundCard::isWriterBusy() const
 {
-	if (m_callback != NULL) {
-		m_callback->readCallback(input, nSamples, m_id);
-		m_callback->writeCallback(output, nSamples, m_id);
-	}
+	return m_writer->isBusy();
 }
 
-bool CSoundCard::convertNameToDevices(PaDeviceIndex& inDev, PaDeviceIndex& outDev)
+CSoundCardReader::CSoundCardReader(snd_pcm_t* handle, unsigned int blockSize, unsigned int channels, IAudioCallback* callback, int id) :
+CThread(),
+m_handle(handle),
+m_blockSize(blockSize),
+m_channels(channels),
+m_callback(callback),
+m_id(id),
+m_killed(false),
+m_samples(NULL)
 {
-	inDev = outDev = -1;
+	assert(handle != NULL);
+	assert(blockSize > 0U);
+	assert(channels == 1U || channels == 2U);
+	assert(callback != NULL);
 
-	PaHostApiIndex apiIndex = ::Pa_HostApiTypeIdToHostApiIndex(paALSA);
-	if (apiIndex == paHostApiNotFound)
-		return false;
+	m_samples = new float[4U * blockSize];
+}
 
-	PaDeviceIndex n = ::Pa_GetDeviceCount();
-	if (n <= 0)
-		return false;
+CSoundCardReader::~CSoundCardReader()
+{
+	delete[] m_samples;
+}
 
-	for (PaDeviceIndex i = 0; i < n; i++) {
-		const PaDeviceInfo* device = ::Pa_GetDeviceInfo(i);
+void CSoundCardReader::entry()
+{
+	LogMessage("Starting ALSA reader thread");
 
-		if (device->hostApi != apiIndex)
-			continue;
+	while (!m_killed) {
+		snd_pcm_sframes_t ret;
+		while ((ret = ::snd_pcm_readi(m_handle, m_samples, m_blockSize)) < 0) {
+			if (ret != -EPIPE)
+				LogWarning("snd_pcm_readi returned %d (%s)", ret, ::snd_strerror(ret));
 
-		if (!m_readDevice.empty() && m_readDevice == device->name && device->maxInputChannels > 0)
-			inDev = i;
+			::snd_pcm_recover(m_handle, ret, 1);
+		}
 
-		if (!m_writeDevice.empty() && m_writeDevice == device->name && device->maxOutputChannels > 0)
-			outDev = i;
+		if (ret > 0)
+			m_callback->readCallback(m_samples, (unsigned int)ret, m_id);
 	}
 
-	if (inDev == -1 && outDev == -1)
-		return false;
+	LogMessage("Stopping ALSA reader thread");
 
-	return true;
+	::snd_pcm_close(m_handle);
 }
+
+void CSoundCardReader::kill()
+{
+	m_killed = true;
+}
+
+CSoundCardWriter::CSoundCardWriter(snd_pcm_t* handle, unsigned int blockSize, unsigned int channels, IAudioCallback* callback, int id) :
+CThread(),
+m_handle(handle),
+m_blockSize(blockSize),
+m_channels(channels),
+m_callback(callback),
+m_id(id),
+m_killed(false),
+m_samples(NULL)
+{
+	assert(handle != NULL);
+	assert(blockSize > 0U);
+	assert(channels == 1U || channels == 2U);
+	assert(callback != NULL);
+
+	m_samples = new float[4U * blockSize];
+}
+
+CSoundCardWriter::~CSoundCardWriter()
+{
+	delete[] m_samples;
+}
+
+void CSoundCardWriter::entry()
+{
+	LogMessage("Starting ALSA writer thread");
+
+	while (!m_killed) {
+		int nSamples = 2 * m_blockSize;
+		m_callback->writeCallback(m_samples, nSamples, m_id);
+
+		if (nSamples == 0) {
+			sleep(5UL);
+		} else {
+			int offset = 0;
+			snd_pcm_sframes_t ret;
+			while ((ret = ::snd_pcm_writei(m_handle, m_samples + offset, nSamples - offset)) != (nSamples - offset)) {
+				if (ret < 0) {
+					if (ret != -EPIPE)
+						LogWarning("snd_pcm_writei returned %d (%s)", ret, ::snd_strerror(ret));
+
+					::snd_pcm_recover(m_handle, ret, 1);
+				} else {
+					offset += ret;
+				}
+			}
+		}
+	}
+
+	LogMessage("Stopping ALSA writer thread");
+
+	::snd_pcm_close(m_handle);
+}
+
+void CSoundCardWriter::kill()
+{
+	m_killed = true;
+}
+
+bool CSoundCardWriter::isBusy() const
+{
+	snd_pcm_state_t state = ::snd_pcm_state(m_handle);
+
+	return state == SND_PCM_STATE_RUNNING || state == SND_PCM_STATE_DRAINING;
+}
+

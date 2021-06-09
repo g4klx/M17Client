@@ -105,6 +105,9 @@ unsigned int CM17RX::read(float* audio, unsigned int len)
 	assert(audio != NULL);
 	assert(len > 0U);
 
+	if (m_queue.isEmpty())
+		return 0U;
+
 	unsigned int amt = m_queue.dataSize();
 	if (len > amt)
 		len = amt;

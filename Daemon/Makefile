@@ -5,7 +5,7 @@
 CC      = cc
 CXX     = c++
 CFLAGS  = -g -O3 -Wall -std=c++0x -pthread -I/usr/local/include
-LIBS    = -lpthread -lutil -lportaudio
+LIBS    = -lpthread -lutil -lasound
 LDFLAGS = -g -L/usr/local/lib
 
 OBJECTS = \

@@ -17,7 +17,7 @@
 class IAudioCallback {
 public:
 	virtual void readCallback(const float* input, unsigned int nSamples, int id) = 0;
-	virtual void writeCallback(float* output, unsigned int nSamples, int id) = 0;
+	virtual void writeCallback(float* output, int& nSamples, int id) = 0;
 
 private:
 };
