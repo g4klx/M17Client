@@ -4,9 +4,9 @@
 
 CC      = cc
 CXX     = c++
-CFLAGS  = -g -O3 -Wall -std=c++0x -pthread -I/usr/local/include
+CFLAGS  = -g -O3 -Wall -std=c++0x -pthread
 LIBS    = -lpthread -lutil -lasound
-LDFLAGS = -g -L/usr/local/lib
+LDFLAGS = -g
 
 OBJECTS = \
 		codec2/codebooks.o codec2/codec2.o codec2/kiss_fft.o codec2/lpc.o codec2/nlp.o codec2/pack.o codec2/qbase.o \

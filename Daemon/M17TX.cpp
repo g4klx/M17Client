@@ -60,8 +60,9 @@ m_source(callsign),
 m_destination(),
 m_micGain(1.0F),
 m_can(0U),
-m_transmit(false),
-m_queue(5000U, "M17 TX"),
+m_status(TXS_NONE),
+m_audio(5000U, "M17 TX Audio"),
+m_queue(5000U, "M17 TX Data"),
 m_frames(0U),
 m_currLSF(NULL),
 m_textLSF(NULL),
@@ -126,16 +127,37 @@ unsigned int CM17TX::read(unsigned char* data)
 	return len;
 }
 
-void CM17TX::write(const float* input, bool end)
+void CM17TX::start()
+{
+	m_status = TXS_HEADER;
+}
+
+void CM17TX::write(const float* input, unsigned int len)
 {
 	assert(input != NULL);
+
+	if (m_status != TXS_NONE)
+		m_audio.addData(input, len);
+}
+
+void CM17TX::process()
+{
+	if (m_status == TXS_NONE)
+		return;
+
+	// Enough audio?
+	if (m_audio.dataSize() < 320U)
+		return;
+
+	float input[320U];
+	m_audio.getData(input, 320U);
 
 	// Adjust the mic gain
 	short audio[320U];
 	for (unsigned int i = 0U; i < 320U; i++)
 		audio[i] = short(input[i] * 32768.0F * m_micGain + 0.5F);
 
-	if (!m_transmit) {
+	if (m_status == TXS_HEADER) {
 		m_currLSF = m_textLSF;
 		m_frames  = 0U;
 		m_lsfN    = 0U;
@@ -162,10 +184,10 @@ void CM17TX::write(const float* input, bool end)
 
 		writeQueue(start);
 		
-		m_transmit = true;
+		m_status = TXS_AUDIO;
 	}
 
-	if (m_transmit) {
+	if (m_status == TXS_AUDIO || m_status == TXS_END) {
 		unsigned char data[M17_FRAME_LENGTH_BYTES + 2U];
 
 		data[0U] = TAG_DATA1;
@@ -193,8 +215,11 @@ void CM17TX::write(const float* input, bool end)
 		CM17Utils::combineFragmentLICHFEC(lich1, lich2, lich3, lich4, data + 2U + M17_SYNC_LENGTH_BYTES);
 
 		uint16_t fn = m_frames;
-		if (end)
+		if (m_status == TXS_END) {
+			m_status = TXS_NONE;
+			m_audio.clear();
 			fn |= 0x8000U;
+		}
 
 		unsigned char payload[M17_FN_LENGTH_BYTES + M17_PAYLOAD_LENGTH_BYTES];
 
@@ -234,10 +259,12 @@ void CM17TX::write(const float* input, bool end)
 		}
 
 		m_frames++;
-
-		if (end)
-			m_transmit = false;
 	}
+}
+
+void CM17TX::end()
+{
+	m_status = TXS_END;
 }
 
 void CM17TX::writeQueue(const unsigned char *data)

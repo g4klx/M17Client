@@ -65,8 +65,6 @@ private:
 #endif
 	sockaddr_storage m_sockaddr;
 	unsigned int     m_sockaddrLen;
-	bool             m_transmit;
-	bool             m_prevTransmit;
 
 	void parseCommand(char* command);
 

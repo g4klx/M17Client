@@ -116,9 +116,7 @@ m_hamLib(NULL),
 m_gpsd(NULL),
 #endif
 m_sockaddr(),
-m_sockaddrLen(0U),
-m_transmit(false),
-m_prevTransmit(false)
+m_sockaddrLen(0U)
 {
 }
 
@@ -130,27 +128,16 @@ void CM17Client::readCallback(const float* input, unsigned int nSamples, int id)
 {
 	assert(m_tx != NULL);
 
-	if (!m_transmit && m_prevTransmit) {
-		LogDebug("nSamples=%u", nSamples);
-		m_tx->write(input, true);
-		m_prevTransmit = false;
-	} else if (m_transmit) {
-		LogDebug("nSamples=%u", nSamples);
-		m_tx->write(input, false);
-		m_prevTransmit = true;
-	}
+	if (nSamples > 0U)
+		m_tx->write(input, nSamples);
 }
 
 void CM17Client::writeCallback(float* output, int& nSamples, int id)
 {
 	assert(m_rx != NULL);
 
-	if (m_transmit) {
-		// File with silence if transmitting
-		::memset(output, 0x00U, nSamples * sizeof(float));
-	} else {
+	if (nSamples > 0)
 		nSamples = int(m_rx->read(output, nSamples));
-	}
 }
 
 int CM17Client::run()
@@ -257,6 +244,9 @@ int CM17Client::run()
 		return 1;
 	}
 
+	// Fix the modem into M17 mode
+	modem.setMode(MODE_M17);
+
 	if (CUDPSocket::lookup(m_conf.getControlRemoteAddress(), m_conf.getControlRemotePort(), m_sockaddr, m_sockaddrLen) != 0) {
 		LogError("Could not lookup the remote address");
 		return 1;
@@ -329,15 +319,20 @@ int CM17Client::run()
 	LogMessage("M17Client-%s is running", VERSION);
 
 	while (!m_killed) {
-		unsigned char data[100U];
+		m_tx->process();
 
-		if (m_transmit) {
-			if (modem.hasM17Space()) {
-				unsigned int len = m_tx->read(data);
-				if (len > 0U)
-					modem.writeM17Data(data, len);
+		bool tx = false;
+		if (modem.hasM17Space()) {
+			unsigned char data[M17_FRAME_LENGTH_BYTES];
+			unsigned int len = m_tx->read(data);
+			if (len > 0U) {
+				modem.writeM17Data(data, len);
+				tx = true;
 			}
-		} else {
+		}
+
+		if (!tx) {
+			unsigned char data[M17_FRAME_LENGTH_BYTES];
 			unsigned int len = modem.readM17Data(data);
 			if (len > 0U)
 				m_rx->write(data, len);
@@ -407,10 +402,10 @@ void CM17Client::parseCommand(char* command)
 	if (::strcmp(ptrs.at(0U), "TX") == 0) {
 		if (::strcmp(ptrs.at(1U), "0") == 0) {
 			LogDebug("\tTransmitter off");
-			m_transmit = false;
+			m_tx->end();
 		} else if (::strcmp(ptrs.at(1U), "1") == 0) {
 			LogDebug("\tTransmitter on");
-			m_transmit = true;
+			m_tx->start();
 		} else {
 			LogWarning("\tUnknown TX command");
 		}

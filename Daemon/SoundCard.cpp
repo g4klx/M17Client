@@ -230,6 +230,8 @@ void CSoundCardReader::entry()
 
 		if (ret > 0)
 			m_callback->readCallback(m_samples, (unsigned int)ret, m_id);
+		else
+			sleep(5UL);
 	}
 
 	LogMessage("Stopping ALSA reader thread");

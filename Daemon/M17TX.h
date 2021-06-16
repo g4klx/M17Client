@@ -28,6 +28,13 @@
 
 #include <string>
 
+enum TX_STATUS {
+	TXS_NONE,
+	TXS_HEADER,
+	TXS_AUDIO,
+	TXS_END
+};
+
 class CM17TX {
 public:
 	CM17TX(const std::string& callsign, const std::string& text, CCodec2& codec2);
@@ -39,7 +46,13 @@ public:
 
 	void setMicGain(unsigned int percentage);
 
-	void write(const float* audio, bool end);
+	void start();
+
+	void write(const float* audio, unsigned int len);
+
+	void process();
+
+	void end();
 
 	unsigned int read(unsigned char* data);
 
@@ -49,7 +62,8 @@ private:
 	std::string                m_destination;
 	float                      m_micGain;
 	unsigned int               m_can;
-	bool                       m_transmit;
+	TX_STATUS                  m_status;
+	CRingBuffer<float>         m_audio;
 	CRingBuffer<unsigned char> m_queue;
 	uint16_t                   m_frames;
 	CM17LSF*                   m_currLSF;
