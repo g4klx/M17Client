@@ -230,17 +230,33 @@ int CM17Client::run()
 
 	CModem modem(false, m_conf.getModemRXInvert(), m_conf.getModemTXInvert(), m_conf.getModemPTTInvert(), m_conf.getModemTXDelay(),
 		     0U, false, m_conf.getModemTrace(), m_conf.getModemDebug());
+
 	modem.setPort(new CUARTController(m_conf.getModemPort(), m_conf.getModemSpeed()));
-	modem.setLevels(m_conf.getModemRXLevel(), 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, m_conf.getModemTXLevel(), 0.0F, 0.0F, 0.0F);
 
 	// By default use the first entry in the code plug file
 	modem.setRFParams(m_codePlug->getData().at(0U).m_rxFrequency, m_conf.getModemRXOffset(),
 			  m_codePlug->getData().at(0U).m_txFrequency, m_conf.getModemTXOffset(),
 			  m_conf.getModemTXDCOffset(), m_conf.getModemRXDCOffset(), m_conf.getModemRFLevel(), 0U);
 
+	// Only enable M17
+	modem.setModeParams(false, false, false, false, false, true, false, false, false);
+
+	// Only set the TX level for M17
+	modem.setLevels(m_conf.getModemRXLevel(), 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, m_conf.getModemTXLevel(), 0.0F, 0.0F, 0.0F);
+
+	// Set the M17 TX hang time to 0
+	modem.setM17Params(0U);
+
 	ret = modem.open();
 	if (!ret) {
 		LogError("Unable to open the MMDVM");
+		::LogFinalise();
+		return 1;
+	}
+
+	if (!modem.hasM17()) {
+		LogError("Modem is not capable of M17");
+		::LogFinalise();
 		return 1;
 	}
 
@@ -249,6 +265,7 @@ int CM17Client::run()
 
 	if (CUDPSocket::lookup(m_conf.getControlRemoteAddress(), m_conf.getControlRemotePort(), m_sockaddr, m_sockaddrLen) != 0) {
 		LogError("Could not lookup the remote address");
+		::LogFinalise();
 		return 1;
 	}
 
@@ -256,6 +273,7 @@ int CM17Client::run()
 	ret = m_socket->open();
 	if (!ret) {
 		LogError("Unable to open the command socket");
+		::LogFinalise();
 		return 1;
 	}
 
@@ -265,6 +283,7 @@ int CM17Client::run()
 		ret = m_hamLib->open();
 		if (!ret) {
 			LogError("Unable to open HamLib");
+			::LogFinalise();
 			return 1;
 		}
 	}
@@ -276,6 +295,7 @@ int CM17Client::run()
 		ret = m_gpsd->open();
 		if (!ret) {
 			LogError("Unable to open GPSD");
+			::LogFinalise();
 			return 1;
 		}
 	}
@@ -310,6 +330,7 @@ int CM17Client::run()
 	ret = sound.open();
 	if (!ret) {
 		LogError("Unable to open the sound card");
+		::LogFinalise();
 		return 1;
 	}
 
@@ -378,6 +399,8 @@ int CM17Client::run()
 	delete m_tx;
 	delete m_rx;
 	delete m_socket;
+
+	::LogFinalise();
 
 	return 0;
 }
