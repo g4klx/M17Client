@@ -22,7 +22,21 @@
 const unsigned int CODEC_SAMPLE_RATE = 8000U;
 const unsigned int CODEC_BLOCK_SIZE  = CODEC_SAMPLE_RATE / 25U;
 
-const unsigned char MODE_M17   = 7U;
+const unsigned char MODE_IDLE    = 0U;
+const unsigned char MODE_DSTAR   = 1U;
+const unsigned char MODE_DMR     = 2U;
+const unsigned char MODE_YSF     = 3U;
+const unsigned char MODE_P25     = 4U;
+const unsigned char MODE_NXDN    = 5U;
+const unsigned char MODE_POCSAG  = 6U;
+const unsigned char MODE_M17     = 7U;
+
+const unsigned char MODE_FM      = 10U;
+
+const unsigned char MODE_CW      = 98U;
+const unsigned char MODE_LOCKOUT = 99U;
+const unsigned char MODE_ERROR   = 100U;
+const unsigned char MODE_QUIT    = 110U;
 
 const unsigned char TAG_HEADER = 0x00U;
 const unsigned char TAG_DATA1  = 0x01U;
@@ -36,6 +50,21 @@ enum RPT_RF_STATE {
 	RS_RF_AUDIO,
 	RS_RF_DATA,
 	RS_RF_INVALID
+};
+
+enum HW_TYPE {
+	HWT_MMDVM,
+	HWT_DVMEGA,
+	HWT_MMDVM_ZUMSPOT,
+	HWT_MMDVM_HS_HAT,
+	HWT_MMDVM_HS_DUAL_HAT,
+	HWT_NANO_HOTSPOT,
+	HWT_NANO_DV,
+	HWT_D2RG_MMDVM_HS,
+	HWT_MMDVM_HS,
+	HWT_OPENGD77_HS,
+	HWT_SKYBRIDGE,
+	HWT_UNKNOWN
 };
 
 #endif

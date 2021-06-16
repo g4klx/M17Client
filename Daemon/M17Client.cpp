@@ -241,14 +241,15 @@ int CM17Client::run()
 	LogMessage("M17Client-%s is starting", VERSION);
 	LogMessage("Built %s %s (GitID #%.7s)", __TIME__, __DATE__, gitversion);
 
-	CModem modem(m_conf.getModemRXInvert(), m_conf.getModemTXInvert(), m_conf.getModemPTTInvert(), m_conf.getModemTXDelay(), m_conf.getModemTrace(), m_conf.getModemDebug());
+	CModem modem(false, m_conf.getModemRXInvert(), m_conf.getModemTXInvert(), m_conf.getModemPTTInvert(), m_conf.getModemTXDelay(),
+		     0U, false, m_conf.getModemTrace(), m_conf.getModemDebug());
 	modem.setPort(new CUARTController(m_conf.getModemPort(), m_conf.getModemSpeed()));
-	modem.setLevels(m_conf.getModemRXLevel(), m_conf.getModemTXLevel());
+	modem.setLevels(m_conf.getModemRXLevel(), 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, m_conf.getModemTXLevel(), 0.0F, 0.0F, 0.0F);
 
 	// By default use the first entry in the code plug file
 	modem.setRFParams(m_codePlug->getData().at(0U).m_rxFrequency, m_conf.getModemRXOffset(),
 			  m_codePlug->getData().at(0U).m_txFrequency, m_conf.getModemTXOffset(),
-			  m_conf.getModemRXDCOffset(), m_conf.getModemTXDCOffset(), m_conf.getModemRFLevel());
+			  m_conf.getModemTXDCOffset(), m_conf.getModemRXDCOffset(), m_conf.getModemRFLevel(), 0U);
 
 	ret = modem.open();
 	if (!ret) {
@@ -331,13 +332,13 @@ int CM17Client::run()
 		unsigned char data[100U];
 
 		if (m_transmit) {
-			if (modem.hasSpace()) {
+			if (modem.hasM17Space()) {
 				unsigned int len = m_tx->read(data);
 				if (len > 0U)
-					modem.writeData(data, len);
+					modem.writeM17Data(data, len);
 			}
 		} else {
-			unsigned int len = modem.readData(data);
+			unsigned int len = modem.readM17Data(data);
 			if (len > 0U)
 				m_rx->write(data, len);
 		}
