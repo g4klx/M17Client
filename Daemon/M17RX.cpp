@@ -13,9 +13,9 @@
 
 #include "M17RX.h"
 #include "M17Convolution.h"
+#include "Golay24128.h"
 #include "M17Utils.h"
 #include "M17CRC.h"
-#include "Golay24128.h"
 #include "Utils.h"
 #include "Log.h"
 
@@ -75,12 +75,16 @@ m_rssi(0U),
 m_maxRSSI(0U),
 m_minRSSI(0U),
 m_aveRSSI(0U),
-m_rssiCount(0U)
+m_rssiCount(0U),
+m_resampler(NULL),
+m_error(0)
 {
+	m_resampler = ::src_new(SRC_SINC_FASTEST, 1, &m_error);
 }
 
 CM17RX::~CM17RX()
 {
+	::src_delete(m_resampler);
 }
 
 void CM17RX::setStatusCallback(IStatusCallback* callback)
@@ -275,16 +279,30 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 		unsigned int fn = ((frame[0U] << 8) + (frame[1U] << 0)) & 0x7FU;
 
 		// A valid M17 audio frame
-		short saudio[320U];
-		m_codec2.codec2_decode(saudio + 0U,   frame + 2U);
-		m_codec2.codec2_decode(saudio + 160U, frame + 2U + 8U);
+		short audio[CODEC_BLOCK_SIZE];
+		m_codec2.codec2_decode(audio + 0U,   frame + 2U);
+		m_codec2.codec2_decode(audio + 160U, frame + 2U + 8U);
 
 		// Adjust the volume, and convert to float
-		float faudio[320U];
-		for (unsigned int i = 0U; i < 320U; i++)
-			faudio[i] = (float(saudio[i]) * m_volume) / 32768.0F;
+		float f8000[CODEC_BLOCK_SIZE];
+		for (unsigned int i = 0U; i < CODEC_BLOCK_SIZE; i++)
+			f8000[i] = (float(audio[i]) * m_volume) / 32768.0F;
 
-		writeQueue(faudio, 320U);
+		float f48000[SOUNDCARD_BLOCK_SIZE];
+
+		SRC_DATA data;
+		data.data_in       = f8000;
+		data.data_out      = f48000;
+		data.input_frames  = CODEC_BLOCK_SIZE;
+		data.output_frames = SOUNDCARD_BLOCK_SIZE;
+		data.end_of_input  = 0;
+		data.src_ratio     = double(SOUNDCARD_SAMPLE_RATE) / double(CODEC_SAMPLE_RATE);
+
+		int ret = ::src_process(m_resampler, &data);
+		if (ret != 0)
+			LogError("Error from the RX resampler - %d - %s", ret, ::src_strerror(ret));
+
+		writeQueue(f48000, SOUNDCARD_BLOCK_SIZE);
 
 		m_frames++;
 

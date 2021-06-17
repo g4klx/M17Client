@@ -26,6 +26,8 @@
 #include "M17LSF.h"
 #include "Modem.h"
 
+#include <samplerate.h>
+
 #include <string>
 
 enum TX_STATUS {
@@ -70,6 +72,8 @@ private:
 	CM17LSF*                   m_textLSF;
 	CM17LSF*                   m_gpsLSF;
 	unsigned int               m_lsfN;
+	SRC_STATE*                 m_resampler;
+	int                        m_error;
 
 	void writeQueue(const unsigned char* data);
 

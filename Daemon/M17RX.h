@@ -28,6 +28,8 @@
 #include "M17LSF.h"
 #include "Modem.h"
 
+#include <samplerate.h>
+
 #include <string>
 
 class CM17RX {
@@ -63,6 +65,8 @@ private:
 	unsigned char      m_minRSSI;
 	unsigned int       m_aveRSSI;
 	unsigned int       m_rssiCount;
+	SRC_STATE*         m_resampler;
+	int                m_error;
 
 	void writeQueue(const float *audio, unsigned int len);
 

@@ -325,7 +325,7 @@ int CM17Client::run()
 	m_rx->setCAN(m_codePlug->getData().at(0U).m_can);
 	m_tx->setCAN(m_codePlug->getData().at(0U).m_can);
 
-	CSoundCard sound(m_conf.getAudioInputDevice(), m_conf.getAudioOutputDevice(), CODEC_SAMPLE_RATE, CODEC_BLOCK_SIZE);
+	CSoundCard sound(m_conf.getAudioInputDevice(), m_conf.getAudioOutputDevice(), SOUNDCARD_SAMPLE_RATE, SOUNDCARD_BLOCK_SIZE);
 	sound.setCallback(this);
 	ret = sound.open();
 	if (!ret) {

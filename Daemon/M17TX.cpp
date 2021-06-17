@@ -13,9 +13,9 @@
 
 #include "M17TX.h"
 #include "M17Convolution.h"
+#include "Golay24128.h"
 #include "M17Utils.h"
 #include "M17CRC.h"
-#include "Golay24128.h"
 #include "Utils.h"
 #include "Log.h"
 
@@ -67,7 +67,9 @@ m_frames(0U),
 m_currLSF(NULL),
 m_textLSF(NULL),
 m_gpsLSF(NULL),
-m_lsfN(0U)
+m_lsfN(0U),
+m_resampler(NULL),
+m_error(0)
 {
 	m_textLSF = new CM17LSF;
 	m_textLSF->setSource(callsign);
@@ -85,10 +87,14 @@ m_lsfN(0U)
 	}
 
 	m_currLSF = m_textLSF;
+
+	m_resampler = ::src_new(SRC_SINC_FASTEST, 1, &m_error);
 }
 
 CM17TX::~CM17TX()
 {
+	::src_delete(m_resampler);
+
 	delete m_textLSF;
 	delete m_gpsLSF;
 }
@@ -146,16 +152,30 @@ void CM17TX::process()
 		return;
 
 	// Enough audio?
-	if (m_audio.dataSize() < 320U)
+	if (m_audio.dataSize() < SOUNDCARD_BLOCK_SIZE)
 		return;
 
-	float input[320U];
-	m_audio.getData(input, 320U);
+	float f48000[SOUNDCARD_BLOCK_SIZE];
+	m_audio.getData(f48000, SOUNDCARD_BLOCK_SIZE);
+
+	float f8000[CODEC_BLOCK_SIZE];
+
+	SRC_DATA data;
+	data.data_in       = f48000;
+	data.data_out      = f8000;
+	data.input_frames  = SOUNDCARD_BLOCK_SIZE;
+	data.output_frames = CODEC_BLOCK_SIZE;
+	data.end_of_input  = 0;
+	data.src_ratio     = double(CODEC_SAMPLE_RATE) / double(SOUNDCARD_SAMPLE_RATE);
+
+	int ret = ::src_process(m_resampler, &data);
+	if (ret != 0)
+		LogError("Error from the TX resampler - %d - %s", ret, ::src_strerror(ret));
 
 	// Adjust the mic gain
-	short audio[320U];
-	for (unsigned int i = 0U; i < 320U; i++)
-		audio[i] = short(input[i] * 32768.0F * m_micGain + 0.5F);
+	short audio[CODEC_BLOCK_SIZE];
+	for (unsigned int i = 0U; i < CODEC_BLOCK_SIZE; i++)
+		audio[i] = short(f8000[i] * 32768.0F * m_micGain + 0.5F);
 
 	if (m_status == TXS_HEADER) {
 		m_currLSF = m_textLSF;

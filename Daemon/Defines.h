@@ -22,6 +22,9 @@
 const unsigned int CODEC_SAMPLE_RATE = 8000U;
 const unsigned int CODEC_BLOCK_SIZE  = CODEC_SAMPLE_RATE / 25U;
 
+const unsigned int SOUNDCARD_SAMPLE_RATE = 48000U;
+const unsigned int SOUNDCARD_BLOCK_SIZE  = CODEC_BLOCK_SIZE * (SOUNDCARD_SAMPLE_RATE / CODEC_SAMPLE_RATE);
+
 const unsigned char MODE_IDLE    = 0U;
 const unsigned char MODE_DSTAR   = 1U;
 const unsigned char MODE_DMR     = 2U;
