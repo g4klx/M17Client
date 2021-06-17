@@ -239,7 +239,7 @@ int CM17Client::run()
 			  m_conf.getModemTXDCOffset(), m_conf.getModemRXDCOffset(), m_conf.getModemRFLevel(), 0U);
 
 	// Only enable M17
-	modem.setModeParams(false, false, false, false, false, true, false, false, false);
+	modem.setModeParams(false, false, false, false, false, true, false, false, false, MODE_M17);
 
 	// Only set the TX level for M17
 	modem.setLevels(m_conf.getModemRXLevel(), 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, m_conf.getModemTXLevel(), 0.0F, 0.0F, 0.0F);
@@ -259,9 +259,6 @@ int CM17Client::run()
 		::LogFinalise();
 		return 1;
 	}
-
-	// Fix the modem into M17 mode
-	modem.setMode(MODE_M17);
 
 	if (CUDPSocket::lookup(m_conf.getControlRemoteAddress(), m_conf.getControlRemotePort(), m_sockaddr, m_sockaddrLen) != 0) {
 		LogError("Could not lookup the remote address");

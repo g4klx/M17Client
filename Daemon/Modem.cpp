@@ -280,7 +280,7 @@ void CModem::setRFParams(unsigned int rxFrequency, int rxOffset, unsigned int tx
 	m_pocsagFrequency = pocsagFrequency + txOffset;
 }
 
-void CModem::setModeParams(bool dstarEnabled, bool dmrEnabled, bool ysfEnabled, bool p25Enabled, bool nxdnEnabled, bool m17Enabled, bool pocsagEnabled, bool fmEnabled, bool ax25Enabled)
+void CModem::setModeParams(bool dstarEnabled, bool dmrEnabled, bool ysfEnabled, bool p25Enabled, bool nxdnEnabled, bool m17Enabled, bool pocsagEnabled, bool fmEnabled, bool ax25Enabled, unsigned char mode)
 {
 	m_dstarEnabled  = dstarEnabled;
 	m_dmrEnabled    = dmrEnabled;
@@ -291,6 +291,7 @@ void CModem::setModeParams(bool dstarEnabled, bool dmrEnabled, bool ysfEnabled, 
 	m_pocsagEnabled = pocsagEnabled;
 	m_fmEnabled     = fmEnabled;
 	m_ax25Enabled   = ax25Enabled;
+	m_mode          = mode;
 }
 
 void CModem::setLevels(float rxLevel, float cwIdTXLevel, float dstarTXLevel, float dmrTXLevel, float ysfTXLevel, float p25TXLevel, float nxdnTXLevel, float m17TXLevel, float pocsagTXLevel, float fmTXLevel, float ax25TXLevel)
@@ -2153,7 +2154,7 @@ bool CModem::setConfig1()
 
 	buffer[5U] = m_txDelay / 10U;		// In 10ms units
 
-	buffer[6U] = MODE_IDLE;
+	buffer[6U] = m_mode;
 
 	buffer[7U] = (unsigned char)(m_rxLevel * 2.55F + 0.5F);
 
@@ -2274,7 +2275,7 @@ bool CModem::setConfig2()
 
 	buffer[6U] = m_txDelay / 10U;		// In 10ms units
 
-	buffer[7U] = MODE_IDLE;
+	buffer[7U] = m_mode;
 
 	buffer[8U] = (unsigned char)(m_txDCOffset + 128);
 	buffer[9U] = (unsigned char)(m_rxDCOffset + 128);
