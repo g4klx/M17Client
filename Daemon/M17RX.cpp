@@ -24,6 +24,8 @@
 #include <cstring>
 #include <ctime>
 
+const unsigned int  SILENCE_BLOCK_COUNT = 5U;
+
 const unsigned int  BLEEP_FREQ   = 2000U;
 const unsigned int  BLEEP_LENGTH = 100U;
 const float         BLEEP_AMPL   = 0.1F;
@@ -69,7 +71,7 @@ m_state(RS_RF_LISTENING),
 m_frames(0U),
 m_lsf(),
 m_running(),
-m_queue(5000U, "M17 RX Audio"),
+m_queue(25000U, "M17 RX Audio"),
 m_rssiMapper(rssiMapper),
 m_rssi(0U),
 m_maxRSSI(0U),
@@ -215,6 +217,8 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 			m_aveRSSI = m_rssi;
 			m_rssiCount = 1U;
 
+			addSilence(SILENCE_BLOCK_COUNT);
+
 			return true;
 		} else {
 			m_state = RS_RF_LATE_ENTRY;
@@ -262,6 +266,8 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 			m_maxRSSI = m_rssi;
 			m_aveRSSI = m_rssi;
 			m_rssiCount = 1U;
+
+			addSilence(SILENCE_BLOCK_COUNT);
 
 			// Fall through
 		} else {
@@ -496,5 +502,15 @@ void CM17RX::addBleep()
 		audio[i] = ::sinf(float(i) * step) * BLEEP_AMPL * m_volume;
 
 	writeQueue(audio, total);
+}
+
+void CM17RX::addSilence(unsigned int n)
+{
+	const float SILENCE = 0.0F;
+
+	for (unsigned int i = 0U; i < n; i++) {
+		for (unsigned int j = 0U; j < SOUNDCARD_BLOCK_SIZE; j++)
+			writeQueue(&SILENCE, 1U);
+	}
 }
 

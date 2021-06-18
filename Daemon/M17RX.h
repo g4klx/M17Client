@@ -78,6 +78,8 @@ private:
 	void processRunningLSF(const unsigned char* fragment);
 	void processLSF(const CM17LSF& lsf) const;
 
+	void addSilence(unsigned int n);
+
 	void end();
 
 	void addBleep();
