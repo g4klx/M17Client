@@ -43,10 +43,28 @@ private:
 
 	std::vector<std::string> m_channels;
 	std::vector<std::string> m_destinations;
-	std::vector<std::string> m_modules;
+	std::vector<char>        m_modules;
+
+	unsigned int m_channelIdx;
+	unsigned int m_destinationIdx;
+	unsigned int m_moduleIdx;
+	
+	bool         m_transmit;
 	
 	void parseCommand(char* command);
 	void parseScreen(char* command);
+
+	void channelUp();
+	void channelDown();
+	void destinationUp();
+	void destinationDown();
+	void moduleUp();
+	void moduleDown();
+
+	void transmit();
+	
+	void page0Next();
+	void page1Next();
 
 	bool getChannels();
 	bool setChannel(const std::string& channel);
@@ -55,6 +73,12 @@ private:
 	bool setVolume(unsigned int volume);
 	bool setMicGain(unsigned int micGain);
 	bool setTransmit(bool transmit);
+
+	void sendCommand(const char* command);
+	
+	void selectChannel();
+	void selectDestination();
+	void selectModule();
 };
 
 #endif

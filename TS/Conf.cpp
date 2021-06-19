@@ -48,7 +48,7 @@ m_selfAddress("127.0.0.1"),
 m_selfPort(7659U),
 m_channel(),
 m_destination(),
-m_module("A"),
+m_module(' '),
 m_volume(100U),
 m_micGain(100U)
 {
@@ -101,7 +101,7 @@ bool CConf::read()
 		else if (key == KEY_DESTINATION)
 			m_destination = std::string(val);
 		else if (key == KEY_MODULE)
-			m_module = std::string(val);
+			m_module = val[0U];
 		else if (key == KEY_VOLUME)
 			m_volume = (unsigned int)::atoi(val);
 		else if (key == KEY_MIC_GAIN)
@@ -168,12 +168,12 @@ void CConf::setDestination(const std::string& value)
 	m_destination = value;
 }
 
-std::string CConf::getModule() const
+char CConf::getModule() const
 {
 	return m_module;
 }
 
-void CConf::setModule(const std::string& value)
+void CConf::setModule(char value)
 {
 	m_module = value;
 }
@@ -219,7 +219,7 @@ bool CConf::write()
 
 	::fprintf(fp, "%s=%s\n", KEY_CHANNEL.c_str(), m_channel.c_str());
 	::fprintf(fp, "%s=%s\n", KEY_DESTINATION.c_str(), m_destination.c_str());
-	::fprintf(fp, "%s=%s\n", KEY_MODULE.c_str(), m_module.c_str());
+	::fprintf(fp, "%s=%c\n", KEY_MODULE.c_str(), m_module);
 
 	::fprintf(fp, "%s=%u\n", KEY_VOLUME.c_str(), m_volume);
 	::fprintf(fp, "%s=%u\n", KEY_MIC_GAIN.c_str(), m_micGain);

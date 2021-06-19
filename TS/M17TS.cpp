@@ -101,7 +101,11 @@ m_sockaddr(),
 m_sockaddrLen(0U),
 m_channels(),
 m_destinations(),
-m_modules()
+m_modules(),
+m_channelIdx(0U),
+m_destinationIdx(0U),
+m_moduleIdx(0U),
+m_transmit(false)
 {
 }
 
@@ -284,12 +288,15 @@ void CM17TS::parseCommand(char* command)
 			std::string channel = std::string(ptrs.at(i));
 			m_channels.push_back(channel);
 		}
+		selectChannel();
 	} else if (::strcmp(ptrs.at(0U), "DEST") == 0) {
 		m_destinations.clear();
 		for (unsigned int i = 1U; i < ptrs.size(); i++) {
 			std::string destination = std::string(ptrs.at(i));
 			m_destinations.push_back(destination);
 		}
+		selectDestination();
+		selectModule();
 	} else if (::strcmp(ptrs.at(0U), "RX") == 0) {
 		bool end                = ::atoi(ptrs.at(1U)) == 1;
 		std::string source      = std::string(ptrs.at(2U));
@@ -304,6 +311,120 @@ void CM17TS::parseCommand(char* command)
 void CM17TS::parseScreen(char* command)
 {
 	assert(command != NULL);
+}
+
+void CM17TS::channelUp()
+{
+	assert(!m_channels.empty());
+
+	if (m_channelIdx == 0U)
+		m_channelIdx = m_channels.size() - 1U;
+	else
+		m_channelIdx--;
+
+	std::string channel = m_channels.at(m_channelIdx);
+
+	char text[100U];
+	::sprintf(text, "CHANNEL.txt=\"%s\"", channel.c_str());
+	sendCommand(text);
+
+	setChannel(channel);
+}
+
+void CM17TS::channelDown()
+{
+	assert(!m_channels.empty());
+
+	m_channelIdx++;
+	if (m_channelIdx == m_channels.size())
+		m_channelIdx = 0U;
+
+	std::string channel = m_channels.at(m_channelIdx);
+
+	char text[100U];
+	::sprintf(text, "CHANNEL.txt=\"%s\"", channel.c_str());
+	sendCommand(text);
+
+	setChannel(channel);
+}
+
+void CM17TS::destinationUp()
+{
+	assert(!m_destinations.empty());
+
+	if (m_destinationIdx == 0U)
+		m_destinationIdx = m_destinations.size() - 1U;
+	else
+		m_destinationIdx--;
+
+	std::string destination = m_destinations.at(m_destinationIdx);
+
+	char text[100U];
+	::sprintf(text, "DESTINATION.txt=\"%s\"", destination.c_str());
+	sendCommand(text);
+}
+
+void CM17TS::destinationDown()
+{
+	assert(!m_destinations.empty());
+
+	m_destinationIdx++;
+	if (m_destinationIdx == m_destinations.size())
+		m_destinationIdx = 0U;
+
+	std::string destination = m_destinations.at(m_destinationIdx);
+
+	char text[100U];
+	::sprintf(text, "DESTINATION.txt=\"%s\"", destination.c_str());
+	sendCommand(text);
+}
+
+void CM17TS::moduleUp()
+{
+	assert(!m_modules.empty());
+
+	if (m_moduleIdx == 0U)
+		m_moduleIdx = m_modules.size() - 1U;
+	else
+		m_moduleIdx--;
+
+	char module = m_modules.at(m_moduleIdx);
+
+	char text[100U];
+	::sprintf(text, "MODULE.txt=\"%c\"", module);
+	sendCommand(text);
+}
+
+void CM17TS::moduleDown()
+{
+	assert(!m_modules.empty());
+
+	m_moduleIdx++;
+	if (m_moduleIdx == m_modules.size())
+		m_moduleIdx = 0U;
+
+	char module = m_modules.at(m_moduleIdx);
+
+	char text[100U];
+	::sprintf(text, "MODULE.txt=\"%c\"", module);
+	sendCommand(text);
+}
+
+void CM17TS::transmit()
+{
+	m_transmit = !m_transmit;
+
+	setTransmit(m_transmit);
+}
+
+void CM17TS::page0Next()
+{
+	sendCommand("page page1");
+}
+
+void CM17TS::page1Next()
+{
+	sendCommand("page page0");
 }
 
 bool CM17TS::getChannels()
@@ -388,5 +509,126 @@ bool CM17TS::setTransmit(bool transmit)
 	::strcat(buffer, transmit ? "1" : "0");
 
 	return m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
+}
+
+void CM17TS::sendCommand(const char* command)
+{
+	assert(command != NULL);
+	assert(m_uart != NULL);
+
+	m_uart->write(command, ::strlen(command));
+	m_uart->write("\xFF\xFF\xFF", 3U);
+}
+
+void CM17TS::selectChannel()
+{
+	m_channelIdx = 0xFFFFU;
+
+	unsigned int n = 0U;
+	for (const auto& it : m_channels) {
+		if (it == m_conf.getChannel()) {
+			m_channelIdx = n;
+			break;
+		}
+
+		n++;
+	}
+
+	if (m_channelIdx == 0xFFFFU)
+		m_channelIdx = 0U;
+
+	std::string channel = m_channels.at(m_channelIdx);
+
+	char text[100U];
+	::sprintf(text, "CHANNEL.txt=\"%s\"", channel.c_str());
+	sendCommand(text);
+
+	m_conf.setChannel(channel);
+
+	setChannel(channel);
+}
+
+void CM17TS::selectDestination()
+{
+	m_destinations.push_back("        E");
+	m_destinations.push_back("        I");
+	m_destinations.push_back("        U");
+
+	m_destinationIdx = 0xFFFFU;
+
+	unsigned int n = 0U;
+	for (const auto& it : m_destinations) {
+		if (it == m_conf.getDestination()) {
+			m_destinationIdx = n;
+			break;
+		}
+
+		n++;
+	}
+
+	if (m_destinationIdx == 0xFFFFU)
+		m_destinationIdx = 0U;
+
+	std::string destination = m_destinations.at(m_destinationIdx);
+
+	char text[100U];
+	::sprintf(text, "DESTINATION.txt=\"%s\"", destination.c_str());
+	sendCommand(text);
+
+	m_conf.setDestination(destination);
+}
+
+void CM17TS::selectModule()
+{
+	m_modules.push_back(' ');
+	m_modules.push_back('A');
+	m_modules.push_back('B');
+	m_modules.push_back('C');
+	m_modules.push_back('D');
+	m_modules.push_back('E');
+	m_modules.push_back('F');
+	m_modules.push_back('G');
+	m_modules.push_back('H');
+	m_modules.push_back('I');
+	m_modules.push_back('J');
+	m_modules.push_back('K');
+	m_modules.push_back('L');
+	m_modules.push_back('M');
+	m_modules.push_back('N');
+	m_modules.push_back('O');
+	m_modules.push_back('P');
+	m_modules.push_back('Q');
+	m_modules.push_back('R');
+	m_modules.push_back('S');
+	m_modules.push_back('T');
+	m_modules.push_back('U');
+	m_modules.push_back('V');
+	m_modules.push_back('W');
+	m_modules.push_back('X');
+	m_modules.push_back('Y');
+	m_modules.push_back('Z');
+
+	m_moduleIdx = 0xFFFFU;
+
+	unsigned int n = 0U;
+	for (const auto& it : m_modules) {
+		if (it == m_conf.getModule()) {
+			m_moduleIdx = n;
+			break;
+		}
+
+		n++;
+	}
+
+	if (m_moduleIdx == 0xFFFFU)
+		m_moduleIdx = 0U;
+
+	char module = m_modules.at(m_moduleIdx);
+
+	char text[100U];
+	::sprintf(text, "MODULE.txt=\"%c\"", module);
+	sendCommand(text);
+
+	m_conf.setModule(module);
 }
 
