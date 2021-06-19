@@ -5,7 +5,7 @@ export CFLAGS  := -g -O2 -Wall $(shell wx-config --cxxflags)
 export LIBS    := $(shell wx-config --libs adv,core) -lasound
 export LDFLAGS := -g
 
-OBJECTS =	App.o ChannelsEvent.o DestinationsEvent.o ErrorEvent.o Frame.o Logger.o ReceiveData.o ReceiveEvent.o \
+OBJECTS =	App.o ChannelsEvent.o Conf.o DestinationsEvent.o ErrorEvent.o Frame.o Logger.o ReceiveData.o ReceiveEvent.o \
 		RSSIEvent.o TextEvent.o Thread.o UDPReaderWriter.o Utils.o
 
 all:		M17GUI

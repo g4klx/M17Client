@@ -33,6 +33,7 @@ const wxChar* NOLOGGING_SWITCH = wxT("nolog");
 CApp::CApp() :
 wxApp(),
 m_noLog(false),
+m_conf(),
 m_frame(NULL),
 m_thread(NULL)
 {
@@ -56,17 +57,20 @@ bool CApp::OnInit()
 		new wxLogNull;
 	}
 
-	m_frame = new CFrame(APPLICATION_NAME + wxT(" - ") + VERSION);
-	m_frame->Show();
-
-	SetTopWindow(m_frame);
-
 	wxLogInfo(wxT("Starting ") + APPLICATION_NAME + wxT(" - ") + VERSION);
 
 	// Log the version of wxWidgets and the Operating System
 	wxLogInfo(wxT("Using wxWidgets %d.%d.%d on %s"), wxMAJOR_VERSION, wxMINOR_VERSION, wxRELEASE_NUMBER, ::wxGetOsDescription().c_str());
 
-	createThread();
+	if (!m_conf.read())
+		return false;
+
+	m_frame = new CFrame(m_conf, APPLICATION_NAME + wxT(" - ") + VERSION);
+	m_frame->Show();
+
+	SetTopWindow(m_frame);
+
+	createThread(m_conf);
 
 	return wxApp::OnInit();
 }
@@ -74,6 +78,8 @@ bool CApp::OnInit()
 int CApp::OnExit()
 {
 	wxLogInfo(APPLICATION_NAME + wxT(" is exiting"));
+
+	m_conf.write();
 
 	m_thread->kill();
 	m_thread->Wait();
@@ -173,9 +179,9 @@ bool CApp::setMicGain(unsigned int micGain)
 	return m_thread->setMicGain(micGain);
 }
 
-void CApp::createThread()
+void CApp::createThread(const CConf& conf)
 {
-	m_thread = new CThread;
+	m_thread = new CThread(conf);
 	m_thread->Create();
 	m_thread->Run();
 }

@@ -24,24 +24,29 @@
 
 const char* DELIMITER = ":";
 
-CThread::CThread() :
+CThread::CThread(const CConf& conf) :
 wxThread(wxTHREAD_JOINABLE),
-m_socket(wxT("127.0.0.1"), 7658U, wxT("127.0.0.1"), 7659U),
+m_socket(NULL),
 m_killed(false)
 {
+	m_socket = new CUDPReaderWriter(conf.getDaemonAddress(), conf.getDaemonPort(),
+					 conf.getSelfAddress(),   conf.getSelfPort());
 }
 
 CThread::~CThread()
 {
+	delete m_socket;
 }
 
 void* CThread::Entry()
 {
-	m_socket.open();
+	wxASSERT(m_socket != NULL);
+
+	m_socket->open();
 
 	while (!m_killed) {
 		char buffer[1000U];
-		int len = m_socket.read(buffer, 1000U);
+		int len = m_socket->read(buffer, 1000U);
 		if (len > 0) {
 			buffer[len] = '\0';
 
@@ -87,7 +92,7 @@ void* CThread::Entry()
 		Sleep(20UL);
 	}
 
-	m_socket.close();
+	m_socket->close();
 
 	return NULL;
 }
@@ -99,71 +104,85 @@ void CThread::kill()
 
 bool CThread::getChannels()
 {
+	wxASSERT(m_socket != NULL);
+
 	char buffer[20U];
 	::strcpy(buffer, "CHAN");
 	::strcat(buffer, DELIMITER);
 	::strcat(buffer, "?");
 
-	return m_socket.write(buffer, ::strlen(buffer));
+	return m_socket->write(buffer, ::strlen(buffer));
 }
 
 bool CThread::setChannel(const wxString& channel)
 {
+	wxASSERT(m_socket != NULL);
+
 	char buffer[20U];
 	::strcpy(buffer, "CHAN");
 	::strcat(buffer, DELIMITER);
 	::strcat(buffer, channel.ToAscii());
 
-	return m_socket.write(buffer, ::strlen(buffer));
+	return m_socket->write(buffer, ::strlen(buffer));
 }
 
 bool CThread::getDestinations()
 {
+	wxASSERT(m_socket != NULL);
+
 	char buffer[20U];
 	::strcpy(buffer, "DEST");
 	::strcat(buffer, DELIMITER);
 	::strcat(buffer, "?");
 
-	return m_socket.write(buffer, ::strlen(buffer));
+	return m_socket->write(buffer, ::strlen(buffer));
 }
 
 bool CThread::setDestination(const wxString& destination)
 {
+	wxASSERT(m_socket != NULL);
+
 	char buffer[20U];
 	::strcpy(buffer, "DEST");
 	::strcat(buffer, DELIMITER);
 	::strcat(buffer, destination.ToAscii());
 
-	return m_socket.write(buffer, ::strlen(buffer));
+	return m_socket->write(buffer, ::strlen(buffer));
 }
 
 bool CThread::setVolume(unsigned int volume)
 {
+	wxASSERT(m_socket != NULL);
+
 	char buffer[20U];
 	::strcpy(buffer, "VOL");
 	::strcat(buffer, DELIMITER);
 	::sprintf(buffer + ::strlen(buffer), "%u", volume);
 
-	return m_socket.write(buffer, ::strlen(buffer));
+	return m_socket->write(buffer, ::strlen(buffer));
 }
 
 bool CThread::setMicGain(unsigned int micGain)
 {
+	wxASSERT(m_socket != NULL);
+
 	char buffer[20U];
 	::strcpy(buffer, "MIC");
 	::strcat(buffer, DELIMITER);
 	::sprintf(buffer + ::strlen(buffer), "%u", micGain);
 
-	return m_socket.write(buffer, ::strlen(buffer));
+	return m_socket->write(buffer, ::strlen(buffer));
 }
 
 bool CThread::setTransmit(bool transmit)
 {
+	wxASSERT(m_socket != NULL);
+
 	char buffer[20U];
 	::strcpy(buffer, "TX");
 	::strcat(buffer, DELIMITER);
 	::strcat(buffer, transmit ? "1" : "0");
 
-	return m_socket.write(buffer, ::strlen(buffer));
+	return m_socket->write(buffer, ::strlen(buffer));
 }
 

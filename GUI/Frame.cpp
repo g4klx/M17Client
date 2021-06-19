@@ -31,6 +31,8 @@
 
 enum {
 	Choice_Channels = 6000,
+	Choice_Destinations,
+	Choice_Modules,
 
 	Button_Transmit,
 
@@ -55,9 +57,11 @@ BEGIN_EVENT_TABLE(CFrame, wxFrame)
 
 	EVT_TOGGLEBUTTON(Button_Transmit, CFrame::onTransmit)
 
-	EVT_LISTBOX(Choice_Channels, CFrame::onChannel)
+	EVT_LISTBOX(Choice_Channels,     CFrame::onChannel)
+	EVT_LISTBOX(Choice_Destinations, CFrame::onDestination)
+	EVT_LISTBOX(Choice_Modules,      CFrame::onModule)
 
-	EVT_COMMAND_SCROLL(Slider_Volume, CFrame::onVolume)
+	EVT_COMMAND_SCROLL(Slider_Volume,  CFrame::onVolume)
 	EVT_COMMAND_SCROLL(Slider_MicGain, CFrame::onMicGain)
 
 	EVT_TIMER(Timer_Timer, CFrame::onTimer)
@@ -71,8 +75,9 @@ BEGIN_EVENT_TABLE(CFrame, wxFrame)
 	EVT_CUSTOM(ERROR_EVENT,   wxID_ANY, CFrame::onError)
 END_EVENT_TABLE()
 
-CFrame::CFrame(const wxString& title) :
+CFrame::CFrame(CConf& conf, const wxString& title) :
 wxFrame(NULL, -1, title),
+m_conf(conf),
 m_channels(NULL),
 m_destinations(NULL),
 m_modules(NULL),
@@ -104,18 +109,20 @@ m_timer(this, Timer_Timer)
 	wxStaticText* destinationsLabel = new wxStaticText(panel, -1, wxT("Dest"), wxDefaultPosition, wxSize(LABEL_WIDTH, -1), wxALIGN_RIGHT);
 	panelSizer->Add(destinationsLabel, wxGBPosition(0, 2), wxDefaultSpan, wxALL, BORDER_SIZE);
 
-	m_destinations = new wxChoice(panel, -1, wxDefaultPosition, wxSize(CONTROL_WIDTH, CONTROL_HEIGHT));
+	m_destinations = new wxChoice(panel, Choice_Destinations, wxDefaultPosition, wxSize(CONTROL_WIDTH, CONTROL_HEIGHT));
 	panelSizer->Add(m_destinations, wxGBPosition(0, 3), wxDefaultSpan, wxALL, BORDER_SIZE);
 
 	wxStaticText* moduleLabel = new wxStaticText(panel, -1, wxT("Module"), wxDefaultPosition, wxSize(LABEL_WIDTH, -1), wxALIGN_RIGHT);
 	panelSizer->Add(moduleLabel, wxGBPosition(0, 4), wxDefaultSpan, wxALL, BORDER_SIZE);
 
-	m_modules = new wxChoice(panel, -1, wxDefaultPosition, wxSize(CONTROL_WIDTH, CONTROL_HEIGHT));
+	m_modules = new wxChoice(panel, Choice_Modules, wxDefaultPosition, wxSize(CONTROL_WIDTH, CONTROL_HEIGHT));
 	m_modules->Append(' ');
 	for (wxChar c = wxT('A'); c <= wxT('Z'); c++)
 		m_modules->Append(c);
-	m_modules->SetSelection(1);
 	panelSizer->Add(m_modules, wxGBPosition(0, 5), wxDefaultSpan, wxALL, BORDER_SIZE);
+
+	wxString module = m_conf.getModule();
+	m_modules->SetStringSelection(module);
 
 	m_transmit = new wxToggleButton(panel, Button_Transmit, _("Transmit"), wxDefaultPosition, wxSize(CONTROL_WIDTH, -1));
 	panelSizer->Add(m_transmit, wxGBPosition(1, 0), wxDefaultSpan, wxALL, BORDER_SIZE);
@@ -126,13 +133,15 @@ m_timer(this, Timer_Timer)
 	wxStaticText* volumeLabel = new wxStaticText(panel, -1, wxT("Volume"), wxDefaultPosition, wxSize(LABEL_WIDTH, -1), wxALIGN_RIGHT);
 	panelSizer->Add(volumeLabel, wxGBPosition(1, 2), wxDefaultSpan, wxALL, BORDER_SIZE);
 
-	m_volume = new wxSlider(panel, Slider_Volume, 100, 0, 500, wxDefaultPosition, wxSize(CONTROL_WIDTH, -1));
+	int volume = m_conf.getVolume();
+	m_volume = new wxSlider(panel, Slider_Volume, volume, 0, 500, wxDefaultPosition, wxSize(CONTROL_WIDTH, -1));
 	panelSizer->Add(m_volume, wxGBPosition(1, 3), wxDefaultSpan, wxALL, BORDER_SIZE);
 
 	wxStaticText* micGainLabel = new wxStaticText(panel, -1, wxT("Mic. Gain"), wxDefaultPosition, wxSize(LABEL_WIDTH, -1), wxALIGN_RIGHT);
 	panelSizer->Add(micGainLabel, wxGBPosition(1, 4), wxDefaultSpan, wxALL, BORDER_SIZE);	
 
-	m_micGain = new wxSlider(panel, Slider_MicGain, 100, 0, 500, wxDefaultPosition, wxSize(CONTROL_WIDTH, -1));
+	int micGain = m_conf.getMicGain();
+	m_micGain = new wxSlider(panel, Slider_MicGain, micGain, 0, 500, wxDefaultPosition, wxSize(CONTROL_WIDTH, -1));
 	panelSizer->Add(m_micGain, wxGBPosition(1, 5), wxDefaultSpan, wxALL, BORDER_SIZE);
 
 	wxStaticBoxSizer* info1Sizer = new wxStaticBoxSizer(new wxStaticBox(panel, -1, _("Current")), wxVERTICAL);
@@ -305,13 +314,37 @@ void CFrame::onChannel(wxCommandEvent& event)
 
 	wxString channel = m_channels->GetString(n);
 
+	m_conf.setChannel(channel);
 	::wxGetApp().setChannel(channel);
+}
+
+void CFrame::onDestination(wxCommandEvent& event)
+{
+	int n = event.GetSelection();
+	if (n == wxNOT_FOUND)
+		return;
+
+	wxString destination = m_destinations->GetString(n);
+
+	m_conf.setDestination(destination);
+}
+
+void CFrame::onModule(wxCommandEvent& event)
+{
+	int n = event.GetSelection();
+	if (n == wxNOT_FOUND)
+		return;
+
+	wxString module = m_modules->GetString(n);
+
+	m_conf.setModule(module);
 }
 
 void CFrame::onVolume(wxScrollEvent& event)
 {
 	int volume = event.GetPosition();
 
+	m_conf.setVolume(volume);
 	::wxGetApp().setVolume((unsigned int)volume);
 }
 
@@ -319,6 +352,7 @@ void CFrame::onMicGain(wxScrollEvent& event)
 {
 	int micGain = event.GetPosition();
 
+	m_conf.setMicGain(micGain);
 	::wxGetApp().setMicGain((unsigned int)micGain);
 }
 
@@ -371,7 +405,9 @@ void CFrame::onChannels(wxEvent& event)
 
 	m_channels->Clear();
 	m_channels->Append(channels);
-	m_channels->SetSelection(0);
+
+	wxString channel = m_conf.getChannel();
+	m_channels->SetStringSelection(channel);
 }
 
 void CFrame::onDestinations(wxEvent& event)
@@ -385,7 +421,9 @@ void CFrame::onDestinations(wxEvent& event)
 	m_destinations->Append(wxT("        E"));
 	m_destinations->Append(wxT("        I"));
 	m_destinations->Append(wxT("        U"));
-	m_destinations->SetSelection(0);
+
+	wxString destination = m_conf.getDestination();
+	m_destinations->SetStringSelection(destination);
 }
 
 void CFrame::onReceive(wxEvent& event)

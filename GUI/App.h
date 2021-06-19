@@ -22,6 +22,7 @@
 #include "ReceiveData.h"
 #include "Thread.h"
 #include "Frame.h"
+#include "Conf.h"
 #include "Defs.h"
 
 #include <wx/wx.h>
@@ -63,10 +64,11 @@ public:
 
 private:
 	bool     m_noLog;
+	CConf    m_conf;
 	CFrame*  m_frame;
 	CThread* m_thread;
 
-	void createThread();
+	void createThread(const CConf& conf);
 };
 
 wxDECLARE_APP(CApp);

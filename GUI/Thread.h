@@ -20,12 +20,13 @@
 #define	Thread_H
 
 #include "UDPReaderWriter.h"
+#include "Conf.h"
 
 #include <wx/wx.h>
 
 class CThread : public wxThread {
 public:
-	CThread();
+	CThread(const CConf& conf);
 	virtual ~CThread();
 
 	virtual bool getChannels();
@@ -42,8 +43,8 @@ public:
 	virtual void  kill();
 
 private:
-	CUDPReaderWriter m_socket;
-	bool             m_killed;
+	CUDPReaderWriter* m_socket;
+	bool              m_killed;
 };
 
 #endif

@@ -20,6 +20,7 @@
 #define	Frame_H
 
 #include "ReceiveData.h"
+#include "Conf.h"
 #include "Defs.h"
 
 #include <wx/wx.h>
@@ -28,7 +29,7 @@
 
 class CFrame : public wxFrame {
 public:
-	CFrame(const wxString& title);
+	CFrame(CConf& conf, const wxString& title);
 	virtual ~CFrame();
 
 	virtual void onQuit(wxCommandEvent& event);
@@ -38,6 +39,8 @@ public:
 	virtual void onClose(wxCloseEvent& event);
 
 	virtual void onChannel(wxCommandEvent& event);
+	virtual void onDestination(wxCommandEvent& event);
+	virtual void onModule(wxCommandEvent& event);
 
 	virtual void onTransmit(wxCommandEvent& event);
 
@@ -63,6 +66,7 @@ public:
 	virtual void onError(wxEvent& event);
 
 private:
+	CConf&          m_conf;
 	wxChoice*       m_channels;
 	wxChoice*       m_destinations;
 	wxChoice*       m_modules;
