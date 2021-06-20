@@ -301,10 +301,13 @@ void CM17TS::parseCommand(char* command)
 		bool end                = ::atoi(ptrs.at(1U)) == 1;
 		std::string source      = std::string(ptrs.at(2U));
 		std::string destination = std::string(ptrs.at(3U));
+		showRX(end, source, destination);
 	} else if (::strcmp(ptrs.at(0U), "TEXT") == 0) {
 		std::string text = std::string(ptrs.at(1U));
+		showText(text);
 	} else if (::strcmp(ptrs.at(0U), "RSSI") == 0) {
 		int rssi = ::atoi(ptrs.at(1U));
+		showRSSI(rssi);
 	}
 }
 
@@ -417,12 +420,50 @@ void CM17TS::transmit()
 	setTransmit(m_transmit);
 }
 
-void CM17TS::page0Next()
+void CM17TS::showRX(bool end, const std::string& source, const std::string& destination)
+{
+	char text[100U];
+	::sprintf(text, "SOURCE.txt=\"%s\"", source.c_str());
+	sendCommand(text);
+}
+
+void CM17TS::showText(const std::string& value)
+{
+	char text[100U];
+	::sprintf(text, "TEXT.txt=\"%s\"", value.c_str());
+	sendCommand(text);
+}
+
+void CM17TS::showRSSI(int rssi)
+{
+}
+
+void CM17TS::page0Left()
+{
+	sendCommand("page page2");
+}
+
+void CM17TS::page0Right()
 {
 	sendCommand("page page1");
 }
 
-void CM17TS::page1Next()
+void CM17TS::page1Left()
+{
+	sendCommand("page page0");
+}
+
+void CM17TS::page1Right()
+{
+	sendCommand("page page2");
+}
+
+void CM17TS::page2Left()
+{
+	sendCommand("page page1");
+}
+
+void CM17TS::page2Right()
 {
 	sendCommand("page page0");
 }

@@ -62,9 +62,17 @@ private:
 	void moduleDown();
 
 	void transmit();
+
+	void showRX(bool end, const std::string& source, const std::string& destination);
+	void showText(const std::string& text);
+	void showRSSI(int value);
 	
-	void page0Next();
-	void page1Next();
+	void page0Left();
+	void page0Right();
+	void page1Left();
+	void page1Right();
+	void page2Left();
+	void page2Right();
 
 	bool getChannels();
 	bool setChannel(const std::string& channel);
