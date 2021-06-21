@@ -259,7 +259,7 @@ bool CUARTController::canWrite(){
 #endif
 }
 
-int CUARTController::write(const uint8_t* buffer, unsigned int length)
+int CUARTController::write(const char* buffer, unsigned int length)
 {
 	assert(buffer != NULL);
 	assert(m_fd != -1);

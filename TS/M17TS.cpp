@@ -106,7 +106,12 @@ m_modules(),
 m_channelIdx(0U),
 m_destinationIdx(0U),
 m_moduleIdx(0U),
-m_transmit(false)
+m_transmit(false),
+m_slider(SI_NONE),
+m_volume(50U),
+m_micGain(50U),
+m_source(),
+m_text()
 {
 }
 
@@ -219,46 +224,48 @@ int CM17TS::run()
 		return 1;
 	}
 
+	m_volume  = m_conf.getVolume();
+	setVolume(m_volume);
+
+	m_micGain = m_conf.getMicGain();
+	setMicGain(m_micGain);
+
 	LogMessage("M17TS-%s is running", VERSION);
 
 	CTimer timer(1000U, 0U, 100U);
 	timer.start();
 
-	sendCommand("bkcmd=3");
-	sendCommand("page page1");
+	sendCommand("bkcmd=2");
+
+	gotoPage2();
 
 	uint8_t screenBuffer[50U];
 	uint8_t endBuffer[3U] = {0x00U, 0x00U, 0x00U};
 	unsigned int screenIdx = 0U;
 
 	while (!m_killed) {
-		char command1[100U];
+		char command[100U];
 		sockaddr_storage sockaddr;
 		unsigned int sockaddrLen = 0U;
-		int ret = m_socket->read(command1, 100U, sockaddr, sockaddrLen);
+		int ret = m_socket->read(command, 100U, sockaddr, sockaddrLen);
 		if (ret > 0) {
-			command1[ret] = '\0';
-			parseCommand(command1);
+			command[ret] = '\0';
+			parseCommand(command);
 		}
 
-		uint8_t command2[50U];
-		ret = m_uart->read(command2, 50U);
+		uint8_t c;
+		ret = m_uart->read(&c, 1U);
 		if (ret > 0) {
-			CUtils::dump(1U, "Screen received raw", command2, ret);
+			screenBuffer[screenIdx++] = c;
 
-			for (int i = 0; i < ret; i++) {
-				screenBuffer[screenIdx++] = command2[i];
+			endBuffer[2U] = endBuffer[1U];
+			endBuffer[1U] = endBuffer[0U];
+			endBuffer[0U] = c;
 
-				endBuffer[2U] = endBuffer[1U];
-				endBuffer[1U] = endBuffer[0U];
-				endBuffer[0U] = command2[i];
-
-				if (::memcmp(endBuffer, "\xFF\xFF\xFF", 3U) == 0) {
-					CUtils::dump(1U, "Screen received raw", screenBuffer, screenIdx);
-					parseScreen(screenBuffer, screenIdx);
-					::memset(endBuffer, 0x00U, 3U);
-					screenIdx = 0U;
-				}
+			if (::memcmp(endBuffer, "\xFF\xFF\xFF", 3U) == 0) {
+				parseScreen(screenBuffer, screenIdx);
+				::memset(endBuffer, 0x00U, 3U);
+				screenIdx = 0U;
 			}
 		}
 
@@ -267,7 +274,7 @@ int CM17TS::run()
 			if (m_channels.empty()) {
 				getChannels();
 				timer.start();
-			} else if (m_channels.empty()) {
+			} else if (m_destinations.empty()) {
 				getDestinations();
 				timer.start();
 			} else {
@@ -336,16 +343,103 @@ void CM17TS::parseCommand(char* command)
 void CM17TS::parseScreen(const uint8_t* command, unsigned int length)
 {
 	assert(command != NULL);
+
+	if (command[0U] == 0x65U) {
+		if (command[1U] == 0U) {
+			if (command[2U] == 5U) {
+				LogMessage("Page 0 CHAN_UP pressed");
+				channelChanged(+1);
+			} else if (command[2U] == 6U) {
+				LogMessage("Page 0 CHAN_DOWN pressed");
+				channelChanged(-1);
+			} else if (command[2U] == 7U) {
+				LogMessage("Page 0 DEST_UP pressed");
+				destinationChanged(+1);
+			} else if (command[2U] == 8U) {
+				LogMessage("Page 0 DEST_DOWN pressed");
+				destinationChanged(-1);
+			} else if (command[2U] == 9U) {
+				LogMessage("Page 0 MOD_UP pressed");
+				moduleChanged(+1);
+			} else if (command[2U] == 10U) {
+				LogMessage("Page 0 MOD_DOWN pressed");
+				moduleChanged(-1);
+			} else if (command[2U] == 11U) {
+				LogMessage("Page 0 RIGHT pressed");
+				gotoPage1();
+			} else if (command[2U] == 12U) {
+				LogMessage("Page 0 LEFT pressed");
+				gotoPage2();
+			} else {
+				CUtils::dump(2U, "Button press on page 0 from an unknown button", command, length);
+			}
+		} else if (command[1U] == 1U) {
+			if (command[2U] == 2U) {
+				LogMessage("Page 1 VOLUME adjusted");
+				volumeChanged();
+			} else if (command[2U] == 3U) {
+				LogMessage("Page 1 MIC_GAIN adjusted");
+				micGainChanged();
+			} else if (command[2U] == 6U) {
+				LogMessage("Page 1 RIGHT pressed");
+				gotoPage2();
+			} else if (command[2U] == 7U) {
+				LogMessage("Page 1 LEFT pressed");
+				gotoPage0();
+			} else {
+				CUtils::dump(2U, "Button press on page 1 from an unknown button", command, length);
+			}
+		} else if (command[1U] == 2U) {
+			if (command[2U] == 2U) {
+				LogMessage("Page 2 RIGHT pressed");
+				gotoPage0();
+			} else if (command[2U] == 3U) {
+				LogMessage("Page 2 LEFT pressed");
+				gotoPage1();
+			} else if (command[2U] == 4U) {
+				LogMessage("Page 2 TRANSMIT pressed");
+				transmit();
+			} else {
+				CUtils::dump(2U, "Button press on page 2 from an unknown button", command, length);
+			}
+		} else {
+			CUtils::dump(2U, "Button press from an unknown page", command, length);
+		}
+	} else if (command[0U] == 0x71U) {
+		switch (m_slider) {
+			case SI_VOLUME:
+				m_volume = (uint32_t(command[4U]) << 24) | (uint32_t(command[3U]) << 16) | (uint32_t(command[2U]) << 8) | (uint32_t(command[1U]) << 0);
+				setVolume(m_volume);
+				m_slider = SI_NONE;
+				break;
+			case SI_MIC_GAIN:
+				m_micGain = (uint32_t(command[4U]) << 24) | (uint32_t(command[3U]) << 16) | (uint32_t(command[2U]) << 8) | (uint32_t(command[1U]) << 0);
+				setMicGain(m_volume);
+				m_slider = SI_NONE;
+				break;
+			default:
+				// CUtils::dump(2U, "Unknown slider data from the screen", command, length);
+				break;
+		}
+	} else {
+		CUtils::dump(2U, "Unknown data from the screen", command, length);
+	}
 }
 
-void CM17TS::channelUp()
+void CM17TS::channelChanged(int val)
 {
 	assert(!m_channels.empty());
 
-	if (m_channelIdx == 0U)
-		m_channelIdx = m_channels.size() - 1U;
-	else
-		m_channelIdx--;
+	if (val == -1) {
+		if (m_channelIdx == 0U)
+			m_channelIdx = m_channels.size() - 1U;
+		else
+			m_channelIdx--;
+	} else {
+		m_channelIdx++;
+		if (m_channelIdx == m_channels.size())
+			m_channelIdx = 0U;
+	}
 
 	std::string channel = m_channels.at(m_channelIdx);
 
@@ -356,31 +450,20 @@ void CM17TS::channelUp()
 	setChannel(channel);
 }
 
-void CM17TS::channelDown()
-{
-	assert(!m_channels.empty());
-
-	m_channelIdx++;
-	if (m_channelIdx == m_channels.size())
-		m_channelIdx = 0U;
-
-	std::string channel = m_channels.at(m_channelIdx);
-
-	char text[100U];
-	::sprintf(text, "CHANNEL.txt=\"%s\"", channel.c_str());
-	sendCommand(text);
-
-	setChannel(channel);
-}
-
-void CM17TS::destinationUp()
+void CM17TS::destinationChanged(int val)
 {
 	assert(!m_destinations.empty());
 
-	if (m_destinationIdx == 0U)
-		m_destinationIdx = m_destinations.size() - 1U;
-	else
-		m_destinationIdx--;
+	if (val == -1) {
+		if (m_destinationIdx == 0U)
+			m_destinationIdx = m_destinations.size() - 1U;
+		else
+			m_destinationIdx--;
+	} else {
+		m_destinationIdx++;
+		if (m_destinationIdx == m_destinations.size())
+			m_destinationIdx = 0U;
+	}
 
 	std::string destination = m_destinations.at(m_destinationIdx);
 
@@ -389,29 +472,20 @@ void CM17TS::destinationUp()
 	sendCommand(text);
 }
 
-void CM17TS::destinationDown()
-{
-	assert(!m_destinations.empty());
-
-	m_destinationIdx++;
-	if (m_destinationIdx == m_destinations.size())
-		m_destinationIdx = 0U;
-
-	std::string destination = m_destinations.at(m_destinationIdx);
-
-	char text[100U];
-	::sprintf(text, "DESTINATION.txt=\"%s\"", destination.c_str());
-	sendCommand(text);
-}
-
-void CM17TS::moduleUp()
+void CM17TS::moduleChanged(int val)
 {
 	assert(!m_modules.empty());
 
-	if (m_moduleIdx == 0U)
-		m_moduleIdx = m_modules.size() - 1U;
-	else
-		m_moduleIdx--;
+	if (val == -1) {
+		if (m_moduleIdx == 0U)
+			m_moduleIdx = m_modules.size() - 1U;
+		else
+			m_moduleIdx--;
+	} else {
+		m_moduleIdx++;
+		if (m_moduleIdx == m_modules.size())
+			m_moduleIdx = 0U;
+	}
 
 	char module = m_modules.at(m_moduleIdx);
 
@@ -420,19 +494,16 @@ void CM17TS::moduleUp()
 	sendCommand(text);
 }
 
-void CM17TS::moduleDown()
+void CM17TS::volumeChanged()
 {
-	assert(!m_modules.empty());
+	m_slider = SI_VOLUME;
+	sendCommand("get VOLUME.val");
+}
 
-	m_moduleIdx++;
-	if (m_moduleIdx == m_modules.size())
-		m_moduleIdx = 0U;
-
-	char module = m_modules.at(m_moduleIdx);
-
-	char text[100U];
-	::sprintf(text, "MODULE.txt=\"%c\"", module);
-	sendCommand(text);
+void CM17TS::micGainChanged()
+{
+	m_slider = SI_MIC_GAIN;
+	sendCommand("get MIC_GAIN.val");
 }
 
 void CM17TS::transmit()
@@ -444,13 +515,25 @@ void CM17TS::transmit()
 
 void CM17TS::showRX(bool end, const std::string& source, const std::string& destination)
 {
-	char text[100U];
-	::sprintf(text, "SOURCE.txt=\"%s\"", source.c_str());
-	sendCommand(text);
+	if (end) {
+		m_source.clear();
+		m_text.clear();
+
+		sendCommand("SOURCE.txt=\"\"");
+		sendCommand("TEXT.txt=\"\"");
+	} else {
+		m_source = source;
+
+		char text[100U];
+		::sprintf(text, "SOURCE.txt=\"%s\"", source.c_str());
+		sendCommand(text);
+	}
 }
 
 void CM17TS::showText(const std::string& value)
 {
+	m_text = value;
+
 	char text[100U];
 	::sprintf(text, "TEXT.txt=\"%s\"", value.c_str());
 	sendCommand(text);
@@ -460,34 +543,59 @@ void CM17TS::showRSSI(int rssi)
 {
 }
 
-void CM17TS::page0Left()
-{
-	sendCommand("page page2");
-}
-
-void CM17TS::page0Right()
-{
-	sendCommand("page page1");
-}
-
-void CM17TS::page1Left()
+void CM17TS::gotoPage0()
 {
 	sendCommand("page page0");
+
+	if (!m_modules.empty()) {
+		char text[100U];
+
+		::sprintf(text, "CHANNEL.txt=\"%s\"", m_channels.at(m_channelIdx).c_str());
+		sendCommand(text);
+
+		::sprintf(text, "DESTINATION.txt=\"%s\"", m_destinations.at(m_destinationIdx).c_str());
+		sendCommand(text);
+
+		::sprintf(text, "MODULE.txt=\"%c\"", m_modules.at(m_moduleIdx));
+		sendCommand(text);
+	}
 }
 
-void CM17TS::page1Right()
-{
-	sendCommand("page page2");
-}
-
-void CM17TS::page2Left()
+void CM17TS::gotoPage1()
 {
 	sendCommand("page page1");
+
+	char text[100U];
+
+	::sprintf(text, "VOLUME.val=%u", m_volume);
+	sendCommand(text);
+
+	::sprintf(text, "MIC_GAIN.val=%u", m_micGain);
+	sendCommand(text);
 }
 
-void CM17TS::page2Right()
+void CM17TS::gotoPage2()
 {
-	sendCommand("page page0");
+	sendCommand("page page2");
+
+	char text[100U];
+
+	if (!m_modules.empty()) {
+		::sprintf(text, "CHANNEL.txt=\"%s\"", m_channels.at(m_channelIdx).c_str());
+		sendCommand(text);
+
+		::sprintf(text, "DESTINATION.txt=\"%s\"", m_destinations.at(m_destinationIdx).c_str());
+		sendCommand(text);
+
+		::sprintf(text, "MODULE.txt=\"%c\"", m_modules.at(m_moduleIdx));
+		sendCommand(text);
+	}
+
+	::sprintf(text, "SOURCE.txt=\"%s\"", m_source.c_str());
+	sendCommand(text);
+
+	::sprintf(text, "TEXT.txt=\"%s\"", m_text.c_str());
+	sendCommand(text);
 }
 
 bool CM17TS::getChannels()
@@ -579,12 +687,8 @@ void CM17TS::sendCommand(const char* command)
 	assert(command != NULL);
 	assert(m_uart != NULL);
 
-	uint8_t debug[100U];
-	::memcpy(debug + 0U, command, ::strlen(command));
-	::memcpy(debug + ::strlen(command), "\xFF\xFF\xFF", 3U);
-	CUtils::dump(1U, "Command sent", debug, ::strlen(command) + 3);
-
-	m_uart->write(debug, ::strlen(command) + 3);
+	m_uart->write(command, ::strlen(command));
+	m_uart->write("\xFF\xFF\xFF", 3U);
 }
 
 void CM17TS::selectChannel()
@@ -617,9 +721,7 @@ void CM17TS::selectChannel()
 
 void CM17TS::selectDestination()
 {
-	m_destinations.push_back("        E");
-	m_destinations.push_back("        I");
-	m_destinations.push_back("        U");
+	m_destinations.push_back("        ");
 
 	m_destinationIdx = 0xFFFFU;
 

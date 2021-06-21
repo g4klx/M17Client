@@ -418,9 +418,7 @@ void CFrame::onDestinations(wxEvent& event)
 
 	m_destinations->Clear();
 	m_destinations->Append(destinations);
-	m_destinations->Append(wxT("        E"));
-	m_destinations->Append(wxT("        I"));
-	m_destinations->Append(wxT("        U"));
+	m_destinations->Append(wxT("        "));
 
 	wxString destination = m_conf.getDestination();
 	m_destinations->SetStringSelection(destination);

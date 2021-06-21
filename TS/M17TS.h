@@ -26,6 +26,12 @@
 #include <vector>
 #include <string>
 
+enum SLIDER_ID {
+	SI_NONE,
+	SI_VOLUME,
+	SI_MIC_GAIN
+};
+
 class CM17TS
 {
 public:
@@ -50,16 +56,20 @@ private:
 	unsigned int m_moduleIdx;
 	
 	bool         m_transmit;
+
+	SLIDER_ID    m_slider;
+	unsigned int m_volume;
+	unsigned int m_micGain;
+
+	std::string  m_source;
+	std::string  m_text;
 	
 	void parseCommand(char* command);
 	void parseScreen(const uint8_t* command, unsigned int length);
 
-	void channelUp();
-	void channelDown();
-	void destinationUp();
-	void destinationDown();
-	void moduleUp();
-	void moduleDown();
+	void channelChanged(int val);
+	void destinationChanged(int val);
+	void moduleChanged(int val);
 
 	void transmit();
 
@@ -67,12 +77,12 @@ private:
 	void showText(const std::string& text);
 	void showRSSI(int value);
 	
-	void page0Left();
-	void page0Right();
-	void page1Left();
-	void page1Right();
-	void page2Left();
-	void page2Right();
+	void volumeChanged();
+	void micGainChanged();
+
+	void gotoPage0();
+	void gotoPage1();
+	void gotoPage2();
 
 	bool getChannels();
 	bool setChannel(const std::string& channel);

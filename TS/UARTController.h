@@ -31,7 +31,7 @@ public:
 
 	int read(uint8_t* buffer, unsigned int length);
 
-	int write(const uint8_t* buffer, unsigned int length);
+	int write(const char* buffer, unsigned int length);
 
 	void close();
 
