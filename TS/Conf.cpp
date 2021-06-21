@@ -40,7 +40,7 @@ const std::string KEY_MIC_GAIN       = "MicGain";
 CConf::CConf() :
 m_fileName(),
 m_daemon(false),
-m_screenPort("/dev/ttyUSB0"),
+m_screenPort("/dev/ttyUSB1"),
 m_screenSpeed(9600U),
 m_daemonAddress("127.0.0.1"),
 m_daemonPort(7658U),

@@ -21,6 +21,7 @@
 #include "Version.h"
 #include "Thread.h"
 #include "Timer.h"
+#include "Utils.h"
 #include "Log.h"
 
 #include <cassert>
@@ -174,7 +175,7 @@ int CM17TS::run()
 		}
 	}
 
-        ret = ::LogInitialise(m_daemon, ".", "M17TS", 1U, 1U, true);
+	ret = ::LogInitialise(m_daemon, ".", "M17TS", 1U, 1U, true);
 	if (!ret) {
 		::fprintf(stderr, "M17TS: unable to open the log file\n");
 		return 1;
@@ -223,21 +224,42 @@ int CM17TS::run()
 	CTimer timer(1000U, 0U, 100U);
 	timer.start();
 
-	while (!m_killed) {
-		char command[100U];
+	sendCommand("bkcmd=3");
+	sendCommand("page page1");
 
+	uint8_t screenBuffer[50U];
+	uint8_t endBuffer[3U] = {0x00U, 0x00U, 0x00U};
+	unsigned int screenIdx = 0U;
+
+	while (!m_killed) {
+		char command1[100U];
 		sockaddr_storage sockaddr;
 		unsigned int sockaddrLen = 0U;
-		int ret = m_socket->read(command, 100U, sockaddr, sockaddrLen);
+		int ret = m_socket->read(command1, 100U, sockaddr, sockaddrLen);
 		if (ret > 0) {
-			command[ret] = '\0';
-			parseCommand(command);
+			command1[ret] = '\0';
+			parseCommand(command1);
 		}
 
-		ret = m_uart->read(command, 100U);
+		uint8_t command2[50U];
+		ret = m_uart->read(command2, 50U);
 		if (ret > 0) {
-			command[ret] = '\0';
-			parseScreen(command);
+			CUtils::dump(1U, "Screen received raw", command2, ret);
+
+			for (int i = 0; i < ret; i++) {
+				screenBuffer[screenIdx++] = command2[i];
+
+				endBuffer[2U] = endBuffer[1U];
+				endBuffer[1U] = endBuffer[0U];
+				endBuffer[0U] = command2[i];
+
+				if (::memcmp(endBuffer, "\xFF\xFF\xFF", 3U) == 0) {
+					CUtils::dump(1U, "Screen received raw", screenBuffer, screenIdx);
+					parseScreen(screenBuffer, screenIdx);
+					::memset(endBuffer, 0x00U, 3U);
+					screenIdx = 0U;
+				}
+			}
 		}
 
 		timer.clock(20U);
@@ -311,7 +333,7 @@ void CM17TS::parseCommand(char* command)
 	}
 }
 
-void CM17TS::parseScreen(char* command)
+void CM17TS::parseScreen(const uint8_t* command, unsigned int length)
 {
 	assert(command != NULL);
 }
@@ -557,8 +579,12 @@ void CM17TS::sendCommand(const char* command)
 	assert(command != NULL);
 	assert(m_uart != NULL);
 
-	m_uart->write(command, ::strlen(command));
-	m_uart->write("\xFF\xFF\xFF", 3U);
+	uint8_t debug[100U];
+	::memcpy(debug + 0U, command, ::strlen(command));
+	::memcpy(debug + ::strlen(command), "\xFF\xFF\xFF", 3U);
+	CUtils::dump(1U, "Command sent", debug, ::strlen(command) + 3);
+
+	m_uart->write(debug, ::strlen(command) + 3);
 }
 
 void CM17TS::selectChannel()

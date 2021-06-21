@@ -67,8 +67,14 @@ bool CUARTController::open()
 		return false;
 	}
 
-	if (::isatty(m_fd))
-		return setRaw();
+	if (!::isatty(m_fd)) {
+		LogError("%s is not a TTY device", m_device.c_str());
+		return false;
+	}
+
+	bool ret = setRaw();
+	if (ret)
+		LogMessage("Opened device %s at %u baud", m_device.c_str(), m_speed);
 		
 	return true;
 }
@@ -185,7 +191,7 @@ int CUARTController::setNonblock(bool nonblock)
 }
 #endif
 
-int CUARTController::read(char* buffer, unsigned int length)
+int CUARTController::read(uint8_t* buffer, unsigned int length)
 {
 	assert(buffer != NULL);
 	assert(m_fd != -1);
@@ -253,7 +259,7 @@ bool CUARTController::canWrite(){
 #endif
 }
 
-int CUARTController::write(const char* buffer, unsigned int length)
+int CUARTController::write(const uint8_t* buffer, unsigned int length)
 {
 	assert(buffer != NULL);
 	assert(m_fd != -1);

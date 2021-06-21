@@ -4,7 +4,7 @@ CFLAGS  = -g -O3 -Wall -std=c++0x -pthread
 LIBS    = -lpthread -lutil
 LDFLAGS = -g
 
-OBJECTS = 	Conf.o Log.o M17TS.o Thread.o Timer.o UARTController.o UDPSocket.o
+OBJECTS = 	Conf.o Log.o M17TS.o Thread.o Timer.o UARTController.o UDPSocket.o Utils.o
 		
 all:		M17TS
 

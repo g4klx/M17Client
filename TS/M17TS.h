@@ -52,7 +52,7 @@ private:
 	bool         m_transmit;
 	
 	void parseCommand(char* command);
-	void parseScreen(char* command);
+	void parseScreen(const uint8_t* command, unsigned int length);
 
 	void channelUp();
 	void channelDown();
