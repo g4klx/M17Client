@@ -360,22 +360,22 @@ void CM17TS::parseScreen(const uint8_t* command, unsigned int length)
 
 	if (command[0U] == 0x65U) {
 		if (command[1U] == 0U) {
-			if (command[2U] == 5U) {
+			if (command[2U] == 4U) {
 				LogMessage("Page 0 CHAN_UP pressed");
 				channelChanged(+1);
-			} else if (command[2U] == 6U) {
+			} else if (command[2U] == 5U) {
 				LogMessage("Page 0 CHAN_DOWN pressed");
 				channelChanged(-1);
-			} else if (command[2U] == 7U) {
+			} else if (command[2U] == 6U) {
 				LogMessage("Page 0 DEST_UP pressed");
 				destinationChanged(+1);
-			} else if (command[2U] == 8U) {
+			} else if (command[2U] == 7U) {
 				LogMessage("Page 0 DEST_DOWN pressed");
 				destinationChanged(-1);
-			} else if (command[2U] == 11U) {
+			} else if (command[2U] == 8U) {
 				LogMessage("Page 0 RIGHT pressed");
 				gotoPage1();
-			} else if (command[2U] == 12U) {
+			} else if (command[2U] == 9U) {
 				LogMessage("Page 0 LEFT pressed");
 				gotoPage2();
 			} else {
