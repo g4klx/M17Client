@@ -106,6 +106,7 @@ m_channels(),
 m_destinations(),
 m_channelIdx(0U),
 m_destinationIdx(0U),
+m_localTX(false),
 m_transmit(false),
 m_receive(false),
 m_slider(SI_NONE),
@@ -338,6 +339,12 @@ void CM17TS::parseCommand(char* command)
 		std::string source      = std::string(ptrs.at(2U));
 		std::string destination = std::string(ptrs.at(3U));
 		showRX(end, source, destination);
+	} else if (::strcmp(ptrs.at(0U), "TX") == 0) {
+		m_transmit = ::atoi(ptrs.at(1U)) == 1;
+		if (m_transmit)
+			sendCommand("TX.txt=\"TX\"");
+		else
+			sendCommand("TX.txt=\"\"");
 	} else if (::strcmp(ptrs.at(0U), "TEXT") == 0) {
 		std::string text = std::string(ptrs.at(1U));
 		showText(text);
@@ -487,14 +494,9 @@ void CM17TS::micGainChanged()
 
 void CM17TS::transmit()
 {
-	m_transmit = !m_transmit;
+	m_localTX = !m_localTX;
 
-	if (m_transmit)
-		sendCommand("TX.txt=\"TX\"");
-	else
-		sendCommand("TX.txt=\"\"");
-
-	setTransmit(m_transmit);
+	setTransmit(m_localTX);
 }
 
 void CM17TS::showRX(bool end, const std::string& source, const std::string& destination)

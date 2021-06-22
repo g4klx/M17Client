@@ -43,6 +43,7 @@ public:
 #if defined(__WXDEBUG__)
 	virtual void OnAssertFailure(const wxChar* file, int line, const wxChar* func, const wxChar* cond, const wxChar* msg);
 #endif
+	virtual void showTransmit(bool tx) const;
 	virtual void showReceive(CReceiveData* data) const;
 	virtual void showText(const wxString& text) const;
 	virtual void showRSSI(int rssi) const;

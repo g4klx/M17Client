@@ -28,6 +28,9 @@
 #if defined(USE_GPSD)
 #include "GPSD.h"
 #endif
+#if defined(USE_GPIO)
+#include "GPIO.h"
+#endif
 #include "CodePlug.h"
 #include "M17RX.h"
 #include "M17TX.h"
@@ -56,6 +59,8 @@ private:
 	CCodePlug*       m_codePlug;
 	CM17RX*          m_rx;
 	CM17TX*          m_tx;
+	bool             m_tx1;
+	bool             m_tx2;
 	CUDPSocket*      m_socket;
 #if defined(USE_HAMLIB)
 	CHamLib*         m_hamLib;
@@ -63,10 +68,15 @@ private:
 #if defined(USE_GPSD)
 	CGPSD*           m_gpsd;
 #endif
+#if defined(USE_GPIO)
+	CGPIO*           m_gpio;
+#endif
 	sockaddr_storage m_sockaddr;
 	unsigned int     m_sockaddrLen;
 
 	void parseCommand(char* command);
+
+	void sendTX(bool tx);
 
 	void sendChannelList();
 	void sendDestinationList();

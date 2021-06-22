@@ -19,6 +19,7 @@
 #include "Frame.h"
 #include "DestinationsEvent.h"
 #include "ChannelsEvent.h"
+#include "TransmitEvent.h"
 #include "ReceiveEvent.h"
 #include "ErrorEvent.h"
 #include "TextEvent.h"
@@ -43,6 +44,7 @@ enum {
 
 DEFINE_EVENT_TYPE(CHANNELS_EVENT)
 DEFINE_EVENT_TYPE(DESTINATIONS_EVENT)
+DEFINE_EVENT_TYPE(TRANSMIT_EVENT)
 DEFINE_EVENT_TYPE(RECEIVE_EVENT)
 DEFINE_EVENT_TYPE(TEXT_EVENT)
 DEFINE_EVENT_TYPE(RSSI_EVENT)
@@ -54,7 +56,7 @@ BEGIN_EVENT_TABLE(CFrame, wxFrame)
 
 	EVT_CLOSE(CFrame::onClose)
 
-	EVT_TOGGLEBUTTON(Button_Transmit, CFrame::onTransmit)
+	EVT_TOGGLEBUTTON(Button_Transmit, CFrame::onTX)
 
 	EVT_LISTBOX(Choice_Channels,     CFrame::onChannel)
 	EVT_LISTBOX(Choice_Destinations, CFrame::onDestination)
@@ -67,10 +69,11 @@ BEGIN_EVENT_TABLE(CFrame, wxFrame)
 	EVT_CUSTOM(CHANNELS_EVENT,     wxID_ANY, CFrame::onChannels)
 	EVT_CUSTOM(DESTINATIONS_EVENT, wxID_ANY, CFrame::onDestinations)
 
-	EVT_CUSTOM(RECEIVE_EVENT, wxID_ANY, CFrame::onReceive)
-	EVT_CUSTOM(TEXT_EVENT,    wxID_ANY, CFrame::onText)
-	EVT_CUSTOM(RSSI_EVENT,    wxID_ANY, CFrame::onRSSI)
-	EVT_CUSTOM(ERROR_EVENT,   wxID_ANY, CFrame::onError)
+	EVT_CUSTOM(TRANSMIT_EVENT, wxID_ANY, CFrame::onTransmit)
+	EVT_CUSTOM(RECEIVE_EVENT,  wxID_ANY, CFrame::onReceive)
+	EVT_CUSTOM(TEXT_EVENT,     wxID_ANY, CFrame::onText)
+	EVT_CUSTOM(RSSI_EVENT,     wxID_ANY, CFrame::onRSSI)
+	EVT_CUSTOM(ERROR_EVENT,    wxID_ANY, CFrame::onError)
 END_EVENT_TABLE()
 
 CFrame::CFrame(CConf& conf, const wxString& title) :
@@ -226,6 +229,13 @@ void CFrame::setDestinations(const wxArrayString& destinations)
 	AddPendingEvent(event);
 }
 
+void CFrame::showTransmit(bool tx)
+{
+	CTransmitEvent event(tx, TRANSMIT_EVENT);
+
+	AddPendingEvent(event);
+}
+
 void CFrame::showReceive(CReceiveData* data)
 {
 	wxASSERT(data != NULL);
@@ -312,6 +322,7 @@ void CFrame::onDestination(wxCommandEvent& event)
 	wxString destination = m_destinations->GetString(n);
 
 	m_conf.setDestination(destination);
+	::wxGetApp().setDestination(destination);
 }
 
 void CFrame::onVolume(wxScrollEvent& event)
@@ -330,31 +341,10 @@ void CFrame::onMicGain(wxScrollEvent& event)
 	::wxGetApp().setMicGain((unsigned int)micGain);
 }
 
-void CFrame::onTransmit(wxCommandEvent& event)
+void CFrame::onTX(wxCommandEvent& event)
 {
 	bool tx = event.IsChecked();
-
-	if (tx) {
-		int n = m_destinations->GetSelection();
-		if (n == wxNOT_FOUND) {
-			m_transmit->SetValue(false);
-			return;
-		}
-
-		wxString destination = m_destinations->GetString(n);
-
-		::wxGetApp().setDestination(destination);
-
-		::wxGetApp().setTransmit(true);
-
-		m_status->SetBackgroundColour(*wxRED);
-		m_status->SetLabel(_("TRANSMIT"));
-	} else {
-		m_status->SetBackgroundColour(*wxLIGHT_GREY);
-		m_status->SetLabel(wxEmptyString);
-
-		::wxGetApp().setTransmit(false);
-	}
+	::wxGetApp().setTransmit(tx);
 }
 
 void CFrame::onChannels(wxEvent& event)
@@ -387,6 +377,19 @@ void CFrame::onDestinations(wxEvent& event)
 
 	wxString destination = m_conf.getDestination();
 	m_destinations->SetStringSelection(destination);
+}
+
+void CFrame::onTransmit(wxEvent& event)
+{
+	CTransmitEvent& txEvent = dynamic_cast<CTransmitEvent&>(event);
+	
+	if (txEvent.getTX()) {
+		m_status->SetBackgroundColour(*wxRED);
+		m_status->SetLabel(_("TRANSMIT"));
+	} else {
+		m_status->SetBackgroundColour(*wxLIGHT_GREY);
+		m_status->SetLabel(wxEmptyString);
+	}
 }
 
 void CFrame::onReceive(wxEvent& event)

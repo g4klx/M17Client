@@ -41,7 +41,7 @@ public:
 	virtual void onChannel(wxCommandEvent& event);
 	virtual void onDestination(wxCommandEvent& event);
 
-	virtual void onTransmit(wxCommandEvent& event);
+	virtual void onTX(wxCommandEvent& event);
 
 	virtual void onVolume(wxScrollEvent& event);
 	virtual void onMicGain(wxScrollEvent& event);
@@ -51,6 +51,7 @@ public:
 	virtual void setChannels(const wxArrayString& channels);
 	virtual void setDestinations(const wxArrayString& channels);
 
+	virtual void showTransmit(bool tx);
 	virtual void showReceive(CReceiveData* data);
 	virtual void showRSSI(int rssi);
 	virtual void showText(const wxString& text);
@@ -59,6 +60,7 @@ public:
 	virtual void onChannels(wxEvent& event);
 	virtual void onDestinations(wxEvent& event);
 
+	virtual void onTransmit(wxEvent& event);
 	virtual void onReceive(wxEvent& event);
 	virtual void onRSSI(wxEvent& event);
 	virtual void onText(wxEvent& event);

@@ -108,12 +108,17 @@ m_conf(confFile),
 m_codePlug(NULL),
 m_rx(NULL),
 m_tx(NULL),
+m_tx1(false),
+m_tx2(false),
 m_socket(NULL),
 #if defined(USE_HAMLIB)
 m_hamLib(NULL),
 #endif
 #if defined(USE_GPSD)
 m_gpsd(NULL),
+#endif
+#if defined(USE_GPIO)
+m_gpio(NULL),
 #endif
 m_sockaddr(),
 m_sockaddrLen(0U)
@@ -298,6 +303,18 @@ int CM17Client::run()
 	}
 #endif
 
+#if defined(USE_GPIO)
+	if (m_conf.getGPIOEnabled()) {
+		m_gpio = new CGPIO(m_conf.getGPIOPTTPin());
+		ret = m_gpio->open();
+		if (!ret) {
+			LogError("Unable to open GPIO");
+			::LogFinalise();
+			return 1;
+		}
+	}
+#endif
+
 	CCodec2 codec2(true);
 
 	CRSSIInterpolator* rssi = new CRSSIInterpolator;
@@ -365,6 +382,24 @@ int CM17Client::run()
 			parseCommand(command);
 		}
 
+#if defined(USE_GPIO)
+		if (m_gpio != NULL) {
+			bool tx = m_gpio->readPTT();
+
+			if (tx && !m_tx1 && !m_tx2) {
+				LogDebug("\tTransmitter on");
+				m_tx->start();
+				sendTX(true);
+			} else if (!tx && !m_tx1 && m_tx2) {
+				LogDebug("\tTransmitter off");
+				m_tx->end();
+				sendTX(false);
+			}
+
+			m_tx2 = tx;
+		}
+#endif
+
 		unsigned int ms = stopWatch.elapsed();
 		stopWatch.start();
 
@@ -385,6 +420,13 @@ int CM17Client::run()
 	if (m_gpsd != NULL) {
 		m_gpsd->close();
 		delete m_gpsd;
+	}
+#endif
+
+#if defined(USE_GPIO)
+	if (m_gpio != NULL) {
+		m_gpio->close();
+		delete m_gpio;
 	}
 #endif
 
@@ -421,11 +463,19 @@ void CM17Client::parseCommand(char* command)
 
 	if (::strcmp(ptrs.at(0U), "TX") == 0) {
 		if (::strcmp(ptrs.at(1U), "0") == 0) {
-			LogDebug("\tTransmitter off");
-			m_tx->end();
+			if (m_tx1 && !m_tx2) {
+				LogDebug("\tTransmitter off");
+				m_tx->end();
+				sendTX(false);
+			}
+			m_tx1 = false;
 		} else if (::strcmp(ptrs.at(1U), "1") == 0) {
-			LogDebug("\tTransmitter on");
-			m_tx->start();
+			if (!m_tx1 && !m_tx2) {
+				LogDebug("\tTransmitter on");
+				m_tx->start();
+				sendTX(true);
+			}
+			m_tx1 = true;
 		} else {
 			LogWarning("\tUnknown TX command");
 		}
@@ -493,6 +543,22 @@ bool CM17Client::processChannelRequest(const char* channel)
 	}
 
 	return false;
+}
+
+void CM17Client::sendTX(bool tx)
+{
+	assert(m_socket != NULL);
+
+	char buffer[10U];
+	::strcpy(buffer, "TX");
+	::strcat(buffer, DELIMITER);
+
+	if (tx)
+		::strcat(buffer, "1");
+	else
+		::strcat(buffer, "0");
+
+	m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
 }
 
 void CM17Client::sendDestinationList()

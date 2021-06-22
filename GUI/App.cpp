@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2010-2015,2018 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2010-2015,2018,2021 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -120,6 +120,11 @@ void CApp::setChannels(const wxArrayString& channels) const
 void CApp::setDestinations(const wxArrayString& destinations) const
 {
 	m_frame->GetEventHandler()->CallAfter(boost::bind(&CFrame::setDestinations, m_frame, destinations));
+}
+
+void CApp::showTransmit(bool tx) const
+{
+	m_frame->GetEventHandler()->CallAfter(boost::bind(&CFrame::showTransmit, m_frame, tx));
 }
 
 void CApp::showReceive(CReceiveData* data) const

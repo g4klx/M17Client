@@ -53,6 +53,7 @@ private:
 	unsigned int m_channelIdx;
 	unsigned int m_destinationIdx;
 	
+	bool         m_localTX;
 	bool         m_transmit;
 	bool         m_receive;
 

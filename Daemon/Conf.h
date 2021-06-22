@@ -74,6 +74,10 @@ public:
 	// The CodePlug section
 	std::string  getCodePlugFile() const;
 
+	// The GPIO section
+	bool         getGPIOEnabled() const;
+	unsigned int getGPIOPTTPin() const;
+
 	// The HamLib section
 	bool	     getHamLibEnabled() const;
 	std::string  getHamLibRadioType() const;
@@ -128,6 +132,9 @@ private:
 	bool         m_logFileRotate;
 
 	std::string  m_codePlugFile;
+
+	bool         m_gpioEnabled;
+	unsigned int m_gpioPTTPin;
 
 	bool         m_hamLibEnabled;
 	std::string  m_hamLibRadioType;

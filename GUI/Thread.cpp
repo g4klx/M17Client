@@ -80,6 +80,9 @@ void* CThread::Entry()
 
 				CReceiveData* data = new CReceiveData(source, destination, end);
 				::wxGetApp().showReceive(data);
+			} else if (::strcmp(ptrs.at(0U), "TX") == 0) {
+				bool tx = std::stoi(ptrs.at(1U)) == 1;
+				::wxGetApp().showTransmit(tx);
 			} else if (::strcmp(ptrs.at(0U), "TEXT") == 0) {
 				wxString text = wxString(ptrs.at(1U));
 				::wxGetApp().showText(text);
