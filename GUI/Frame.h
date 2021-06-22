@@ -40,7 +40,6 @@ public:
 
 	virtual void onChannel(wxCommandEvent& event);
 	virtual void onDestination(wxCommandEvent& event);
-	virtual void onModule(wxCommandEvent& event);
 
 	virtual void onTransmit(wxCommandEvent& event);
 
@@ -69,7 +68,6 @@ private:
 	CConf&          m_conf;
 	wxChoice*       m_channels;
 	wxChoice*       m_destinations;
-	wxChoice*       m_modules;
 	wxToggleButton* m_transmit;
 	wxStaticText*   m_status;
 	wxSlider*       m_volume;

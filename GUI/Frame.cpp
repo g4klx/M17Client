@@ -32,7 +32,6 @@
 enum {
 	Choice_Channels = 6000,
 	Choice_Destinations,
-	Choice_Modules,
 
 	Button_Transmit,
 
@@ -59,7 +58,6 @@ BEGIN_EVENT_TABLE(CFrame, wxFrame)
 
 	EVT_LISTBOX(Choice_Channels,     CFrame::onChannel)
 	EVT_LISTBOX(Choice_Destinations, CFrame::onDestination)
-	EVT_LISTBOX(Choice_Modules,      CFrame::onModule)
 
 	EVT_COMMAND_SCROLL(Slider_Volume,  CFrame::onVolume)
 	EVT_COMMAND_SCROLL(Slider_MicGain, CFrame::onMicGain)
@@ -80,7 +78,6 @@ wxFrame(NULL, -1, title),
 m_conf(conf),
 m_channels(NULL),
 m_destinations(NULL),
-m_modules(NULL),
 m_transmit(NULL),
 m_status(NULL),
 m_volume(NULL),
@@ -111,18 +108,6 @@ m_timer(this, Timer_Timer)
 
 	m_destinations = new wxChoice(panel, Choice_Destinations, wxDefaultPosition, wxSize(CONTROL_WIDTH, CONTROL_HEIGHT));
 	panelSizer->Add(m_destinations, wxGBPosition(0, 3), wxDefaultSpan, wxALL, BORDER_SIZE);
-
-	wxStaticText* moduleLabel = new wxStaticText(panel, -1, wxT("Module"), wxDefaultPosition, wxSize(LABEL_WIDTH, -1), wxALIGN_RIGHT);
-	panelSizer->Add(moduleLabel, wxGBPosition(0, 4), wxDefaultSpan, wxALL, BORDER_SIZE);
-
-	m_modules = new wxChoice(panel, Choice_Modules, wxDefaultPosition, wxSize(CONTROL_WIDTH, CONTROL_HEIGHT));
-	m_modules->Append(' ');
-	for (wxChar c = wxT('A'); c <= wxT('Z'); c++)
-		m_modules->Append(c);
-	panelSizer->Add(m_modules, wxGBPosition(0, 5), wxDefaultSpan, wxALL, BORDER_SIZE);
-
-	wxString module = m_conf.getModule();
-	m_modules->SetStringSelection(module);
 
 	m_transmit = new wxToggleButton(panel, Button_Transmit, _("Transmit"), wxDefaultPosition, wxSize(CONTROL_WIDTH, -1));
 	panelSizer->Add(m_transmit, wxGBPosition(1, 0), wxDefaultSpan, wxALL, BORDER_SIZE);
@@ -329,17 +314,6 @@ void CFrame::onDestination(wxCommandEvent& event)
 	m_conf.setDestination(destination);
 }
 
-void CFrame::onModule(wxCommandEvent& event)
-{
-	int n = event.GetSelection();
-	if (n == wxNOT_FOUND)
-		return;
-
-	wxString module = m_modules->GetString(n);
-
-	m_conf.setModule(module);
-}
-
 void CFrame::onVolume(wxScrollEvent& event)
 {
 	int volume = event.GetPosition();
@@ -369,20 +343,6 @@ void CFrame::onTransmit(wxCommandEvent& event)
 
 		wxString destination = m_destinations->GetString(n);
 
-		n = m_modules->GetSelection();
-		if (n == wxNOT_FOUND) {
-			m_transmit->SetValue(false);
-			return;
-		}
-
-		wxString module = m_modules->GetString(n);
-
-		if (!module.IsSameAs(wxT(" "))) {
-			destination.Append(wxT("           "));
-			destination.Truncate(8U);
-			destination.Append(module);
-		}
-		
 		::wxGetApp().setDestination(destination);
 
 		::wxGetApp().setTransmit(true);
@@ -417,8 +377,13 @@ void CFrame::onDestinations(wxEvent& event)
 	wxArrayString destinations = destEvent.getDestinations();
 
 	m_destinations->Clear();
+
+	m_destinations->Append(wxT("ALL      "));
+	m_destinations->Append(wxT("ECHO     "));
+	m_destinations->Append(wxT("INFO     "));
+	m_destinations->Append(wxT("UNLINK   "));
+
 	m_destinations->Append(destinations);
-	m_destinations->Append(wxT("        "));
 
 	wxString destination = m_conf.getDestination();
 	m_destinations->SetStringSelection(destination);

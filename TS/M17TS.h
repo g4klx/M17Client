@@ -49,17 +49,18 @@ private:
 
 	std::vector<std::string> m_channels;
 	std::vector<std::string> m_destinations;
-	std::vector<char>        m_modules;
 
 	unsigned int m_channelIdx;
 	unsigned int m_destinationIdx;
-	unsigned int m_moduleIdx;
 	
 	bool         m_transmit;
+	bool         m_receive;
 
 	SLIDER_ID    m_slider;
 	unsigned int m_volume;
 	unsigned int m_micGain;
+
+	unsigned int m_sMeter;
 
 	std::string  m_source;
 	std::string  m_text;
@@ -69,7 +70,6 @@ private:
 
 	void channelChanged(int val);
 	void destinationChanged(int val);
-	void moduleChanged(int val);
 
 	void transmit();
 
@@ -96,7 +96,6 @@ private:
 	
 	void selectChannel();
 	void selectDestination();
-	void selectModule();
 };
 
 #endif

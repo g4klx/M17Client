@@ -45,9 +45,6 @@ public:
 	void           setDestination(const std::string& value);
 	std::string    getDestination() const;
 
-	void           setModule(char value);
-	char           getModule() const;
-
 	void           setVolume(unsigned int value);
 	unsigned int   getVolume() const;
 	
@@ -67,7 +64,6 @@ private:
 	unsigned short m_selfPort;
 	std::string    m_channel;
 	std::string    m_destination;
-	char           m_module;
 	unsigned int   m_volume;
 	unsigned int   m_micGain;
 };

@@ -26,7 +26,6 @@ const wxString  KEY_SELF_ADDRESS   = wxT("SelfAddress");
 const wxString  KEY_SELF_PORT      = wxT("SelfPort");
 const wxString  KEY_CHANNEL        = wxT("Channel");
 const wxString  KEY_DESTINATION    = wxT("Destination");
-const wxString  KEY_MODULE         = wxT("Module");
 const wxString  KEY_VOLUME         = wxT("Volume");
 const wxString  KEY_MIC_GAIN       = wxT("MicGain");
 
@@ -39,7 +38,6 @@ m_selfAddress(wxT("127.0.0.1")),
 m_selfPort(7659U),
 m_channel(),
 m_destination(),
-m_module(wxT("A")),
 m_volume(100U),
 m_micGain(100U)
 {
@@ -100,8 +98,6 @@ bool CConf::read()
 			m_channel = val;
 		} else if (key.IsSameAs(KEY_DESTINATION)) {
 			m_destination = val;
-		} else if (key.IsSameAs(KEY_MODULE)) {
-			m_module = val;
 		} else if (key.IsSameAs(KEY_VOLUME)) {
 			val.ToULong(&temp);
 			m_volume = (unsigned int)temp;
@@ -158,16 +154,6 @@ void CConf::setDestination(const wxString& value)
 	m_destination = value;
 }
 
-wxString CConf::getModule() const
-{
-	return m_module;
-}
-
-void CConf::setModule(const wxString& value)
-{
-	m_module = value;
-}
-
 unsigned int CConf::getVolume() const
 {
 	return m_volume;
@@ -220,7 +206,6 @@ bool CConf::write()
 
 	buffer.Printf(wxT("%s=%s"), KEY_CHANNEL.c_str(), m_channel.c_str()); file.AddLine(buffer);
 	buffer.Printf(wxT("%s=%s"), KEY_DESTINATION.c_str(), m_destination.c_str()); file.AddLine(buffer);
-	buffer.Printf(wxT("%s=%s"), KEY_MODULE.c_str(), m_module.c_str()); file.AddLine(buffer);
 
 	buffer.Printf(wxT("%s=%u"), KEY_VOLUME.c_str(), m_volume); file.AddLine(buffer);
 	buffer.Printf(wxT("%s=%u"), KEY_MIC_GAIN.c_str(), m_micGain); file.AddLine(buffer);

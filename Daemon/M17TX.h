@@ -61,7 +61,6 @@ public:
 private:
 	CCodec2&                   m_codec2;
 	std::string                m_source;
-	std::string                m_destination;
 	float                      m_micGain;
 	unsigned int               m_can;
 	TX_STATUS                  m_status;

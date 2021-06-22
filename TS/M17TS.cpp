@@ -36,6 +36,8 @@
 
 const char* DELIMITER = ":";
 
+const unsigned int RSSI_BASE = 140U;
+
 static bool m_killed = false;
 static int  m_signal = 0;
 
@@ -102,14 +104,14 @@ m_sockaddr(),
 m_sockaddrLen(0U),
 m_channels(),
 m_destinations(),
-m_modules(),
 m_channelIdx(0U),
 m_destinationIdx(0U),
-m_moduleIdx(0U),
 m_transmit(false),
+m_receive(false),
 m_slider(SI_NONE),
 m_volume(50U),
 m_micGain(50U),
+m_sMeter(0U),
 m_source(),
 m_text()
 {
@@ -320,12 +322,17 @@ void CM17TS::parseCommand(char* command)
 		selectChannel();
 	} else if (::strcmp(ptrs.at(0U), "DEST") == 0) {
 		m_destinations.clear();
+
+		m_destinations.push_back("ALL      ");
+		m_destinations.push_back("ECHO     ");
+		m_destinations.push_back("INFO     ");
+		m_destinations.push_back("UNLINK   ");
+
 		for (unsigned int i = 1U; i < ptrs.size(); i++) {
 			std::string destination = std::string(ptrs.at(i));
 			m_destinations.push_back(destination);
 		}
 		selectDestination();
-		selectModule();
 	} else if (::strcmp(ptrs.at(0U), "RX") == 0) {
 		bool end                = ::atoi(ptrs.at(1U)) == 1;
 		std::string source      = std::string(ptrs.at(2U));
@@ -358,12 +365,6 @@ void CM17TS::parseScreen(const uint8_t* command, unsigned int length)
 			} else if (command[2U] == 8U) {
 				LogMessage("Page 0 DEST_DOWN pressed");
 				destinationChanged(-1);
-			} else if (command[2U] == 9U) {
-				LogMessage("Page 0 MOD_UP pressed");
-				moduleChanged(+1);
-			} else if (command[2U] == 10U) {
-				LogMessage("Page 0 MOD_DOWN pressed");
-				moduleChanged(-1);
 			} else if (command[2U] == 11U) {
 				LogMessage("Page 0 RIGHT pressed");
 				gotoPage1();
@@ -472,28 +473,6 @@ void CM17TS::destinationChanged(int val)
 	sendCommand(text);
 }
 
-void CM17TS::moduleChanged(int val)
-{
-	assert(!m_modules.empty());
-
-	if (val == -1) {
-		if (m_moduleIdx == 0U)
-			m_moduleIdx = m_modules.size() - 1U;
-		else
-			m_moduleIdx--;
-	} else {
-		m_moduleIdx++;
-		if (m_moduleIdx == m_modules.size())
-			m_moduleIdx = 0U;
-	}
-
-	char module = m_modules.at(m_moduleIdx);
-
-	char text[100U];
-	::sprintf(text, "MODULE.txt=\"%c\"", module);
-	sendCommand(text);
-}
-
 void CM17TS::volumeChanged()
 {
 	m_slider = SI_VOLUME;
@@ -510,23 +489,37 @@ void CM17TS::transmit()
 {
 	m_transmit = !m_transmit;
 
+	if (m_transmit)
+		sendCommand("TX.txt=\"TX\"");
+	else
+		sendCommand("TX.txt=\"\"");
+
 	setTransmit(m_transmit);
 }
 
 void CM17TS::showRX(bool end, const std::string& source, const std::string& destination)
 {
 	if (end) {
+		m_receive = false;
+
+		m_sMeter = 0U;
+
 		m_source.clear();
 		m_text.clear();
 
+		sendCommand("S_METER.val=0");
 		sendCommand("SOURCE.txt=\"\"");
 		sendCommand("TEXT.txt=\"\"");
+		sendCommand("RX.txt=\"\"");
 	} else {
-		m_source = source;
+		m_receive = true;
+		m_source  = source;
 
 		char text[100U];
 		::sprintf(text, "SOURCE.txt=\"%s\"", source.c_str());
 		sendCommand(text);
+
+		sendCommand("RX.txt=\"RX\"");
 	}
 }
 
@@ -541,22 +534,33 @@ void CM17TS::showText(const std::string& value)
 
 void CM17TS::showRSSI(int rssi)
 {
+	m_sMeter = 0U;
+
+	unsigned int dBm = std::abs(rssi);
+
+	if (dBm < RSSI_BASE) {
+		m_sMeter = RSSI_BASE - rssi;
+
+		if (m_sMeter > 100U)
+			m_sMeter = 100U;
+	}
+
+	char text[100U];
+	::sprintf(text, "S_METER.val=%u", m_sMeter);
+	sendCommand(text);
 }
 
 void CM17TS::gotoPage0()
 {
 	sendCommand("page page0");
 
-	if (!m_modules.empty()) {
+	if (!m_destinations.empty()) {
 		char text[100U];
 
 		::sprintf(text, "CHANNEL.txt=\"%s\"", m_channels.at(m_channelIdx).c_str());
 		sendCommand(text);
 
 		::sprintf(text, "DESTINATION.txt=\"%s\"", m_destinations.at(m_destinationIdx).c_str());
-		sendCommand(text);
-
-		::sprintf(text, "MODULE.txt=\"%c\"", m_modules.at(m_moduleIdx));
 		sendCommand(text);
 	}
 }
@@ -580,14 +584,11 @@ void CM17TS::gotoPage2()
 
 	char text[100U];
 
-	if (!m_modules.empty()) {
+	if (!m_destinations.empty()) {
 		::sprintf(text, "CHANNEL.txt=\"%s\"", m_channels.at(m_channelIdx).c_str());
 		sendCommand(text);
 
 		::sprintf(text, "DESTINATION.txt=\"%s\"", m_destinations.at(m_destinationIdx).c_str());
-		sendCommand(text);
-
-		::sprintf(text, "MODULE.txt=\"%c\"", m_modules.at(m_moduleIdx));
 		sendCommand(text);
 	}
 
@@ -595,6 +596,19 @@ void CM17TS::gotoPage2()
 	sendCommand(text);
 
 	::sprintf(text, "TEXT.txt=\"%s\"", m_text.c_str());
+	sendCommand(text);
+
+	if (m_receive)
+		sendCommand("RX.txt=\"RX\"");
+	else
+		sendCommand("RX.txt=\"\"");
+
+	if (m_transmit)
+		sendCommand("TX.txt=\"TX\"");
+	else
+		sendCommand("TX.txt=\"\"");
+
+	::sprintf(text, "S_METER.val=%u", m_sMeter);
 	sendCommand(text);
 }
 
@@ -721,8 +735,6 @@ void CM17TS::selectChannel()
 
 void CM17TS::selectDestination()
 {
-	m_destinations.push_back("        ");
-
 	m_destinationIdx = 0xFFFFU;
 
 	unsigned int n = 0U;
@@ -746,58 +758,3 @@ void CM17TS::selectDestination()
 
 	m_conf.setDestination(destination);
 }
-
-void CM17TS::selectModule()
-{
-	m_modules.push_back(' ');
-	m_modules.push_back('A');
-	m_modules.push_back('B');
-	m_modules.push_back('C');
-	m_modules.push_back('D');
-	m_modules.push_back('E');
-	m_modules.push_back('F');
-	m_modules.push_back('G');
-	m_modules.push_back('H');
-	m_modules.push_back('I');
-	m_modules.push_back('J');
-	m_modules.push_back('K');
-	m_modules.push_back('L');
-	m_modules.push_back('M');
-	m_modules.push_back('N');
-	m_modules.push_back('O');
-	m_modules.push_back('P');
-	m_modules.push_back('Q');
-	m_modules.push_back('R');
-	m_modules.push_back('S');
-	m_modules.push_back('T');
-	m_modules.push_back('U');
-	m_modules.push_back('V');
-	m_modules.push_back('W');
-	m_modules.push_back('X');
-	m_modules.push_back('Y');
-	m_modules.push_back('Z');
-
-	m_moduleIdx = 0xFFFFU;
-
-	unsigned int n = 0U;
-	for (const auto& it : m_modules) {
-		if (it == m_conf.getModule()) {
-			m_moduleIdx = n;
-			break;
-		}
-
-		n++;
-	}
-
-	if (m_moduleIdx == 0xFFFFU)
-		m_moduleIdx = 0U;
-
-	char module = m_modules.at(m_moduleIdx);
-
-	char text[100U];
-	::sprintf(text, "MODULE.txt=\"%c\"", module);
-	sendCommand(text);
-
-	m_conf.setModule(module);
-}
-

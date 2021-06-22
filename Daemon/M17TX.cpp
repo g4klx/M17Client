@@ -57,7 +57,6 @@ const unsigned char BIT_MASK_TABLE[] = { 0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04
 CM17TX::CM17TX(const std::string& callsign, const std::string& text, CCodec2& codec2) :
 m_codec2(codec2),
 m_source(callsign),
-m_destination(),
 m_micGain(1.0F),
 m_can(0U),
 m_status(TXS_NONE),
@@ -108,8 +107,6 @@ void CM17TX::setCAN(unsigned int can)
 
 void CM17TX::setDestination(const std::string& callsign)
 {
-	m_destination = callsign;
-	
 	m_textLSF->setDest(callsign);
 }
 

@@ -41,9 +41,6 @@ public:
 	void           setDestination(const wxString& value);
 	wxString       getDestination() const;
 
-	void           setModule(const wxString& value);
-	wxString       getModule() const;
-
 	void           setVolume(unsigned int value);
 	unsigned int   getVolume() const;
 	
@@ -60,7 +57,6 @@ private:
 	unsigned short m_selfPort;
 	wxString       m_channel;
 	wxString       m_destination;
-	wxString       m_module;
 	unsigned int   m_volume;
 	unsigned int   m_micGain;
 };
