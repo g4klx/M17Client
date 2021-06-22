@@ -455,6 +455,9 @@ void CM17TS::channelChanged(int val)
 	::sprintf(text, "CHANNEL.txt=\"%s\"", channel.c_str());
 	sendCommand(text);
 
+	m_conf.setChannel(channel);
+	m_conf.write();
+
 	setChannel(channel);
 }
 
@@ -478,6 +481,11 @@ void CM17TS::destinationChanged(int val)
 	char text[100U];
 	::sprintf(text, "DESTINATION.txt=\"%s\"", destination.c_str());
 	sendCommand(text);
+
+	m_conf.setDestination(destination);
+	m_conf.write();
+
+	setDestination(destination);
 }
 
 void CM17TS::volumeChanged()
@@ -666,6 +674,9 @@ bool CM17TS::setVolume(unsigned int volume)
 {
 	assert(m_socket != NULL);
 
+	m_conf.setVolume(volume);
+	m_conf.write();
+
 	char buffer[20U];
 	::strcpy(buffer, "VOL");
 	::strcat(buffer, DELIMITER);
@@ -677,6 +688,9 @@ bool CM17TS::setVolume(unsigned int volume)
 bool CM17TS::setMicGain(unsigned int micGain)
 {
 	assert(m_socket != NULL);
+
+	m_conf.setMicGain(micGain);
+	m_conf.write();
 
 	char buffer[20U];
 	::strcpy(buffer, "MIC");
@@ -730,8 +744,6 @@ void CM17TS::selectChannel()
 	::sprintf(text, "CHANNEL.txt=\"%s\"", channel.c_str());
 	sendCommand(text);
 
-	m_conf.setChannel(channel);
-
 	setChannel(channel);
 }
 
@@ -758,5 +770,5 @@ void CM17TS::selectDestination()
 	::sprintf(text, "DESTINATION.txt=\"%s\"", destination.c_str());
 	sendCommand(text);
 
-	m_conf.setDestination(destination);
+	setDestination(destination);
 }

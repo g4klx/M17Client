@@ -58,8 +58,8 @@ BEGIN_EVENT_TABLE(CFrame, wxFrame)
 
 	EVT_TOGGLEBUTTON(Button_Transmit, CFrame::onTX)
 
-	EVT_LISTBOX(Choice_Channels,     CFrame::onChannel)
-	EVT_LISTBOX(Choice_Destinations, CFrame::onDestination)
+	EVT_CHOICE(Choice_Channels,     CFrame::onChannel)
+	EVT_CHOICE(Choice_Destinations, CFrame::onDestination)
 
 	EVT_COMMAND_SCROLL(Slider_Volume,  CFrame::onVolume)
 	EVT_COMMAND_SCROLL(Slider_MicGain, CFrame::onMicGain)
@@ -303,25 +303,21 @@ void CFrame::onAbout(wxCommandEvent&)
 
 void CFrame::onChannel(wxCommandEvent& event)
 {
-	int n = event.GetSelection();
-	if (n == wxNOT_FOUND)
-		return;
-
-	wxString channel = m_channels->GetString(n);
+	wxString channel = event.GetString();
 
 	m_conf.setChannel(channel);
+	m_conf.write();
+
 	::wxGetApp().setChannel(channel);
 }
 
 void CFrame::onDestination(wxCommandEvent& event)
 {
-	int n = event.GetSelection();
-	if (n == wxNOT_FOUND)
-		return;
-
-	wxString destination = m_destinations->GetString(n);
+	wxString destination = event.GetString();
 
 	m_conf.setDestination(destination);
+	m_conf.write();
+
 	::wxGetApp().setDestination(destination);
 }
 
@@ -330,6 +326,8 @@ void CFrame::onVolume(wxScrollEvent& event)
 	int volume = event.GetPosition();
 
 	m_conf.setVolume(volume);
+	m_conf.write();
+
 	::wxGetApp().setVolume((unsigned int)volume);
 }
 
@@ -338,6 +336,8 @@ void CFrame::onMicGain(wxScrollEvent& event)
 	int micGain = event.GetPosition();
 
 	m_conf.setMicGain(micGain);
+	m_conf.write();
+
 	::wxGetApp().setMicGain((unsigned int)micGain);
 }
 
@@ -357,7 +357,9 @@ void CFrame::onChannels(wxEvent& event)
 	m_channels->Append(channels);
 
 	wxString channel = m_conf.getChannel();
-	m_channels->SetStringSelection(channel);
+	bool ret = m_channels->SetStringSelection(channel);
+	if (!ret)
+		m_channels->SetSelection(0U);
 }
 
 void CFrame::onDestinations(wxEvent& event)
@@ -376,7 +378,9 @@ void CFrame::onDestinations(wxEvent& event)
 	m_destinations->Append(destinations);
 
 	wxString destination = m_conf.getDestination();
-	m_destinations->SetStringSelection(destination);
+	bool ret = m_destinations->SetStringSelection(destination);
+	if (!ret)
+		m_destinations->SetSelection(0U);
 }
 
 void CFrame::onTransmit(wxEvent& event)
