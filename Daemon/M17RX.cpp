@@ -193,7 +193,7 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 
 		CM17Convolution conv;
 		unsigned char frame[M17_LSF_LENGTH_BYTES];
-		conv.decodeLinkSetup(data + 2U + M17_SYNC_LENGTH_BYTES, frame);
+		unsigned int ber = conv.decodeLinkSetup(data + 2U + M17_SYNC_LENGTH_BYTES, frame);
 
 		bool valid = CM17CRC::checkCRC16(frame, M17_LSF_LENGTH_BYTES);
 		if (valid) {
@@ -218,6 +218,8 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 			m_rssiCount = 1U;
 
 			addSilence(SILENCE_BLOCK_COUNT);
+
+			LogDebug("Received link setup, BER: %u/368", ber);
 
 			return true;
 		} else {
@@ -280,9 +282,11 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 
 		CM17Convolution conv;
 		unsigned char frame[M17_FN_LENGTH_BYTES + M17_PAYLOAD_LENGTH_BYTES];
-		conv.decodeData(data + 2U + M17_SYNC_LENGTH_BYTES + M17_LICH_FRAGMENT_FEC_LENGTH_BYTES, frame);
+		unsigned int ber = conv.decodeData(data + 2U + M17_SYNC_LENGTH_BYTES + M17_LICH_FRAGMENT_FEC_LENGTH_BYTES, frame);
 
 		unsigned int fn = ((frame[0U] << 8) + (frame[1U] << 0)) & 0x7FU;
+
+		LogDebug("Received audio, fn: %u, BER: %u/272", fn, ber);
 
 		// A valid M17 audio frame
 		short audio[CODEC_BLOCK_SIZE];
