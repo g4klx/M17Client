@@ -284,14 +284,21 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 		unsigned char frame[M17_FN_LENGTH_BYTES + M17_PAYLOAD_LENGTH_BYTES];
 		unsigned int ber = conv.decodeData(data + 2U + M17_SYNC_LENGTH_BYTES + M17_LICH_FRAGMENT_FEC_LENGTH_BYTES, frame);
 
-		unsigned int fn = ((frame[0U] << 8) + (frame[1U] << 0)) & 0x7FU;
+		bool valid = ber < 12U;
 
-		LogDebug("Received audio, fn: %u, BER: %u/272", fn, ber);
+		unsigned int fn = (frame[0U] << 8) + (frame[1U] << 0);
+
+		LogDebug("Received audio, fn: %u, BER: %u/272 (%.1f%%)", fn & 0x7FU, ber, float(ber) / 2.72F);
 
 		// A valid M17 audio frame
 		short audio[CODEC_BLOCK_SIZE];
-		m_codec2.codec2_decode(audio + 0U,   frame + 2U);
-		m_codec2.codec2_decode(audio + 160U, frame + 2U + 8U);
+		if (valid) {
+			m_codec2.codec2_decode(audio + 0U,   frame + 2U);
+			m_codec2.codec2_decode(audio + 160U, frame + 2U + 8U);
+		} else {
+			// Insert silence if the audio is too corrupted
+			::memset(audio, 0x00U, CODEC_BLOCK_SIZE * sizeof(short));
+		}
 
 		// Adjust the volume, and convert to float
 		float f8000[CODEC_BLOCK_SIZE];
@@ -316,7 +323,7 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 
 		m_frames++;
 
-		if ((fn & 0x8000U) == 0x8000U) {
+		if (valid && (fn & 0x8000U) == 0x8000U) {
 			std::string source = m_lsf.getSource();
 			std::string dest   = m_lsf.getDest();
 
