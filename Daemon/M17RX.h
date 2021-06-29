@@ -39,8 +39,6 @@ public:
 
 	void setStatusCallback(IStatusCallback* callback);
 
-	void setCAN(unsigned int can);
-
 	void setVolume(unsigned int percentage);
 
 	bool write(unsigned char* data, unsigned int len);
@@ -53,7 +51,6 @@ private:
 	bool               m_bleep;
 	float              m_volume;
 	IStatusCallback*   m_callback;
-	unsigned int       m_can;
 	RPT_RF_STATE       m_state;
 	unsigned int       m_frames;
 	CM17LSF            m_lsf;
