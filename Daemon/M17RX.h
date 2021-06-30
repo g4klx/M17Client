@@ -53,6 +53,8 @@ private:
 	IStatusCallback*   m_callback;
 	RPT_RF_STATE       m_state;
 	unsigned int       m_frames;
+	unsigned int       m_errs;
+	unsigned int       m_bits;
 	CM17LSF            m_lsf;
 	CM17LSF            m_running;
 	CRingBuffer<float> m_queue;

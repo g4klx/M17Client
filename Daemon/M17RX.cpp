@@ -68,6 +68,8 @@ m_volume(1.0F),
 m_callback(NULL),
 m_state(RS_RF_LISTENING),
 m_frames(0U),
+m_errs(0U),
+m_bits(0U),
 m_lsf(),
 m_running(),
 m_queue(25000U, "M17 RX Audio"),
@@ -129,9 +131,9 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 		std::string dest   = m_lsf.getDest();
 
 		if (m_rssi != 0U)
-			LogMessage("Transmission lost from %s to %s, %.1f seconds, RSSI: -%u/-%u/-%u dBm", source.c_str(), dest.c_str(), float(m_frames) / 25.0F, m_minRSSI, m_maxRSSI, m_aveRSSI / m_rssiCount);
+			LogMessage("Transmission lost from %s to %s, %.1f seconds, BER: %.1f%%, RSSI: -%u/-%u/-%u dBm", source.c_str(), dest.c_str(), float(m_frames) / 25.0F, float(m_errs * 100U) / float(m_bits), m_minRSSI, m_maxRSSI, m_aveRSSI / m_rssiCount);
 		else
-			LogMessage("Transmission lost from %s to %s, %.1f seconds", source.c_str(), dest.c_str(), float(m_frames) / 25.0F);
+			LogMessage("Transmission lost from %s to %s, %.1f seconds, BER: %.1f%%", source.c_str(), dest.c_str(), float(m_frames) / 25.0F, float(m_errs * 100U) / float(m_bits));
 		end();
 		return false;
 	}
@@ -205,13 +207,17 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 			}
 
 			m_running.reset();
-			m_frames = 0U;
-			m_minRSSI = m_rssi;
-			m_maxRSSI = m_rssi;
-			m_aveRSSI = m_rssi;
+			m_frames    = 0U;
+			m_errs      = ber;
+			m_bits      = 368U;
+			m_minRSSI   = m_rssi;
+			m_maxRSSI   = m_rssi;
+			m_aveRSSI   = m_rssi;
 			m_rssiCount = 1U;
 
-			LogDebug("Received link setup, BER: %u/368", ber);
+			addSilence(SILENCE_BLOCK_COUNT);
+
+			LogDebug("Received link setup, BER: %u/368 (%.1f%%)", ber, float(ber) / 3.68F);
 
 			return true;
 		} else {
@@ -255,15 +261,23 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 			}
 
 			m_running.reset();
-			m_frames = 0U;
+			m_frames  = 0U;
+			m_errs    = 0U;
+			m_bits    = 1U;
 			m_minRSSI = m_rssi;
 			m_maxRSSI = m_rssi;
 			m_aveRSSI = m_rssi;
 			m_rssiCount = 1U;
+
+			addSilence(SILENCE_BLOCK_COUNT);
+
+			// Fall through
+		} else {
+			return false;
 		}
 	}
 
-	if (data[0U] == TAG_DATA1) {
+	if (m_state == RS_RF_AUDIO && data[0U] == TAG_DATA1) {
 		processRunningLSF(data + 2U + M17_SYNC_LENGTH_BYTES);
 
 		CM17Convolution conv;
@@ -276,9 +290,8 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 
 		LogDebug("Received audio, FN: %u, BER: %u/272 (%.1f%%)", fn & 0x7FU, ber, float(ber) / 2.72F);
 
-		// If we have no audio in the buffer, insert some silence
-		if (m_queue.isEmpty())
-			addSilence(SILENCE_BLOCK_COUNT);
+		m_bits += 272U;
+		m_errs += ber;
 
 		// A valid M17 audio frame
 		short audio[CODEC_BLOCK_SIZE];
@@ -314,17 +327,13 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 		m_frames++;
 
 		if (valid && (fn & 0x8000U) == 0x8000U) {
-			valid = m_lsf.isValid();
-			if (valid) {
-				std::string source = m_lsf.getSource();
-				std::string dest   = m_lsf.getDest();
+			std::string source = m_lsf.getSource();
+			std::string dest   = m_lsf.getDest();
 
-				if (m_rssi != 0U)
-					LogMessage("Received end of transmission from %s to %s, %.1f seconds, RSSI: -%u/-%u/-%u dBm", source.c_str(), dest.c_str(), float(m_frames) / 25.0F, m_minRSSI, m_maxRSSI, m_aveRSSI / m_rssiCount);
-				else
-					LogMessage("Received end of transmission from %s to %s, %.1f seconds", source.c_str(), dest.c_str(), float(m_frames) / 25.0F);
-			}
-
+			if (m_rssi != 0U)
+				LogMessage("Received end of transmission from %s to %s, %.1f seconds, BER: %.1f%%, RSSI: -%u/-%u/-%u dBm", source.c_str(), dest.c_str(), float(m_frames) / 25.0F, float(m_errs * 100U) / float(m_bits), m_minRSSI, m_maxRSSI, m_aveRSSI / m_rssiCount);
+			else
+				LogMessage("Received end of transmission from %s to %s, %.1f seconds, BER: %.1f%%", source.c_str(), dest.c_str(), float(m_frames) / 25.0F, float(m_errs * 100U) / float(m_bits));
 			end();
 		}
 
@@ -340,13 +349,8 @@ void CM17RX::end()
 		if (m_bleep)
 			addBleep();
 
-		if (m_callback != NULL) {
-			bool valid = m_lsf.isValid();
-			if (valid)
-				m_callback->statusCallback(m_lsf.getSource(), m_lsf.getDest(), true);
-			else
-				m_callback->statusCallback("", "", true);
-		}
+		if (m_callback != NULL)
+			m_callback->statusCallback(m_lsf.getSource(), m_lsf.getDest(), true);
 	}
 
 	m_state = RS_RF_LISTENING;
