@@ -39,6 +39,8 @@ public:
 
 	void setStatusCallback(IStatusCallback* callback);
 
+	unsigned int getVolume() const;
+
 	void setVolume(unsigned int percentage);
 
 	bool write(unsigned char* data, unsigned int len);

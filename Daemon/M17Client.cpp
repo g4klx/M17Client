@@ -305,7 +305,7 @@ int CM17Client::run()
 
 #if defined(USE_GPIO)
 	if (m_conf.getGPIOEnabled()) {
-		m_gpio = new CGPIO(m_conf.getGPIOPTTPin());
+		m_gpio = new CGPIO(m_conf.getGPIOPTTInvert(), m_conf.getGPIOPTTPin(), m_conf.getGPIOVolumeInvert(), m_conf.getGPIOVolumeUpPin(), m_conf.getGPIOVolumeDownPin());
 		ret = m_gpio->open();
 		if (!ret) {
 			LogError("Unable to open GPIO");
@@ -383,7 +383,7 @@ int CM17Client::run()
 
 #if defined(USE_GPIO)
 		if (m_gpio != NULL) {
-			bool tx = m_gpio->readPTT();
+			bool tx = m_gpio->getPTT();
 
 			if (tx && !m_tx1 && !m_tx2) {
 				LogDebug("\tTransmitter on");
@@ -396,6 +396,23 @@ int CM17Client::run()
 			}
 
 			m_tx2 = tx;
+
+			bool volumeUp   = m_gpio->getVolumeUp();
+			bool volumeDown = m_gpio->getVolumeDown();
+
+			if (volumeUp || volumeDown) {
+				unsigned int volume = m_rx->getVolume();
+			
+				if (volumeUp) {
+					if (volume < 500U)
+						volume++;
+				} else if (volumeDown) {
+					if (volume > 0U)
+						volume--;
+				}
+			
+				m_rx->setVolume(volume);
+			}
 		}
 #endif
 

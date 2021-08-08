@@ -97,6 +97,11 @@ void CM17RX::setStatusCallback(IStatusCallback* callback)
 	m_callback = callback;
 }
 
+unsigned int CM17RX::getVolume() const
+{
+	return (unsigned int)(m_volume * 100.0F + 0.5F);
+}
+
 void CM17RX::setVolume(unsigned int percentage)
 {
 	m_volume = float(percentage) / 100.0F;

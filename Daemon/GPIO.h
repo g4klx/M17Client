@@ -27,19 +27,28 @@
 
 class CGPIO {
 public:
-	CGPIO(unsigned int pttPin);
+	CGPIO(bool pttInvert, unsigned int pttPin, bool volumeInvert, unsigned int volumeUpPin, unsigned int volumeDownPin);
 	~CGPIO();
 
 	bool open();
 
-	bool readPTT();
+	bool getPTT();
+
+	bool getVolumeUp();
+	bool getVolumeDown();
 
 	void close();
 
 private:
+	bool         m_pttInvert;
 	unsigned int m_pttPin;
+	bool         m_volumeInvert;
+	unsigned int m_volumeUpPin;
+	unsigned int m_volumeDownPin;
 	gpiod_chip*  m_chip;
 	gpiod_line*  m_ptt;
+	gpiod_line*  m_volumeUp;
+	gpiod_line*  m_volumeDown;
 };
 
 #endif

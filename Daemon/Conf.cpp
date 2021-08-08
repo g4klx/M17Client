@@ -75,7 +75,11 @@ m_logFileRoot(),
 m_logFileRotate(true),
 m_codePlugFile("CodePlug.ini"),
 m_gpioEnabled(false),
+m_gpioPTTInvert(true),
 m_gpioPTTPin(15U),
+m_gpioVolumeInvert(true),
+m_gpioVolumeUpPin(14U),
+m_gpioVolumeDownPin(13U),
 m_hamLibEnabled(false),
 m_hamLibRadioType(),
 m_gpsdEnabled(false),
@@ -231,8 +235,16 @@ bool CConf::read()
 		} else if (section == SECTION_GPIO) {
 			if (::strcmp(key, "Enable") == 0)
 				m_gpioEnabled = ::atoi(value) == 1;
+			else if (::strcmp(key, "PTTInvert") == 0)
+				m_gpioPTTInvert = ::atoi(value) == 1;
 			else if (::strcmp(key, "PTT") == 0)
 				m_gpioPTTPin = (unsigned int)::atoi(value);
+			else if (::strcmp(key, "VolumeInvert") == 0)
+				m_gpioVolumeInvert = ::atoi(value) == 1;
+			else if (::strcmp(key, "VolumeUp") == 0)
+				m_gpioVolumeUpPin = (unsigned int)::atoi(value);
+			else if (::strcmp(key, "VolumeDown") == 0)
+				m_gpioVolumeDownPin = (unsigned int)::atoi(value);
 		} else if (section == SECTION_HAMLIB) {
 			if (::strcmp(key, "Enable") == 0)
 				m_hamLibEnabled = ::atoi(value) == 1;
@@ -427,9 +439,29 @@ bool CConf::getGPIOEnabled() const
 	return m_gpioEnabled;
 }
 
+bool CConf::getGPIOPTTInvert() const
+{
+	return m_gpioPTTInvert;
+}
+
 unsigned int CConf::getGPIOPTTPin() const
 {
 	return m_gpioPTTPin;
+}
+
+bool CConf::getGPIOVolumeInvert() const
+{
+	return m_gpioVolumeInvert;
+}
+
+unsigned int CConf::getGPIOVolumeUpPin() const
+{
+	return m_gpioVolumeUpPin;
+}
+
+unsigned int CConf::getGPIOVolumeDownPin() const
+{
+	return m_gpioVolumeDownPin;
 }
 
 bool CConf::getHamLibEnabled() const
