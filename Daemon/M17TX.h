@@ -39,7 +39,7 @@ enum TX_STATUS {
 
 class CM17TX {
 public:
-	CM17TX(const std::string& callsign, const std::string& text, CCodec2& codec2);
+	CM17TX(const std::string& callsign, const std::string& text, CCodec2& codec3200, CCodec2& codec1600);
 	~CM17TX();
 
 	void setCAN(unsigned int can);
@@ -59,7 +59,8 @@ public:
 	unsigned int read(unsigned char* data);
 
 private:
-	CCodec2&                   m_codec2;
+	CCodec2&                   m_3200;
+	CCodec2&                   m_1600;
 	std::string                m_source;
 	float                      m_micGain;
 	unsigned int               m_can;

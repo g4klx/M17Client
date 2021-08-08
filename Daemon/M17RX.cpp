@@ -60,8 +60,9 @@ const unsigned char BIT_MASK_TABLE[] = { 0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04
 #define WRITE_BIT(p,i,b) p[(i)>>3] = (b) ? (p[(i)>>3] | BIT_MASK_TABLE[(i)&7]) : (p[(i)>>3] & ~BIT_MASK_TABLE[(i)&7])
 #define READ_BIT(p,i)    (p[(i)>>3] & BIT_MASK_TABLE[(i)&7])
 
-CM17RX::CM17RX(const std::string& callsign, CRSSIInterpolator* rssiMapper, bool bleep, CCodec2& codec2) :
-m_codec2(codec2),
+CM17RX::CM17RX(const std::string& callsign, CRSSIInterpolator* rssiMapper, bool bleep, CCodec2& codec3200, CCodec2& codec1600) :
+m_3200(codec3200),
+m_1600(codec1600),
 m_callsign(callsign),
 m_bleep(bleep),
 m_volume(1.0F),
@@ -282,7 +283,7 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 		}
 	}
 
-	if (m_state == RS_RF_AUDIO && data[0U] == TAG_DATA1) {
+	if ((m_state == RS_RF_AUDIO || m_state == RS_RF_AUDIO_DATA) && data[0U] == TAG_DATA1) {
 		processRunningLSF(data + 2U + M17_SYNC_LENGTH_BYTES);
 
 		CM17Convolution conv;
@@ -301,8 +302,13 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 		// A valid M17 audio frame
 		short audio[CODEC_BLOCK_SIZE];
 		if (valid) {
-			m_codec2.codec2_decode(audio + 0U,   frame + 2U);
-			m_codec2.codec2_decode(audio + 160U, frame + 2U + 8U);
+			if (m_state == RS_RF_AUDIO) {
+				m_3200.codec2_decode(audio + 0U,   frame + 2U);
+				m_3200.codec2_decode(audio + 160U, frame + 2U + 8U);
+			} else {
+				m_1600.codec2_decode(audio + 0U,   frame + 2U);
+				m_1600.codec2_decode(audio + 160U, frame + 2U + 4U);
+			}
 		} else {
 			// Insert silence if the audio is too corrupted
 			::memset(audio, 0x00U, CODEC_BLOCK_SIZE * sizeof(short));
@@ -399,7 +405,7 @@ bool CM17RX::processHeader(bool lateEntry)
 		break;
 	case M17_DATA_TYPE_VOICE_DATA:
 		LogMessage("Received%svoice + data transmission from %s to %s", lateEntry ? " late entry " : " ", source.c_str(), dest.c_str());
-		m_state = RS_RF_AUDIO;
+		m_state = RS_RF_AUDIO_DATA;
 		break;
 	default:
 		LogMessage("Received%sunknown transmission from %s to %s", lateEntry ? " late entry " : " ", source.c_str(), dest.c_str());

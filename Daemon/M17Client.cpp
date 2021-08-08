@@ -315,17 +315,18 @@ int CM17Client::run()
 	}
 #endif
 
-	CCodec2 codec2(true);
+	CCodec2 codec3200(true);
+	CCodec2 codec1600(false);
 
 	CRSSIInterpolator* rssi = new CRSSIInterpolator;
 	if (!m_conf.getModemRSSIMappingFile().empty())
 		rssi->load(m_conf.getModemRSSIMappingFile());
 
-	m_tx = new CM17TX(m_conf.getCallsign(), m_conf.getText(), codec2);
+	m_tx = new CM17TX(m_conf.getCallsign(), m_conf.getText(), codec3200, codec1600);
 	m_tx->setMicGain(m_conf.getAudioMicGain());
 	m_tx->setDestination("ALL");
 
-	m_rx = new CM17RX(m_conf.getCallsign(), rssi, m_conf.getBleep(), codec2);
+	m_rx = new CM17RX(m_conf.getCallsign(), rssi, m_conf.getBleep(), codec3200, codec1600);
 	m_rx->setVolume(m_conf.getAudioVolume());
 	m_rx->setStatusCallback(this);
 

@@ -34,7 +34,7 @@
 
 class CM17RX {
 public:
-	CM17RX(const std::string& callsign, CRSSIInterpolator* rssiMapper, bool bleep, CCodec2& codec2);
+	CM17RX(const std::string& callsign, CRSSIInterpolator* rssiMapper, bool bleep, CCodec2& codec3200, CCodec2& codec1600);
 	~CM17RX();
 
 	void setStatusCallback(IStatusCallback* callback);
@@ -48,7 +48,8 @@ public:
 	unsigned int read(float* audio, unsigned int len);
 
 private:
-	CCodec2&           m_codec2;
+	CCodec2&           m_3200;
+	CCodec2&           m_1600;
 	std::string        m_callsign;
 	bool               m_bleep;
 	float              m_volume;
