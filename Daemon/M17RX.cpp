@@ -294,7 +294,7 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 
 		unsigned int fn = (frame[0U] << 8) + (frame[1U] << 0);
 
-		LogDebug("Received audio, FN: %u, BER: %u/272 (%.1f%%)", fn & 0x7FU, ber, float(ber) / 2.72F);
+		LogDebug("Received audio, FN: %u, BER: %u/272 (%.1f%%)", fn & 0x7FFFU, ber, float(ber) / 2.72F);
 
 		m_bits += 272U;
 		m_errs += ber;
