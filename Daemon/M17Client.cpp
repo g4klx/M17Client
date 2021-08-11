@@ -585,6 +585,12 @@ void CM17Client::sendDestinationList()
 	::strcpy(buffer, "DEST");
 	::strcat(buffer, DELIMITER);
 	::strcat(buffer, "ALL");
+	::strcat(buffer, DELIMITER);
+	::strcat(buffer, "INFO");
+	::strcat(buffer, DELIMITER);
+	::strcat(buffer, "ECHO");
+	::strcat(buffer, DELIMITER);
+	::strcat(buffer, "UNLINK");
 
 	for (const auto& dest : m_conf.getDestinations()) {
 		::strcat(buffer, DELIMITER);
