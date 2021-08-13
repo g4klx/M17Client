@@ -98,8 +98,6 @@ int main(int argc, char** argv)
 			::LogInfo("M17Client-%s restarted on receipt of SIGHUP", VERSION);
 	} while (m_signal == 1);
 
-	::LogFinalise();
-
 	return ret;
 }
 
