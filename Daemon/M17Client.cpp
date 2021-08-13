@@ -412,6 +412,8 @@ int CM17Client::run()
 						volume--;
 				}
 			
+				LogDebug("Volume set to %u", volume);
+
 				m_rx->setVolume(volume);
 			}
 		}
@@ -501,7 +503,7 @@ void CM17Client::parseCommand(char* command)
 			LogDebug("\tChannel list request");
 			sendChannelList();
 		} else {
-			LogDebug("\tChannel set");
+			LogDebug("\tChannel set to \"%s\"", ptrs.at(1U));
 			bool ret = processChannelRequest(ptrs.at(1U));
 			if (!ret)
 				LogWarning("\tInvalid channel request");
@@ -511,15 +513,15 @@ void CM17Client::parseCommand(char* command)
 			LogDebug("\tDestination list request");
 			sendDestinationList();
 		} else {
-			LogDebug("\tDestination set");
+			LogDebug("\tDestination set to \"%s\"", ptrs.at(1U));
 			m_tx->setDestination(ptrs.at(1U));
 		}
 	} else if (::strcmp(ptrs.at(0U), "VOL") == 0) {
-		LogDebug("\tVolume set");
-		m_rx->setVolume(std::stoi(ptrs.at(1U)));
+		LogDebug("\tVolume set to %s", ptrs.at(1U));
+		m_rx->setVolume(::atoi(ptrs.at(1U)));
 	} else if (::strcmp(ptrs.at(0U), "MIC") == 0) {
-		LogDebug("\tMic gain set");
-		m_tx->setMicGain(std::stoi(ptrs.at(1U)));
+		LogDebug("\tMic gain set to %s", ptrs.at(1U));
+		m_tx->setMicGain(::atoi(ptrs.at(1U)));
 	} else {
 		LogWarning("\tUnknown command");
 	}
