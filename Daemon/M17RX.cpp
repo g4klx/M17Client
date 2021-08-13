@@ -28,7 +28,7 @@ const unsigned int  SILENCE_BLOCK_COUNT = 5U;
 
 const unsigned int  BLEEP_FREQ   = 2000U;
 const unsigned int  BLEEP_LENGTH = 100U;
-const float         BLEEP_AMPL   = 0.1F;
+const float         BLEEP_AMPL   = 0.001F;
 
 const unsigned int INTERLEAVER[] = {
 	0U, 137U, 90U, 227U, 180U, 317U, 270U, 39U, 360U, 129U, 82U, 219U, 172U, 309U, 262U, 31U, 352U, 121U, 74U, 211U, 164U,
