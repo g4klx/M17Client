@@ -132,7 +132,7 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 
 	unsigned char type = data[0U];
 
-	if (type == TAG_LOST && m_state == RS_RF_AUDIO) {
+	if (type == TAG_LOST && (m_state == RS_RF_AUDIO || m_state == RS_RF_AUDIO_DATA)) {
 		std::string source = m_lsf.getSource();
 		std::string dest   = m_lsf.getDest();
 
@@ -305,6 +305,7 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 		} else {
 			m_1600.codec2_decode(audio + 0U,   frame + 2U);
 			m_1600.codec2_decode(audio + 160U, frame + 2U + 4U);
+			CUtils::dump(1U, "Data Payload", frame + 2U + 8U, 8U);
 		}
 
 		// Adjust the volume, and convert to float
@@ -349,7 +350,7 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 
 void CM17RX::end()
 {
-	if (m_state == RS_RF_AUDIO) {
+	if (m_state == RS_RF_AUDIO || m_state == RS_RF_AUDIO_DATA) {
 		if (m_bleep)
 			addBleep();
 
@@ -505,8 +506,8 @@ void CM17RX::processRunningLSF(const unsigned char* fragment)
 
 void CM17RX::addBleep()
 {
-	const unsigned int length = CODEC_SAMPLE_RATE / BLEEP_FREQ;
-	const unsigned int total  = (CODEC_SAMPLE_RATE * BLEEP_LENGTH) / 1000U;
+	const unsigned int length = SOUNDCARD_SAMPLE_RATE / BLEEP_FREQ;
+	const unsigned int total  = (SOUNDCARD_SAMPLE_RATE * BLEEP_LENGTH) / 1000U;
 
 	float step = (2.0F * M_PI) / float(length);
 
@@ -527,4 +528,3 @@ void CM17RX::addSilence(unsigned int n)
 			writeQueue(&SILENCE, 1U);
 	}
 }
-
