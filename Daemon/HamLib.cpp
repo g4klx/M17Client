@@ -26,6 +26,7 @@
 
 #include <cassert>
 #include <cstdio>
+#include <cstring>
 
 struct RigDesc {
 	std::string m_name;
@@ -47,10 +48,14 @@ const std::vector<RigDesc> RigNames = {
 	{"TM-V71",  RIG_MODEL_TMV71},
 	{"TM-V7",   RIG_MODEL_TMV7}};
 
-CHamLib::CHamLib(const std::string& type) :
-m_type(type)
+CHamLib::CHamLib(const std::string& type, const std::string& port, unsigned int speed) :
+m_type(type),
+m_port(port),
+m_speed(speed)
 {
 	assert(!type.empty());
+	assert(!port.empty());
+	assert(speed > 0U);
 }
 
 CHamLib::~CHamLib()
@@ -79,6 +84,9 @@ bool CHamLib::open()
 		LogError("Invalid rig initialisation");
 		return false;
 	}
+
+	::strcpy(m_rig->state.rigport.pathname, m_port.c_str());
+	m_rig->state.rigport.parm.serial.rate = m_speed;
 
 	int ret = ::rig_open(m_rig);
 	if (ret != RIG_OK) {

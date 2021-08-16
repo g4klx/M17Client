@@ -82,6 +82,8 @@ m_gpioVolumeUpPin(14U),
 m_gpioVolumeDownPin(13U),
 m_hamLibEnabled(false),
 m_hamLibRadioType(),
+m_hamLibPort(),
+m_hamLibSpeed(0U),
 m_gpsdEnabled(false),
 m_gpsdAddress("127.0.0.1"),
 m_gpsdPort(),
@@ -250,6 +252,10 @@ bool CConf::read()
 				m_hamLibEnabled = ::atoi(value) == 1;
 			else if (::strcmp(key, "RadioType") == 0)
 				m_hamLibRadioType = value;
+			else if (::strcmp(key, "Port") == 0)
+				m_hamLibPort = value;
+			else if (::strcmp(key, "Speed") == 0)
+				m_hamLibSpeed = (unsigned int)::atoi(value);
 		} else if (section == SECTION_GPSD) {
 			if (::strcmp(key, "Enable") == 0)
 				m_gpsdEnabled = ::atoi(value) == 1;
@@ -472,6 +478,16 @@ bool CConf::getHamLibEnabled() const
 std::string CConf::getHamLibRadioType() const
 {
 	return m_hamLibRadioType;
+}
+
+std::string CConf::getHamLibPort() const
+{
+	return m_hamLibPort;
+}
+
+unsigned int CConf::getHamLibSpeed() const
+{
+	return m_hamLibSpeed;
 }
 
 bool CConf::getGPSDEnabled() const

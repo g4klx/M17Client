@@ -279,7 +279,7 @@ int CM17Client::run()
 
 #if defined(USE_HAMLIB)
 	if (m_conf.getHamLibEnabled()) {
-		m_hamLib = new CHamLib(m_conf.getHamLibRadioType());
+		m_hamLib = new CHamLib(m_conf.getHamLibRadioType(), m_conf.getHamLibPort(), m_conf.getHamLibSpeed());
 		ret = m_hamLib->open();
 		if (!ret) {
 			LogError("Unable to open HamLib");

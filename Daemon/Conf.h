@@ -85,6 +85,8 @@ public:
 	// The HamLib section
 	bool	     getHamLibEnabled() const;
 	std::string  getHamLibRadioType() const;
+	std::string  getHamLibPort() const;
+	unsigned int getHamLibSpeed() const;
 
 	// The GPSD section
 	bool         getGPSDEnabled() const;
@@ -146,6 +148,8 @@ private:
 
 	bool         m_hamLibEnabled;
 	std::string  m_hamLibRadioType;
+	std::string  m_hamLibPort;
+	unsigned int m_hamLibSpeed;
 
 	bool         m_gpsdEnabled;
 	std::string  m_gpsdAddress;

@@ -27,7 +27,7 @@
 
 class CHamLib {
 public:
-	CHamLib(const std::string& type);
+	CHamLib(const std::string& type, const std::string& port, unsigned int speed);
 	~CHamLib();
 
 	bool open();
@@ -37,8 +37,10 @@ public:
 	void close();
 
 private:
-	std::string m_type;
-	RIG*        m_rig;
+	std::string  m_type;
+	std::string  m_port;
+	unsigned int m_speed;
+	RIG*         m_rig;
 };
 
 #endif
