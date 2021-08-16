@@ -19,7 +19,7 @@
 #if defined(USE_HAMLIB)
 
 #if !defined(HamLib_H)
-#define	HanLib_H
+#define	HamLib_H
 
 #include <hamlib/rig.h>
 
