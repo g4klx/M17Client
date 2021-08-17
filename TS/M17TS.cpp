@@ -323,12 +323,6 @@ void CM17TS::parseCommand(char* command)
 		selectChannel();
 	} else if (::strcmp(ptrs.at(0U), "DEST") == 0) {
 		m_destinations.clear();
-
-		m_destinations.push_back("ALL      ");
-		m_destinations.push_back("ECHO     ");
-		m_destinations.push_back("INFO     ");
-		m_destinations.push_back("UNLINK   ");
-
 		for (unsigned int i = 1U; i < ptrs.size(); i++) {
 			std::string destination = std::string(ptrs.at(i));
 			m_destinations.push_back(destination);

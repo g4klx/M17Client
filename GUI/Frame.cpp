@@ -370,11 +370,6 @@ void CFrame::onDestinations(wxEvent& event)
 
 	m_destinations->Clear();
 
-	m_destinations->Append(wxT("ALL      "));
-	m_destinations->Append(wxT("ECHO     "));
-	m_destinations->Append(wxT("INFO     "));
-	m_destinations->Append(wxT("UNLINK   "));
-
 	m_destinations->Append(destinations);
 
 	wxString destination = m_conf.getDestination();
