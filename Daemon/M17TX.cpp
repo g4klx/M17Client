@@ -24,8 +24,6 @@
 #include <cstring>
 #include <ctime>
 
-// #define	TRANSMIT_1600
-
 const unsigned int INTERLEAVER[] = {
 	0U, 137U, 90U, 227U, 180U, 317U, 270U, 39U, 360U, 129U, 82U, 219U, 172U, 309U, 262U, 31U, 352U, 121U, 74U, 211U, 164U,
 	301U, 254U, 23U, 344U, 113U, 66U, 203U, 156U, 293U, 246U, 15U, 336U, 105U, 58U, 195U, 148U, 285U, 238U, 7U, 328U, 97U,
@@ -56,9 +54,10 @@ const unsigned char BIT_MASK_TABLE[] = { 0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04
 #define WRITE_BIT(p,i,b) p[(i)>>3] = (b) ? (p[(i)>>3] | BIT_MASK_TABLE[(i)&7]) : (p[(i)>>3] & ~BIT_MASK_TABLE[(i)&7])
 #define READ_BIT(p,i)    (p[(i)>>3] & BIT_MASK_TABLE[(i)&7])
 
-CM17TX::CM17TX(const std::string& callsign, const std::string& text, CCodec2& codec3200, CCodec2& codec1600) :
+CM17TX::CM17TX(const std::string& callsign, const std::string& text, unsigned int mode, CCodec2& codec3200, CCodec2& codec1600) :
 m_3200(codec3200),
 m_1600(codec1600),
+m_mode(mode),
 m_source(callsign),
 m_micGain(1.0F),
 m_can(0U),
@@ -76,11 +75,7 @@ m_error(0)
 	m_textLSF = new CM17LSF;
 	m_textLSF->setSource(callsign);
 	m_textLSF->setPacketStream(M17_STREAM_TYPE);
-#if defined(TRANSMIT_1600)
-	m_textLSF->setDataType(M17_DATA_TYPE_VOICE_DATA);
-#else
-	m_textLSF->setDataType(M17_DATA_TYPE_VOICE);
-#endif
+	m_textLSF->setDataType(m_mode == 1600U ? M17_DATA_TYPE_VOICE_DATA : M17_DATA_TYPE_VOICE);
 	m_textLSF->setEncryptionType(M17_ENCRYPTION_TYPE_NONE);
 	m_textLSF->setEncryptionSubType(M17_ENCRYPTION_SUB_TYPE_TEXT);
 	m_textLSF->setMeta(M17_NULL_NONCE);
@@ -252,14 +247,14 @@ void CM17TX::process()
 		payload[1U] = (fn >> 0) & 0xFFU;
 
 		// Add the data/audio
-#if defined(TRANSMIT_1600)
-		m_1600.codec2_encode(payload + M17_FN_LENGTH_BYTES + 0U, audio + 0U);
-		m_1600.codec2_encode(payload + M17_FN_LENGTH_BYTES + 4U, audio + 160U);
-		::memset(payload + M17_FN_LENGTH_BYTES + 4U, 0x00U, 8U);
-#else
-		m_3200.codec2_encode(payload + M17_FN_LENGTH_BYTES + 0U, audio + 0U);
-		m_3200.codec2_encode(payload + M17_FN_LENGTH_BYTES + 8U, audio + 160U);
-#endif
+		if (m_mode == 1600U) {
+			m_1600.codec2_encode(payload + M17_FN_LENGTH_BYTES + 0U, audio + 0U);
+			m_1600.codec2_encode(payload + M17_FN_LENGTH_BYTES + 4U, audio + 160U);
+			::memset(payload + M17_FN_LENGTH_BYTES + 4U, 0x00U, 8U);
+		} else {
+			m_3200.codec2_encode(payload + M17_FN_LENGTH_BYTES + 0U, audio + 0U);
+			m_3200.codec2_encode(payload + M17_FN_LENGTH_BYTES + 8U, audio + 160U);
+		}
 
 		// Add the Convolution FEC
 		CM17Convolution conv;

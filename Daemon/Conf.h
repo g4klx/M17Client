@@ -33,6 +33,7 @@ public:
 	// The General section
 	std::string  getCallsign() const;
 	std::string  getText() const;
+	unsigned int getTXMode() const;
 	bool         getBleep() const;
 	bool         getDaemon() const;
 	bool         getDebug() const;
@@ -103,6 +104,7 @@ private:
 	std::string  m_file;
 	std::string  m_callsign;
 	std::string  m_text;
+	unsigned int m_txMode;
 	bool         m_bleep;
 	bool         m_daemon;
 	bool         m_debug;

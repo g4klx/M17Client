@@ -44,6 +44,7 @@ CConf::CConf(const std::string& file) :
 m_file(file),
 m_callsign(),
 m_text(),
+m_txMode(3200U),
 m_bleep(true),
 m_daemon(false),
 m_debug(false),
@@ -166,6 +167,8 @@ bool CConf::read()
 				m_callsign = value;
 			} else if (::strcmp(key, "Text") == 0)
 				m_text = value;
+			else if (::strcmp(key, "TXMode") == 0)
+				m_txMode = (unsigned int)::atoi(value);
 			else if (::strcmp(key, "Bleep") == 0)
 				m_bleep = ::atoi(value) == 1;
 			else if (::strcmp(key, "Daemon") == 0)
@@ -288,6 +291,11 @@ std::string CConf::getCallsign() const
 std::string CConf::getText() const
 {
 	return m_text;
+}
+
+unsigned int CConf::getTXMode() const
+{
+	return m_txMode;
 }
 
 bool CConf::getBleep() const

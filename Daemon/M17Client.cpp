@@ -320,7 +320,7 @@ int CM17Client::run()
 	if (!m_conf.getModemRSSIMappingFile().empty())
 		rssi->load(m_conf.getModemRSSIMappingFile());
 
-	m_tx = new CM17TX(m_conf.getCallsign(), m_conf.getText(), codec3200, codec1600);
+	m_tx = new CM17TX(m_conf.getCallsign(), m_conf.getText(), m_conf.getTXMode(), codec3200, codec1600);
 	m_tx->setMicGain(m_conf.getAudioMicGain());
 	m_tx->setDestination("ALL");
 
