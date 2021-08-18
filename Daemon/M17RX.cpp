@@ -331,7 +331,10 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 
 		m_frames++;
 
-		if ((fn & 0x8000U) == 0x8000U) {
+		bool bValid = (fn & 0x7FFFU) < (210U * 25U);		// 210 seconds maximum
+		bool bEnd   = (fn & 0x8000U) == 0x8000U;
+
+		if (bValid && bEnd) {
 			std::string source = m_lsf.getSource();
 			std::string dest   = m_lsf.getDest();
 
