@@ -57,6 +57,8 @@ private:
 	bool         m_transmit;
 	bool         m_receive;
 
+	unsigned int m_page;
+
 	SLIDER_ID    m_slider;
 	unsigned int m_volume;
 	unsigned int m_micGain;

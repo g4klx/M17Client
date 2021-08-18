@@ -109,6 +109,7 @@ m_destinationIdx(0U),
 m_localTX(false),
 m_transmit(false),
 m_receive(false),
+m_page(0U),
 m_slider(SI_NONE),
 m_volume(50U),
 m_micGain(50U),
@@ -549,14 +550,17 @@ void CM17TS::showRSSI(int rssi)
 			m_sMeter = 100U;
 	}
 
-	char text[100U];
-	::sprintf(text, "S_METER.val=%u", m_sMeter);
-	sendCommand(text);
+	if (m_page == 2U) {
+		char text[100U];
+		::sprintf(text, "S_METER.val=%u", m_sMeter);
+		sendCommand(text);
+	}
 }
 
 void CM17TS::gotoPage0()
 {
 	sendCommand("page page0");
+	m_page = 0U;
 
 	if (!m_destinations.empty()) {
 		char text[100U];
@@ -572,6 +576,7 @@ void CM17TS::gotoPage0()
 void CM17TS::gotoPage1()
 {
 	sendCommand("page page1");
+	m_page = 1U;
 
 	char text[100U];
 
@@ -585,6 +590,7 @@ void CM17TS::gotoPage1()
 void CM17TS::gotoPage2()
 {
 	sendCommand("page page2");
+	m_page = 2U;
 
 	char text[100U];
 
