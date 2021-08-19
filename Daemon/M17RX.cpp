@@ -335,33 +335,16 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 	}
 
 	if ((m_state == RS_RF_AUDIO || m_state == RS_RF_AUDIO_DATA) && data[0U] == TAG_HEADER) {
-		CM17Convolution conv;
-		unsigned char frame[M17_LSF_LENGTH_BYTES];
-		unsigned int ber = conv.decodeLinkSetup(data + 2U + M17_SYNC_LENGTH_BYTES, frame);
+		std::string source = m_lsf.getSource();
+		std::string dest   = m_lsf.getDest();
 
-		bool valid = CM17CRC::checkCRC16(frame, M17_LSF_LENGTH_BYTES);
-		if (valid) {
-			CM17LSF lsf;
-			lsf.setLinkSetup(frame);
+		if (m_rssi != 0U)
+			LogMessage("Received end of transmission from %s to %s, %.1f seconds, BER: %.1f%%, RSSI: -%u/-%u/-%u dBm", source.c_str(), dest.c_str(), float(m_frames) / 25.0F, float(m_errs * 100U) / float(m_bits), m_minRSSI, m_maxRSSI, m_aveRSSI / m_rssiCount);
+		else
+			LogMessage("Received end of transmission from %s to %s, %.1f seconds, BER: %.1f%%", source.c_str(), dest.c_str(), float(m_frames) / 25.0F, float(m_errs * 100U) / float(m_bits));
+		end();
 
-			m_frames++;
-			m_errs  += ber;
-			m_bits  += 368U;
-
-			bool bEnd = lsf.getDataType() == M17_DATA_TYPE_END;
-			if (bEnd) {
-				std::string source = lsf.getSource();
-				std::string dest   = lsf.getDest();
-
-				if (m_rssi != 0U)
-					LogMessage("Received end of transmission from %s to %s, %.1f seconds, BER: %.1f%%, RSSI: -%u/-%u/-%u dBm", source.c_str(), dest.c_str(), float(m_frames) / 25.0F, float(m_errs * 100U) / float(m_bits), m_minRSSI, m_maxRSSI, m_aveRSSI / m_rssiCount);
-				else
-					LogMessage("Received end of transmission from %s to %s, %.1f seconds, BER: %.1f%%", source.c_str(), dest.c_str(), float(m_frames) / 25.0F, float(m_errs * 100U) / float(m_bits));
-				end();
-			}
-
-			return true;
-		}
+		return true;
 	}
 
 	return false;
