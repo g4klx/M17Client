@@ -77,6 +77,7 @@ public:
 
 	// The GPIO section
 	bool         getGPIOEnabled() const;
+	unsigned int getGPIOStatusPin() const;
 	bool         getGPIOPTTInvert() const;
 	unsigned int getGPIOPTTPin() const;
 	bool         getGPIOVolumeInvert() const;
@@ -142,6 +143,7 @@ private:
 	std::string  m_codePlugFile;
 
 	bool         m_gpioEnabled;
+	unsigned int m_gpioStatusPin;
 	bool         m_gpioPTTInvert;
 	unsigned int m_gpioPTTPin;
 	bool         m_gpioVolumeInvert;

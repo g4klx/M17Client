@@ -76,6 +76,7 @@ m_logFileRoot(),
 m_logFileRotate(true),
 m_codePlugFile("CodePlug.ini"),
 m_gpioEnabled(false),
+m_gpioStatusPin(0U),
 m_gpioPTTInvert(true),
 m_gpioPTTPin(15U),
 m_gpioVolumeInvert(true),
@@ -240,6 +241,8 @@ bool CConf::read()
 		} else if (section == SECTION_GPIO) {
 			if (::strcmp(key, "Enable") == 0)
 				m_gpioEnabled = ::atoi(value) == 1;
+			else if (::strcmp(key, "Status") == 0)
+				m_gpioStatusPin = (unsigned int)::atoi(value);
 			else if (::strcmp(key, "PTTInvert") == 0)
 				m_gpioPTTInvert = ::atoi(value) == 1;
 			else if (::strcmp(key, "PTT") == 0)
@@ -451,6 +454,11 @@ std::string CConf::getCodePlugFile() const
 bool CConf::getGPIOEnabled() const
 {
 	return m_gpioEnabled;
+}
+
+unsigned int CConf::getGPIOStatusPin() const
+{
+	return m_gpioStatusPin;
 }
 
 bool CConf::getGPIOPTTInvert() const

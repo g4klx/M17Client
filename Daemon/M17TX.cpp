@@ -100,6 +100,11 @@ CM17TX::~CM17TX()
 	delete m_gpsLSF;
 }
 
+bool CM17TX::isTX() const
+{
+	return m_status != TXS_NONE;
+}
+
 void CM17TX::setCAN(unsigned int can)
 {
 	m_can = can;

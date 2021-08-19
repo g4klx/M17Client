@@ -58,6 +58,8 @@ public:
 
 	unsigned int read(unsigned char* data);
 
+	bool isTX() const;
+
 private:
 	CCodec2&                   m_3200;
 	CCodec2&                   m_1600;

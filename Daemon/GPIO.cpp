@@ -29,13 +29,15 @@
 
 #include "cerrno"
 
-CGPIO::CGPIO(bool pttInvert, unsigned int pttPin, bool volumeInvert, unsigned int volumeUpPin, unsigned int volumeDownPin) :
+CGPIO::CGPIO(unsigned int statusPin, bool pttInvert, unsigned int pttPin, bool volumeInvert, unsigned int volumeUpPin, unsigned int volumeDownPin) :
+m_statusPin(statusPin),
 m_pttInvert(pttInvert),
 m_pttPin(pttPin),
 m_volumeInvert(pttInvert),
 m_volumeUpPin(volumeUpPin),
 m_volumeDownPin(volumeDownPin),
 m_chip(NULL),
+m_status(NULL),
 m_ptt(NULL),
 m_volumeUp(NULL),
 m_volumeDown(NULL)
@@ -52,6 +54,20 @@ bool CGPIO::open()
 	if (m_chip == NULL) {
 		LogError("Unable to open the GPIO chip, errno=%d", errno);
 		return false;
+	}
+
+	if (m_statusPin > 0U) {
+		m_status = ::gpiod_chip_get_line(m_chip, m_statusPin);
+		if (m_status == NULL) {
+			LogError("Unable to open the Status GPIO pin, errno=%d", errno);
+			return false;
+		}
+
+		int ret = ::gpiod_line_request_output(m_status, "M17Client", 0);
+		if (ret == -1) {
+			LogError("Unable to set the Status GPIO pin for input, errno=%d", errno);
+			return false;
+		}
 	}
 
 	if (m_pttPin > 0U) {
@@ -97,6 +113,14 @@ bool CGPIO::open()
 	}
 
 	return true;
+}
+
+void CGPIO::setStatus(bool tx)
+{
+	if (m_status == NULL)
+		return;
+
+	::gpiod_line_set_value(m_status, tx ? 1 : 0);
 }
 
 bool CGPIO::getPTT()
@@ -153,6 +177,11 @@ bool CGPIO::getVolumeDown()
 void CGPIO::close()
 {
 	assert(m_chip != NULL);
+
+	if (m_status != NULL) {
+		::gpiod_line_release(m_status);
+		m_status  = NULL;
+	}
 
 	if (m_ptt != NULL) {
 		::gpiod_line_release(m_ptt);
