@@ -65,6 +65,7 @@ private:
 	CCodec2&                   m_1600;
 	unsigned int               m_mode;
 	std::string                m_source;
+	std::string                m_dest;
 	float                      m_micGain;
 	unsigned int               m_can;
 	TX_STATUS                  m_status;

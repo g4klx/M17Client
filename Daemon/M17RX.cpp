@@ -290,9 +290,9 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 		unsigned char frame[M17_FN_LENGTH_BYTES + M17_PAYLOAD_LENGTH_BYTES];
 		unsigned int ber = conv.decodeData(data + 2U + M17_SYNC_LENGTH_BYTES + M17_LICH_FRAGMENT_FEC_LENGTH_BYTES, frame);
 
-		unsigned int fn = (frame[0U] << 8) + (frame[1U] << 0);
+		uint16_t fn = (frame[0U] << 8) + (frame[1U] << 0);
 
-		LogDebug("Received audio, FN: %u, BER: %u/272 (%.1f%%)", fn & 0x7FFFU, ber, float(ber) / 2.72F);
+		LogDebug("Received audio, FN: %u, BER: %u/272 (%.1f%%)", fn, ber, float(ber) / 2.72F);
 
 		m_bits += 272U;
 		m_errs += ber;
@@ -331,21 +331,37 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 
 		m_frames++;
 
-		bool bValid = (fn & 0x7FFFU) < (210U * 25U);		// 210 seconds maximum
-		bool bEnd   = (fn & 0x8000U) == 0x8000U;
-
-		if (bValid && bEnd) {
-			std::string source = m_lsf.getSource();
-			std::string dest   = m_lsf.getDest();
-
-			if (m_rssi != 0U)
-				LogMessage("Received end of transmission from %s to %s, %.1f seconds, BER: %.1f%%, RSSI: -%u/-%u/-%u dBm", source.c_str(), dest.c_str(), float(m_frames) / 25.0F, float(m_errs * 100U) / float(m_bits), m_minRSSI, m_maxRSSI, m_aveRSSI / m_rssiCount);
-			else
-				LogMessage("Received end of transmission from %s to %s, %.1f seconds, BER: %.1f%%", source.c_str(), dest.c_str(), float(m_frames) / 25.0F, float(m_errs * 100U) / float(m_bits));
-			end();
-		}
-
 		return true;
+	}
+
+	if ((m_state == RS_RF_AUDIO || m_state == RS_RF_AUDIO_DATA) && data[0U] == TAG_HEADER) {
+		CM17Convolution conv;
+		unsigned char frame[M17_LSF_LENGTH_BYTES];
+		unsigned int ber = conv.decodeLinkSetup(data + 2U + M17_SYNC_LENGTH_BYTES, frame);
+
+		bool valid = CM17CRC::checkCRC16(frame, M17_LSF_LENGTH_BYTES);
+		if (valid) {
+			CM17LSF lsf;
+			lsf.setLinkSetup(frame);
+
+			m_frames++;
+			m_errs  += ber;
+			m_bits  += 368U;
+
+			bool bEnd = lsf.getDataType() == M17_DATA_TYPE_END;
+			if (bEnd) {
+				std::string source = lsf.getSource();
+				std::string dest   = lsf.getDest();
+
+				if (m_rssi != 0U)
+					LogMessage("Received end of transmission from %s to %s, %.1f seconds, BER: %.1f%%, RSSI: -%u/-%u/-%u dBm", source.c_str(), dest.c_str(), float(m_frames) / 25.0F, float(m_errs * 100U) / float(m_bits), m_minRSSI, m_maxRSSI, m_aveRSSI / m_rssiCount);
+				else
+					LogMessage("Received end of transmission from %s to %s, %.1f seconds, BER: %.1f%%", source.c_str(), dest.c_str(), float(m_frames) / 25.0F, float(m_errs * 100U) / float(m_bits));
+				end();
+			}
+
+			return true;
+		}
 	}
 
 	return false;

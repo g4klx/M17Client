@@ -64,6 +64,7 @@ const unsigned char M17_1600_SILENCE[] = {0x01U, 0x00U, 0x04U, 0x00U, 0x25U, 0x7
 const unsigned char M17_PACKET_TYPE = 0U;
 const unsigned char M17_STREAM_TYPE = 1U;
 
+const unsigned char M17_DATA_TYPE_END        = 0x00U;
 const unsigned char M17_DATA_TYPE_DATA       = 0x01U;
 const unsigned char M17_DATA_TYPE_VOICE      = 0x02U;
 const unsigned char M17_DATA_TYPE_VOICE_DATA = 0x03U;

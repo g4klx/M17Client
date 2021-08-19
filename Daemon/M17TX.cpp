@@ -59,6 +59,7 @@ m_3200(codec3200),
 m_1600(codec1600),
 m_mode(mode),
 m_source(callsign),
+m_dest(),
 m_micGain(1.0F),
 m_can(0U),
 m_status(TXS_NONE),
@@ -114,6 +115,8 @@ void CM17TX::setCAN(unsigned int can)
 
 void CM17TX::setDestination(const std::string& callsign)
 {
+	m_dest = callsign;
+
 	m_textLSF->setDest(callsign);
 }
 
@@ -211,7 +214,7 @@ void CM17TX::process()
 		m_status = TXS_AUDIO;
 	}
 
-	if (m_status == TXS_AUDIO || m_status == TXS_END) {
+	if (m_status == TXS_AUDIO) {
 		unsigned char data[M17_FRAME_LENGTH_BYTES + 2U];
 
 		data[0U] = TAG_DATA1;
@@ -238,16 +241,10 @@ void CM17TX::process()
 
 		CM17Utils::combineFragmentLICHFEC(lich1, lich2, lich3, lich4, data + 2U + M17_SYNC_LENGTH_BYTES);
 
-		uint16_t fn = m_frames;
-		if (m_status == TXS_END) {
-			m_status = TXS_NONE;
-			m_audio.clear();
-			fn |= 0x8000U;
-		}
-
 		unsigned char payload[M17_FN_LENGTH_BYTES + M17_PAYLOAD_LENGTH_BYTES];
 
 		// Add the FN
+		uint16_t fn = m_frames;
 		payload[0U] = (fn >> 8) & 0xFFU;
 		payload[1U] = (fn >> 0) & 0xFFU;
 
@@ -289,6 +286,42 @@ void CM17TX::process()
 		}
 
 		m_frames++;
+	}
+
+	if (m_status == TXS_END) {
+		// Create a dummy start message
+		unsigned char end[M17_FRAME_LENGTH_BYTES + 2U];
+
+		end[0U] = TAG_HEADER;
+		end[1U] = 0x00U;
+
+		// Generate the sync
+		addLinkSetupSync(end + 2U);
+
+		CM17LSF lsf;
+		lsf.setSource(m_source);
+		lsf.setDest(m_dest);
+		lsf.setPacketStream(M17_STREAM_TYPE);
+		lsf.setDataType(M17_DATA_TYPE_END);
+		lsf.setEncryptionType(M17_ENCRYPTION_TYPE_NONE);
+		lsf.setEncryptionSubType(M17_ENCRYPTION_SUB_TYPE_TEXT);
+		lsf.setMeta(M17_NULL_NONCE);
+
+		unsigned char setup[M17_LSF_LENGTH_BYTES];
+		lsf.getLinkSetup(setup);
+
+		// Add the convolution FEC
+		CM17Convolution conv;
+		conv.encodeLinkSetup(setup, end + 2U + M17_SYNC_LENGTH_BYTES);
+
+		unsigned char temp[M17_FRAME_LENGTH_BYTES];
+		interleaver(end + 2U, temp);
+		decorrelator(temp, end + 2U);
+
+		writeQueue(end);
+
+		m_status = TXS_NONE;
+		m_audio.clear();
 	}
 }
 
