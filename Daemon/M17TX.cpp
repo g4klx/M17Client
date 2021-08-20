@@ -59,7 +59,6 @@ m_3200(codec3200),
 m_1600(codec1600),
 m_mode(mode),
 m_source(callsign),
-m_dest(),
 m_micGain(1.0F),
 m_can(0U),
 m_status(TXS_NONE),
@@ -69,6 +68,7 @@ m_frames(0U),
 m_currLSF(NULL),
 m_textLSF(NULL),
 m_gpsLSF(NULL),
+m_endLSF(),
 m_lsfN(0U),
 m_resampler(NULL),
 m_error(0)
@@ -80,6 +80,13 @@ m_error(0)
 	m_textLSF->setEncryptionType(M17_ENCRYPTION_TYPE_NONE);
 	m_textLSF->setEncryptionSubType(M17_ENCRYPTION_SUB_TYPE_TEXT);
 	m_textLSF->setMeta(M17_NULL_NONCE);
+
+	m_endLSF.setSource(callsign);
+	m_endLSF.setPacketStream(M17_STREAM_TYPE);
+	m_endLSF.setDataType(M17_DATA_TYPE_END);
+	m_endLSF.setEncryptionType(M17_ENCRYPTION_TYPE_NONE);
+	m_endLSF.setEncryptionSubType(M17_ENCRYPTION_SUB_TYPE_TEXT);
+	m_endLSF.setMeta(M17_NULL_NONCE);
 
 	if (!text.empty()) {
 		std::string temp = text;
@@ -115,9 +122,8 @@ void CM17TX::setCAN(unsigned int can)
 
 void CM17TX::setDestination(const std::string& callsign)
 {
-	m_dest = callsign;
-
 	m_textLSF->setDest(callsign);
+	m_endLSF.setDest(callsign);
 }
 
 void CM17TX::setMicGain(unsigned int percentage)
@@ -298,17 +304,8 @@ void CM17TX::process()
 		// Generate the sync
 		addLinkSetupSync(end + 2U);
 
-		CM17LSF lsf;
-		lsf.setSource(m_source);
-		lsf.setDest(m_dest);
-		lsf.setPacketStream(M17_STREAM_TYPE);
-		lsf.setDataType(M17_DATA_TYPE_END);
-		lsf.setEncryptionType(M17_ENCRYPTION_TYPE_NONE);
-		lsf.setEncryptionSubType(M17_ENCRYPTION_SUB_TYPE_TEXT);
-		lsf.setMeta(M17_NULL_NONCE);
-
 		unsigned char setup[M17_LSF_LENGTH_BYTES];
-		lsf.getLinkSetup(setup);
+		m_endLSF.getLinkSetup(setup);
 
 		// Add the convolution FEC
 		CM17Convolution conv;

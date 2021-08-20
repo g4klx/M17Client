@@ -404,9 +404,7 @@ bool CM17RX::processHeader(bool lateEntry)
 		m_state = RS_RF_AUDIO_DATA;
 		break;
 	default:
-		LogMessage("Received%sunknown transmission from %s to %s", lateEntry ? " late entry " : " ", source.c_str(), dest.c_str());
-		m_state = RS_RF_DATA;
-		break;
+		return false;
 	}
 
 	// Valid M17 LSF received
