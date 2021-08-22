@@ -71,4 +71,6 @@ enum HW_TYPE {
 	HWT_UNKNOWN
 };
 
+const float INVALID_GPS_DATA = -999.9F;
+
 #endif

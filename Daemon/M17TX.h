@@ -29,6 +29,7 @@
 #include <samplerate.h>
 
 #include <string>
+#include <vector>
 
 enum TX_STATUS {
 	TXS_NONE,
@@ -45,6 +46,8 @@ public:
 	void setCAN(unsigned int can);
 
 	void setDestination(const std::string& callsign);
+
+	void setGPS(float latitude, float longitude, float altitude, float speed, float track, const std::string& type);
 
 	void setMicGain(unsigned int percentage);
 
@@ -65,6 +68,7 @@ private:
 	CCodec2&                   m_1600;
 	unsigned int               m_mode;
 	std::string                m_source;
+	std::string                m_dest;
 	float                      m_micGain;
 	unsigned int               m_can;
 	TX_STATUS                  m_status;
@@ -72,7 +76,9 @@ private:
 	CRingBuffer<unsigned char> m_queue;
 	uint16_t                   m_frames;
 	CM17LSF*                   m_currLSF;
-	CM17LSF*                   m_textLSF;
+	std::vector<CM17LSF*>::const_iterator m_currTextLSF;
+	std::vector<CM17LSF*>      m_textLSF;
+	bool                       m_sendingGPS;
 	CM17LSF*                   m_gpsLSF;
 	unsigned int               m_lsfN;
 	SRC_STATE*                 m_resampler;

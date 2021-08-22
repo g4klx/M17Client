@@ -406,7 +406,7 @@ bool CM17RX::processHeader(bool lateEntry)
 		break;
 	default:
 		LogMessage("Received%sunknown transmission from %s to %s", lateEntry ? " late entry " : " ", source.c_str(), dest.c_str());
-		m_state = RS_RF_DATA;
+		m_lsf.reset();
 		break;
 	}
 
@@ -445,18 +445,21 @@ void CM17RX::processLSF(const CM17LSF& lsf) const
 
 		switch (lsf.getEncryptionSubType()) {
 			case M17_ENCRYPTION_SUB_TYPE_TEXT:
-				CUtils::dump(1U, "LSF Text Data", (unsigned char *)meta, M17_META_LENGTH_BYTES);
+				if (meta[0U] != 0x00U) {
+					CUtils::dump(1U, "LSF Text Data", (unsigned char *)meta, M17_META_LENGTH_BYTES);
 
-				meta[M17_META_LENGTH_BYTES] = '\0';
+					meta[M17_META_LENGTH_BYTES] = '\0';
 
-				// Make sure that the text is valid, or at least interesting
-				if (meta[0U] != 0x00U && ::strcmp(meta, "              ") != 0)
-					m_callback->textCallback(meta);
-
+					m_callback->textCallback(meta + 1U);
+				}
 				break;
 
 			case M17_ENCRYPTION_SUB_TYPE_GPS:
 				CUtils::dump(1U, "LSF GPS Data", (unsigned char *)meta, M17_META_LENGTH_BYTES);
+				break;
+
+			case M17_ENCRYPTION_SUB_TYPE_CALLSIGNS:
+				CUtils::dump(1U, "LSF Callsign Data", (unsigned char *)meta, M17_META_LENGTH_BYTES);
 				break;
 
 			default:

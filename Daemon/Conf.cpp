@@ -86,9 +86,10 @@ m_hamLibEnabled(false),
 m_hamLibRadioType(),
 m_hamLibPort(),
 m_hamLibSpeed(0U),
-m_gpsdEnabled(false),
+m_gpsEnabled(false),
 m_gpsdAddress("127.0.0.1"),
 m_gpsdPort(),
+m_gpsType("Fixed"),
 m_controlRemoteAddress("127.0.0.1"),
 m_controlRemotePort(0U),
 m_controlLocalAddress("127.0.0.1"),
@@ -264,11 +265,13 @@ bool CConf::read()
 				m_hamLibSpeed = (unsigned int)::atoi(value);
 		} else if (section == SECTION_GPSD) {
 			if (::strcmp(key, "Enable") == 0)
-				m_gpsdEnabled = ::atoi(value) == 1;
+				m_gpsEnabled = ::atoi(value) == 1;
 			else if (::strcmp(key, "Address") == 0)
 				m_gpsdAddress = value;
 			else if (::strcmp(key, "Port") == 0)
 				m_gpsdPort = value;
+			else if (::strcmp(key, "Type") == 0)
+				m_gpsType = value;
 		} else if (section == SECTION_CONTROL) {
 			if (::strcmp(key, "RemoteAddress") == 0)
 				m_controlRemoteAddress = value;
@@ -506,9 +509,9 @@ unsigned int CConf::getHamLibSpeed() const
 	return m_hamLibSpeed;
 }
 
-bool CConf::getGPSDEnabled() const
+bool CConf::getGPSEnabled() const
 {
-	return m_gpsdEnabled;
+	return m_gpsEnabled;
 }
 
 std::string CConf::getGPSDAddress() const
@@ -519,6 +522,11 @@ std::string CConf::getGPSDAddress() const
 std::string CConf::getGPSDPort() const
 {
 	return m_gpsdPort;
+}
+
+std::string CConf::getGPSType() const
+{
+	return m_gpsType;
 }
 
 std::string CConf::getControlRemoteAddress() const

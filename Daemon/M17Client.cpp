@@ -290,7 +290,7 @@ int CM17Client::run()
 #endif
 
 #if defined(USE_GPSD)
-	if (m_conf.getGPSDEnabled()) {
+	if (m_conf.getGPSEnabled()) {
 		m_gpsd = new CGPSD(m_conf.getGPSDAddress(), m_conf.getGPSDPort());
 		ret = m_gpsd->open();
 		if (!ret) {
@@ -380,6 +380,15 @@ int CM17Client::run()
 			parseCommand(command);
 		}
 
+#if defined(USE_GPSD)
+		if (m_gpsd != NULL) {
+			float latiude, longitude, altitude, speed, track;
+			bool ret = m_gpsd->getData(latiude, longitude, altitude, speed, track);
+			if (ret)
+				m_tx->setGPS(latiude, longitude, altitude, speed, track, m_conf.getGPSType());
+		}
+#endif
+
 #if defined(USE_GPIO)
 		if (m_gpio != NULL) {
 			bool tx = m_gpio->getPTT();
@@ -422,6 +431,10 @@ int CM17Client::run()
 		unsigned int ms = stopWatch.elapsed();
 		stopWatch.start();
 
+#if defined(USE_GPSD)
+		if (m_gpsd != NULL)
+			m_gpsd->clock(ms);
+#endif
 		modem.clock(ms);
 
 		if (ms < 10U)

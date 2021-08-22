@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2018,2020 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2018,2020,2021 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -18,8 +18,10 @@
 
 #if defined(USE_GPSD)
 
-#if !defined(GPSD.h)
+#if !defined(GPSD_H)
 #define	GPSD_H
+
+#include "Timer.h"
 
 #include <string>
 
@@ -32,6 +34,8 @@ public:
 
 	bool open();
 
+	bool getData(float& latitude, float& longitude, float& altitude, float& speed, float& track);
+
 	void clock(unsigned int ms);
 
 	void close();
@@ -40,6 +44,7 @@ private:
 	std::string       m_gpsdAddress;
 	std::string       m_gpsdPort;
 	struct gps_data_t m_gpsdData;
+	CTimer            m_timer;
 };
 
 #endif

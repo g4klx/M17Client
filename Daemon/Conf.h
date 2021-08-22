@@ -91,9 +91,10 @@ public:
 	unsigned int getHamLibSpeed() const;
 
 	// The GPSD section
-	bool         getGPSDEnabled() const;
+	bool         getGPSEnabled() const;
 	std::string  getGPSDAddress() const;
 	std::string  getGPSDPort() const;
+	std::string  getGPSType() const;
 
 	// The Control section
 	std::string    getControlRemoteAddress() const;
@@ -155,9 +156,10 @@ private:
 	std::string  m_hamLibPort;
 	unsigned int m_hamLibSpeed;
 
-	bool         m_gpsdEnabled;
+	bool         m_gpsEnabled;
 	std::string  m_gpsdAddress;
 	std::string  m_gpsdPort;
+	std::string  m_gpsType;
 
 	std::string    m_controlRemoteAddress;
 	unsigned short m_controlRemotePort;

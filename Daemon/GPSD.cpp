@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2018,2020 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2018,2020,2021 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,6 +17,8 @@
  */
 
 #include "GPSD.h"
+#include "Defines.h"
+#include "Log.h"
 
 #if defined(USE_GPSD)
 
@@ -29,9 +31,7 @@ CGPSD::CGPSD(const std::string& address, const std::string& port) :
 m_gpsdAddress(address),
 m_gpsdPort(port),
 m_gpsdData(),
-m_idTimer(1000U, 60U),
-m_networks(),
-m_aprs(NULL)
+m_timer(1000U, 5U)
 {
 	assert(!address.empty());
 	assert(!port.empty());
@@ -39,20 +39,6 @@ m_aprs(NULL)
 
 CGPSD::~CGPSD()
 {
-}
-
-void CGPSD::addNetwork(CDMRNetwork* network)
-{
-	assert(network != NULL);
-
-	m_networks.push_back(network);
-}
-
-void CGPSD::setAPRS(CAPRSWriter* aprs)
-{
-	assert(aprs != NULL);
-
-	m_aprs = aprs;
 }
 
 bool CGPSD::open()
@@ -67,19 +53,9 @@ bool CGPSD::open()
 
 	LogMessage("Connected to GPSD");
 
-	m_idTimer.start();
+	m_timer.start();
 
 	return true;
-}
-
-void CGPSD::clock(unsigned int ms)
-{
-	m_idTimer.clock(ms);
-
-	if (m_idTimer.hasExpired()) {
-		sendReport();
-		m_idTimer.start();
-	}
 }
 
 void CGPSD::close()
@@ -88,41 +64,58 @@ void CGPSD::close()
 	::gps_close(&m_gpsdData);
 }
 
-void CGPSD::sendReport()
+void CGPSD::clock(unsigned int ms)
+{
+	m_timer.clock(ms);
+}
+
+bool CGPSD::getData(float& latitude, float& longitude, float& altitude, float& speed, float& track)
 {
 	if (!::gps_waiting(&m_gpsdData, 0))
-		return;
+		return false;
 
 #if GPSD_API_MAJOR_VERSION >= 7
 	if (::gps_read(&m_gpsdData, NULL, 0) <= 0)
-		return;
+		return false;
 #else
 	if (::gps_read(&m_gpsdData) <= 0)
-		return;
+		return false;
 #endif
 
+	if (m_timer.isRunning() && !m_timer.hasExpired())
+		return false;
+
 	if (m_gpsdData.status != STATUS_FIX)
-		return;
+		return false;
 
 	bool latlonSet = (m_gpsdData.set & LATLON_SET) == LATLON_SET;
 	if (!latlonSet)
-		return;
+		return false;
 
 	bool altitudeSet = (m_gpsdData.set & ALTITUDE_SET) == ALTITUDE_SET;
+	bool speedSet    = (m_gpsdData.set & SPEED_SET) == SPEED_SET;
+	bool trackSet    = (m_gpsdData.set & TRACK_SET) == TRACK_SET;
 
-	float latitude  = float(m_gpsdData.fix.latitude);
-	float longitude = float(m_gpsdData.fix.longitude);
+	latitude  = float(m_gpsdData.fix.latitude);
+	longitude = float(m_gpsdData.fix.longitude);
 #if GPSD_API_MAJOR_VERSION >= 9
-	float altitude  = float(m_gpsdData.fix.altMSL);
+	altitude  = float(m_gpsdData.fix.altMSL);
 #else
-	float altitude  = float(m_gpsdData.fix.altitude);
+	altitude  = float(m_gpsdData.fix.altitude);
 #endif
+	speed     = float(m_gpsdData.fix.speed);
+	track     = float(m_gpsdData.fix.track);
 
-	if (m_aprs != NULL)
-		m_aprs->setLocation(latitude, longitude, altitudeSet ? altitude : 0.0F);
+	if (!altitudeSet)
+		altitude = INVALID_GPS_DATA;
+	if (!speedSet)
+		speed = INVALID_GPS_DATA;
+	if (!trackSet)
+		track = INVALID_GPS_DATA;
 
-	for (std::vector<CDMRNetwork*>::const_iterator it = m_networks.begin(); it != m_networks.end(); ++it)
-		(*it)->writeHomePosition(latitude, longitude);
+	m_timer.start();
+
+	return true;
 }
 
 #endif

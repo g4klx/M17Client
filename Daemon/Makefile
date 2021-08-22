@@ -1,6 +1,6 @@
 # To use HamLib to control the radio, add -DUSE_HAMLIB to the CFLAGS line and add -lhamlib to the LIBS line
 #
-# To use GPSD to transmit GPS data, add -DUSE_GPSD to the CFLAGS line
+# To use GPSD to transmit GPS data, add -DUSE_GPSD to the CFLAGS line and add -lgps to the LIBS line
 #
 # To use GPIO for PTT, add -DUSE_GPIO to the CFLAGS line and add -lgpiod to the LIBS line
 #

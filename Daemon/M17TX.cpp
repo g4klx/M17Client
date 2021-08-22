@@ -59,6 +59,7 @@ m_3200(codec3200),
 m_1600(codec1600),
 m_mode(mode),
 m_source(callsign),
+m_dest(),
 m_micGain(1.0F),
 m_can(0U),
 m_status(TXS_NONE),
@@ -66,28 +67,52 @@ m_audio(5000U, "M17 TX Audio"),
 m_queue(5000U, "M17 TX Data"),
 m_frames(0U),
 m_currLSF(NULL),
-m_textLSF(NULL),
+m_currTextLSF(),
+m_textLSF(),
+m_sendingGPS(false),
 m_gpsLSF(NULL),
 m_lsfN(0U),
 m_resampler(NULL),
 m_error(0)
 {
-	m_textLSF = new CM17LSF;
-	m_textLSF->setSource(callsign);
-	m_textLSF->setPacketStream(M17_STREAM_TYPE);
-	m_textLSF->setDataType(m_mode == 1600U ? M17_DATA_TYPE_VOICE_DATA : M17_DATA_TYPE_VOICE);
-	m_textLSF->setEncryptionType(M17_ENCRYPTION_TYPE_NONE);
-	m_textLSF->setEncryptionSubType(M17_ENCRYPTION_SUB_TYPE_TEXT);
-	m_textLSF->setMeta(M17_NULL_NONCE);
-
 	if (!text.empty()) {
-		std::string temp = text;
-		temp.resize(M17_META_LENGTH_BYTES, ' ');
+		unsigned char count = text.size() / (M17_META_LENGTH_BYTES - 1U);
+		if ((text.size() % (M17_META_LENGTH_BYTES - 1U)) > 0U)
+			count++;
 
-		m_textLSF->setMeta((const unsigned char*)temp.c_str());
+		for (unsigned char n = 0U; n < count; n++) {
+			CM17LSF* lsf = new CM17LSF;
+			lsf->setSource(callsign);
+			lsf->setPacketStream(M17_STREAM_TYPE);
+			lsf->setDataType(m_mode == 1600U ? M17_DATA_TYPE_VOICE_DATA : M17_DATA_TYPE_VOICE);
+			lsf->setEncryptionType(M17_ENCRYPTION_TYPE_NONE);
+			lsf->setEncryptionSubType(M17_ENCRYPTION_SUB_TYPE_TEXT);
+
+			unsigned char meta[M17_META_LENGTH_BYTES];
+
+			meta[0U] = (n << 4) | (count << 0);
+
+			std::string temp = text.substr(n * (M17_META_LENGTH_BYTES - 1U), M17_META_LENGTH_BYTES - 1U);
+			temp.resize(M17_META_LENGTH_BYTES - 1U, ' ');
+
+			::memcpy(meta + 1U, temp.c_str(), M17_META_LENGTH_BYTES - 1U);
+
+			lsf->setMeta(meta);
+			m_textLSF.push_back(lsf);
+		}
+	} else {
+		CM17LSF* lsf = new CM17LSF;
+		lsf->setSource(callsign);
+		lsf->setPacketStream(M17_STREAM_TYPE);
+		lsf->setDataType(m_mode == 1600U ? M17_DATA_TYPE_VOICE_DATA : M17_DATA_TYPE_VOICE);
+		lsf->setEncryptionType(M17_ENCRYPTION_TYPE_NONE);
+		lsf->setEncryptionSubType(M17_ENCRYPTION_SUB_TYPE_TEXT);
+		lsf->setMeta(M17_NULL_META);
+		m_textLSF.push_back(lsf);
 	}
 
-	m_currLSF = m_textLSF;
+	m_currTextLSF = m_textLSF.cbegin();
+	m_currLSF = *m_currTextLSF;
 
 	m_resampler = ::src_new(SRC_SINC_FASTEST, 1, &m_error);
 }
@@ -96,7 +121,10 @@ CM17TX::~CM17TX()
 {
 	::src_delete(m_resampler);
 
-	delete m_textLSF;
+	for (std::vector<CM17LSF*>::iterator it = m_textLSF.begin(); it != m_textLSF.end(); ++it)
+		delete *it;
+	m_textLSF.clear();
+
 	delete m_gpsLSF;
 }
 
@@ -109,12 +137,96 @@ void CM17TX::setCAN(unsigned int can)
 {
 	m_can = can;
 	
-	m_textLSF->setCAN(can);
+	for (std::vector<CM17LSF*>::iterator it = m_textLSF.begin(); it != m_textLSF.end(); ++it)
+		(*it)->setCAN(can);
 }
 
 void CM17TX::setDestination(const std::string& callsign)
 {
-	m_textLSF->setDest(callsign);
+	m_dest = callsign;
+
+	for (std::vector<CM17LSF*>::iterator it = m_textLSF.begin(); it != m_textLSF.end(); ++it)
+		(*it)->setDest(callsign);
+}
+
+void CM17TX::setGPS(float latitude, float longitude, float altitude, float speed, float track, const std::string& type)
+{
+	LogDebug("GPS Data: Lat=%f deg Long=%f deg Alt=%f m Speed=%f m/s Track=%f deg Type=%s", latitude, longitude, altitude, speed, track, type.c_str());
+
+	m_gpsLSF = new CM17LSF;
+	m_gpsLSF->setSource(m_source);
+	m_gpsLSF->setDest(m_dest);
+	m_gpsLSF->setPacketStream(M17_STREAM_TYPE);
+	m_gpsLSF->setDataType(m_mode == 1600U ? M17_DATA_TYPE_VOICE_DATA : M17_DATA_TYPE_VOICE);
+	m_gpsLSF->setEncryptionType(M17_ENCRYPTION_TYPE_NONE);
+	m_gpsLSF->setEncryptionSubType(M17_ENCRYPTION_SUB_TYPE_GPS);
+
+	bool latN = true;
+	if (latitude < 0.0F) {
+		latitude *= -1.0F;
+		latN = false;
+	}
+
+	bool longE = true;
+	if (longitude < 0.0F) {
+		longitude *= -1.0F;
+		longE = false;
+	}
+
+	unsigned char meta[M17_META_LENGTH_BYTES];
+	::memset(meta, 0x00U, M17_META_LENGTH_BYTES);
+
+	meta[0U] = M17_GPS_CLIENT_M17CLIENT << 4;
+
+	if (type == "Handheld")
+		meta[1U] = M17_GPS_TYPE_HANDHELD;
+	else if (type == "Mobile")
+		meta[1U] = M17_GPS_TYPE_MOBILE;
+	else
+		meta[1U] = M17_GPS_TYPE_FIXED;
+
+	unsigned char degrees  = (unsigned char)latitude;
+	unsigned short seconds = (unsigned short)((latitude - float(degrees)) * 65535.0F);
+
+	meta[2U] = degrees;
+	meta[3U] = (seconds >> 8) & 0xFFU;
+	meta[4U] = (seconds >> 0) & 0xFFU;
+
+	degrees = (unsigned char)longitude;
+	seconds = (unsigned short)((longitude - float(degrees)) * 65535.0F);
+
+	meta[5U] = degrees;
+	meta[6U] = (seconds >> 8) & 0xFFU;
+	meta[7U] = (seconds >> 0) & 0xFFU;
+
+	if (!latN)
+		meta[8U] |= 0x01U;
+	if (!longE)
+		meta[8U] |= 0x02U;
+
+	if (altitude != INVALID_GPS_DATA) {
+		altitude *= 3.28F;	// m to ft
+		unsigned short height = (unsigned short)(altitude + 1500.5F);
+
+		meta[9U]  = (height >> 8) & 0xFFU;
+		meta[10U] = (height >> 0) & 0xFFU;
+
+		meta[8U] |= 0x04U;
+	}
+	
+	if (speed != INVALID_GPS_DATA && track != INVALID_GPS_DATA) {
+		speed *= 2.2369F;	// m/s to mph
+		unsigned short direction = (unsigned short)(track + 0.5F);
+
+		meta[11U] = (direction >> 8) & 0xFFU;
+		meta[12U] = (direction >> 0) & 0xFFU;
+
+		meta[13U] = (unsigned char)(speed + 0.5F);
+
+		meta[8U] |= 0x08U;
+	}
+
+	m_gpsLSF->setMeta(meta);
 }
 
 void CM17TX::setMicGain(unsigned int percentage)
@@ -140,6 +252,9 @@ unsigned int CM17TX::read(unsigned char* data)
 void CM17TX::start()
 {
 	m_status = TXS_HEADER;
+	
+	m_currTextLSF = m_textLSF.cbegin();
+	m_currLSF = *m_currTextLSF;
 }
 
 void CM17TX::write(const float* input, unsigned int len)
@@ -182,7 +297,6 @@ void CM17TX::process()
 		audio[i] = short(f8000[i] * 32768.0F * m_micGain + 0.5F);
 
 	if (m_status == TXS_HEADER) {
-		m_currLSF = m_textLSF;
 		m_frames  = 0U;
 		m_lsfN    = 0U;
 
@@ -279,13 +393,17 @@ void CM17TX::process()
 			if (m_currLSF == m_gpsLSF) {
 				delete m_gpsLSF;
 				m_gpsLSF = NULL;
-				
-				m_currLSF = m_textLSF;
 			}
 
 			// Do a round-robin of the different LSF contents
-			if (m_currLSF == m_textLSF && m_gpsLSF != NULL)
+			if (m_gpsLSF != NULL && m_currLSF != m_gpsLSF) {
 				m_currLSF = m_gpsLSF;
+			} else {
+				++m_currTextLSF;
+				if (m_currTextLSF == m_textLSF.cend())
+					m_currTextLSF = m_textLSF.cbegin();
+				m_currLSF = *m_currTextLSF;
+			}
 		}
 
 		m_frames++;
