@@ -74,12 +74,12 @@ private:
 	CM17LSF*                   m_currLSF;
 	CM17LSF*                   m_textLSF;
 	CM17LSF*                   m_gpsLSF;
-	CM17LSF                    m_endLSF;
 	unsigned int               m_lsfN;
 	SRC_STATE*                 m_resampler;
 	int                        m_error;
 
 	void writeQueue(const unsigned char* data);
+	void writeQueueEOT();
 
 	void interleaver(const unsigned char* in, unsigned char* out) const;
 	void decorrelator(const unsigned char* in, unsigned char* out) const;

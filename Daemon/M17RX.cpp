@@ -154,12 +154,6 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 		return false;
 	}
 
-	// Ignore packet data
-	if (type == TAG_DATA2) {
-		m_state = RS_RF_LISTENING;
-		return false;
-	}
-
 	// Have we got RSSI bytes on the end?
 	if (len == (M17_FRAME_LENGTH_BYTES + 4U)) {
 		uint16_t raw = 0U;
@@ -232,12 +226,12 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 		}
 	}
 
-	if (m_state == RS_RF_LISTENING && data[0U] == TAG_DATA1) {
+	if (m_state == RS_RF_LISTENING && data[0U] == TAG_DATA) {
 		m_state = RS_RF_LATE_ENTRY;
 		m_lsf.reset();
 	}
 
-	if (m_state == RS_RF_LATE_ENTRY && data[0U] == TAG_DATA1) {
+	if (m_state == RS_RF_LATE_ENTRY && data[0U] == TAG_DATA) {
 		unsigned int lich1, lich2, lich3, lich4;
 		bool valid1 = CGolay24128::decode24128(data + 2U + M17_SYNC_LENGTH_BYTES + 0U, lich1);
 		bool valid2 = CGolay24128::decode24128(data + 2U + M17_SYNC_LENGTH_BYTES + 3U, lich2);
@@ -283,7 +277,7 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 		}
 	}
 
-	if ((m_state == RS_RF_AUDIO || m_state == RS_RF_AUDIO_DATA) && data[0U] == TAG_DATA1) {
+	if ((m_state == RS_RF_AUDIO || m_state == RS_RF_AUDIO_DATA) && data[0U] == TAG_DATA) {
 		processRunningLSF(data + 2U + M17_SYNC_LENGTH_BYTES);
 
 		CM17Convolution conv;
@@ -334,7 +328,7 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 		return true;
 	}
 
-	if ((m_state == RS_RF_AUDIO || m_state == RS_RF_AUDIO_DATA) && data[0U] == TAG_HEADER) {
+	if ((m_state == RS_RF_AUDIO || m_state == RS_RF_AUDIO_DATA) && data[0U] == TAG_EOT) {
 		std::string source = m_lsf.getSource();
 		std::string dest   = m_lsf.getDest();
 

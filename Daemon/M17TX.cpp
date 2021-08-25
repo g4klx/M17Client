@@ -68,7 +68,6 @@ m_frames(0U),
 m_currLSF(NULL),
 m_textLSF(NULL),
 m_gpsLSF(NULL),
-m_endLSF(),
 m_lsfN(0U),
 m_resampler(NULL),
 m_error(0)
@@ -80,13 +79,6 @@ m_error(0)
 	m_textLSF->setEncryptionType(M17_ENCRYPTION_TYPE_NONE);
 	m_textLSF->setEncryptionSubType(M17_ENCRYPTION_SUB_TYPE_TEXT);
 	m_textLSF->setMeta(M17_NULL_NONCE);
-
-	m_endLSF.setSource(callsign);
-	m_endLSF.setPacketStream(M17_STREAM_TYPE);
-	m_endLSF.setDataType(M17_DATA_TYPE_END);
-	m_endLSF.setEncryptionType(M17_ENCRYPTION_TYPE_NONE);
-	m_endLSF.setEncryptionSubType(M17_ENCRYPTION_SUB_TYPE_TEXT);
-	m_endLSF.setMeta(M17_NULL_NONCE);
 
 	if (!text.empty()) {
 		std::string temp = text;
@@ -123,7 +115,6 @@ void CM17TX::setCAN(unsigned int can)
 void CM17TX::setDestination(const std::string& callsign)
 {
 	m_textLSF->setDest(callsign);
-	m_endLSF.setDest(callsign);
 }
 
 void CM17TX::setMicGain(unsigned int percentage)
@@ -223,7 +214,7 @@ void CM17TX::process()
 	if (m_status == TXS_AUDIO) {
 		unsigned char data[M17_FRAME_LENGTH_BYTES + 2U];
 
-		data[0U] = TAG_DATA1;
+		data[0U] = TAG_DATA;
 		data[1U] = 0x00U;
 
 		// Generate the sync
@@ -295,28 +286,7 @@ void CM17TX::process()
 	}
 
 	if (m_status == TXS_END) {
-		// Create a dummy start message
-		unsigned char end[M17_FRAME_LENGTH_BYTES + 2U];
-
-		end[0U] = TAG_HEADER;
-		end[1U] = 0x00U;
-
-		// Generate the sync
-		addLinkSetupSync(end + 2U);
-
-		unsigned char setup[M17_LSF_LENGTH_BYTES];
-		m_endLSF.getLinkSetup(setup);
-
-		// Add the convolution FEC
-		CM17Convolution conv;
-		conv.encodeLinkSetup(setup, end + 2U + M17_SYNC_LENGTH_BYTES);
-
-		unsigned char temp[M17_FRAME_LENGTH_BYTES];
-		interleaver(end + 2U, temp);
-		decorrelator(temp, end + 2U);
-
-		writeQueue(end);
-
+		writeQueueEOT();
 		m_status = TXS_NONE;
 		m_audio.clear();
 	}
@@ -331,7 +301,7 @@ void CM17TX::writeQueue(const unsigned char *data)
 {
 	assert(data != NULL);
 
-	unsigned char len = M17_FRAME_LENGTH_BYTES + 2U;
+	const unsigned char len = M17_FRAME_LENGTH_BYTES + 2U;
 
 	unsigned int space = m_queue.freeSpace();
 	if (space < (len + 1U)) {
@@ -342,6 +312,22 @@ void CM17TX::writeQueue(const unsigned char *data)
 	m_queue.addData(&len, 1U);
 
 	m_queue.addData(data, len);
+}
+
+void CM17TX::writeQueueEOT()
+{
+	const unsigned char len = 1U;
+
+	unsigned int space = m_queue.freeSpace();
+	if (space < (len + 1U)) {
+		LogError("Overflow in the M17 TX queue");
+		return;
+	}
+
+	m_queue.addData(&len, 1U);
+
+	const unsigned char data = TAG_EOT;
+	m_queue.addData(&data, len);
 }
 
 void CM17TX::interleaver(const unsigned char* in, unsigned char* out) const
