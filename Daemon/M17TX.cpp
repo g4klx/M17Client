@@ -90,7 +90,7 @@ m_error(0)
 
 			unsigned char meta[M17_META_LENGTH_BYTES];
 
-			meta[0U] = (n << 4) | (count << 0);
+			meta[0U] = ((n + 1U) << 4) | (count << 0);
 
 			std::string temp = text.substr(n * (M17_META_LENGTH_BYTES - 1U), M17_META_LENGTH_BYTES - 1U);
 			temp.resize(M17_META_LENGTH_BYTES - 1U, ' ');
