@@ -634,6 +634,7 @@ void CM17Client::statusCallback(const std::string& source, const std::string& de
 void CM17Client::textCallback(const char* text)
 {
 	assert(m_socket != NULL);
+	assert(text != NULL);
 
 	char buffer[50U];
 	::strcpy(buffer, "TEXT");
@@ -658,5 +659,18 @@ void CM17Client::rssiCallback(int rssi)
 void CM17Client::gpsCallback()
 {
 	assert(m_socket != NULL);
+}
+
+void CM17Client::callsignsCallback(const char* callsigns)
+{
+	assert(m_socket != NULL);
+	assert(callsigns != NULL);
+
+	char buffer[100U];
+	::strcpy(buffer, "CALLS");
+	::strcat(buffer, DELIMITER);
+	::strcat(buffer, callsigns);
+
+	m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
 }
 

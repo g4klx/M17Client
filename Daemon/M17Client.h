@@ -53,6 +53,7 @@ public:
 	virtual void textCallback(const char* text);
 	virtual void rssiCallback(int rssi);
 	virtual void gpsCallback();
+	virtual void callsignsCallback(const char* callsigns);
 
 private:
 	CConf            m_conf;

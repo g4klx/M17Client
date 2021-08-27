@@ -481,8 +481,21 @@ void CM17RX::processLSF(const CM17LSF& lsf)
 				CUtils::dump(1U, "LSF GPS Data", meta, M17_META_LENGTH_BYTES);
 				break;
 
-			case M17_ENCRYPTION_SUB_TYPE_CALLSIGNS:
-				CUtils::dump(1U, "LSF Callsign Data", meta, M17_META_LENGTH_BYTES);
+			case M17_ENCRYPTION_SUB_TYPE_CALLSIGNS: {
+					CUtils::dump(1U, "LSF Callsign Data", meta, M17_META_LENGTH_BYTES);
+
+					std::string callsigns;
+					CM17Utils::decodeCallsign(meta + 0U, callsigns);
+
+					if (::memcmp(meta + 6U, "\x00\x00\x00\x00\x00\x00", 6U) != 0) {
+						std::string callsign;
+						CM17Utils::decodeCallsign(meta + 6U, callsign);
+
+						callsigns += " @ " + callsign;
+					}
+
+					m_callback->callsignsCallback(callsigns.c_str());
+				}
 				break;
 
 			default:

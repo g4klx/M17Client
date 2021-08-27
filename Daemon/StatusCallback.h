@@ -26,6 +26,8 @@ public:
 
 	virtual void gpsCallback() = 0;
 
+	virtual void callsignsCallback(const char* callsigns) = 0;
+
 private:
 };
 
