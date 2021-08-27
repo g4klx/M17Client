@@ -73,6 +73,9 @@ m_errs(0U),
 m_bits(0U),
 m_lsf(),
 m_running(),
+m_textMap(0x00U),
+m_textBitMap(0x00U),
+m_text(NULL),
 m_queue(25000U, "M17 RX Audio"),
 m_rssiMapper(rssiMapper),
 m_rssi(0U),
@@ -83,11 +86,15 @@ m_rssiCount(0U),
 m_resampler(NULL),
 m_error(0)
 {
+	m_text = new char[15U * M17_META_LENGTH_BYTES];
+
 	m_resampler = ::src_new(SRC_SINC_FASTEST, 1, &m_error);
 }
 
 CM17RX::~CM17RX()
 {
+	delete[] m_text;
+
 	::src_delete(m_resampler);
 }
 
@@ -213,13 +220,15 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 			}
 
 			m_running.reset();
-			m_frames    = 0U;
-			m_errs      = ber;
-			m_bits      = 368U;
-			m_minRSSI   = m_rssi;
-			m_maxRSSI   = m_rssi;
-			m_aveRSSI   = m_rssi;
-			m_rssiCount = 1U;
+			m_frames     = 0U;
+			m_errs       = ber;
+			m_bits       = 368U;
+			m_minRSSI    = m_rssi;
+			m_maxRSSI    = m_rssi;
+			m_aveRSSI    = m_rssi;
+			m_rssiCount  = 1U;
+			m_textMap    = 0x00U;
+			m_textBitMap = 0x00U;
 
 			addSilence(SILENCE_BLOCK_COUNT);
 
@@ -267,13 +276,15 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 			}
 
 			m_running.reset();
-			m_frames  = 0U;
-			m_errs    = 0U;
-			m_bits    = 1U;
-			m_minRSSI = m_rssi;
-			m_maxRSSI = m_rssi;
-			m_aveRSSI = m_rssi;
-			m_rssiCount = 1U;
+			m_frames     = 0U;
+			m_errs       = 0U;
+			m_bits       = 1U;
+			m_minRSSI    = m_rssi;
+			m_maxRSSI    = m_rssi;
+			m_aveRSSI    = m_rssi;
+			m_rssiCount  = 1U;
+			m_textMap    = 0x00U;
+			m_textBitMap = 0x00U;
 
 			addSilence(SILENCE_BLOCK_COUNT);
 
@@ -437,34 +448,46 @@ void CM17RX::decorrelator(const unsigned char* in, unsigned char* out) const
 		out[i] = in[i] ^ SCRAMBLER[i];
 }
 
-void CM17RX::processLSF(const CM17LSF& lsf) const
+void CM17RX::processLSF(const CM17LSF& lsf)
 {
 	if (lsf.getEncryptionType() == M17_ENCRYPTION_TYPE_NONE) {
-		char meta[20U];
-		lsf.getMeta((unsigned char *)meta);
+		unsigned char meta[20U];
+		lsf.getMeta(meta);
 
 		switch (lsf.getEncryptionSubType()) {
 			case M17_ENCRYPTION_SUB_TYPE_TEXT:
 				if (meta[0U] != 0x00U) {
-					CUtils::dump(1U, "LSF Text Data", (unsigned char *)meta, M17_META_LENGTH_BYTES);
+					CUtils::dump(1U, "LSF Text Data", meta, M17_META_LENGTH_BYTES);
 
-					meta[M17_META_LENGTH_BYTES] = '\0';
+					if (m_textMap == 0x00U) {
+						uint8_t count = (meta[0U] >> 0) & 0x0FU;
+						for (uint8_t i = 0U; i < count; i++)
+							m_textMap |= 1U << i;
 
-					m_callback->textCallback(meta + 1U);
+						::memset(m_text, 0x00U, 15U * M17_META_LENGTH_BYTES);
+					}
+
+					unsigned char n = ((meta[0U] >> 4) & 0x0FU) - 1U;
+
+					::memcpy(m_text + n * (M17_META_LENGTH_BYTES - 1U), meta + 1U, M17_META_LENGTH_BYTES - 1U);
+					m_textBitMap |= 1U << n;
+
+					if ((m_textMap ^ m_textBitMap) == 0x00U)
+						m_callback->textCallback(m_text);
 				}
 				break;
 
 			case M17_ENCRYPTION_SUB_TYPE_GPS:
-				CUtils::dump(1U, "LSF GPS Data", (unsigned char *)meta, M17_META_LENGTH_BYTES);
+				CUtils::dump(1U, "LSF GPS Data", meta, M17_META_LENGTH_BYTES);
 				break;
 
 			case M17_ENCRYPTION_SUB_TYPE_CALLSIGNS:
-				CUtils::dump(1U, "LSF Callsign Data", (unsigned char *)meta, M17_META_LENGTH_BYTES);
+				CUtils::dump(1U, "LSF Callsign Data", meta, M17_META_LENGTH_BYTES);
 				break;
 
 			default:
 				LogDebug("Unhandled LSF Data Type: %u", lsf.getEncryptionSubType());
-				CUtils::dump(1U, "LSF Meta Data", (unsigned char *)meta, M17_META_LENGTH_BYTES);
+				CUtils::dump(1U, "LSF Meta Data", meta, M17_META_LENGTH_BYTES);
 				break;
 		}
 	} else {

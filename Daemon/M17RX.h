@@ -60,6 +60,9 @@ private:
 	unsigned int       m_bits;
 	CM17LSF            m_lsf;
 	CM17LSF            m_running;
+	uint16_t           m_textMap;
+	uint16_t           m_textBitMap;
+	char*              m_text;
 	CRingBuffer<float> m_queue;
 	CRSSIInterpolator* m_rssiMapper;
 	unsigned char      m_rssi;
@@ -78,7 +81,7 @@ private:
 	void decorrelator(const unsigned char* in, unsigned char* out) const;
 
 	void processRunningLSF(const unsigned char* fragment);
-	void processLSF(const CM17LSF& lsf) const;
+	void processLSF(const CM17LSF& lsf);
 
 	void addSilence(unsigned int n);
 
