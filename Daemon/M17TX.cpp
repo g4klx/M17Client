@@ -176,7 +176,7 @@ void CM17TX::setGPS(float latitude, float longitude, float altitude, float speed
 	unsigned char meta[M17_META_LENGTH_BYTES];
 	::memset(meta, 0x00U, M17_META_LENGTH_BYTES);
 
-	meta[0U] = M17_GPS_CLIENT_M17CLIENT << 4;
+	meta[0U] = M17_GPS_CLIENT_M17CLIENT;
 
 	if (type == "Handheld")
 		meta[1U] = M17_GPS_TYPE_HANDHELD;

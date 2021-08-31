@@ -477,8 +477,44 @@ void CM17RX::processLSF(const CM17LSF& lsf)
 				}
 				break;
 
-			case M17_ENCRYPTION_SUB_TYPE_GPS:
-				CUtils::dump(1U, "LSF GPS Data", meta, M17_META_LENGTH_BYTES);
+			case M17_ENCRYPTION_SUB_TYPE_GPS: {
+					CUtils::dump(1U, "LSF GPS Data", meta, M17_META_LENGTH_BYTES);
+
+					std::string type;
+
+					switch (meta[1U]) {
+						case M17_GPS_TYPE_HANDHELD:
+							type = "Handheld";
+							break;
+						case M17_GPS_TYPE_MOBILE:
+							type = "Mobile";
+							break;
+						case M17_GPS_TYPE_FIXED:
+							type = "Fixed";
+							break;
+						default:
+							type = "Unknown";
+							break;
+					}
+
+					float latitude  = float(meta[2U]) + float((meta[3U] << 8) + (meta[4U] << 0)) / 65535.0F;
+					float longitude = float(meta[5U]) + float((meta[6U] << 8) + (meta[7U] << 0)) / 65535.0F;
+
+					if ((meta[8U] & 0x01U) == 0x01U) latitude  *= -1.0F;
+					if ((meta[8U] & 0x02U) == 0x02U) longitude *= -1.0F;
+
+					float altitude = INVALID_GPS_DATA;
+					if ((meta[8U] & 0x04U) == 0x04U)
+						altitude = (float((meta[9U] << 8) + (meta[10U] << 0)) - 1500.0F) / 3.28F;
+
+					float speed = INVALID_GPS_DATA, track = INVALID_GPS_DATA;
+					if ((meta[8U] & 0x08U) == 0x08U) {
+						track = float((meta[11U] << 8) + (meta[12U] << 0));
+						speed = float(meta[13U]) / 2.2369F;
+					}
+
+					LogDebug("RX GPS Data: Lat=%f deg Long=%f deg Alt=%f m Speed=%f m/s Track=%f deg Type=%s", latitude, longitude, altitude, speed, track, type.c_str());
+				}
 				break;
 
 			case M17_ENCRYPTION_SUB_TYPE_CALLSIGNS: {
