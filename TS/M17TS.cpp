@@ -114,7 +114,9 @@ m_slider(SI_NONE),
 m_volume(50U),
 m_sMeter(0U),
 m_source(),
-m_text()
+m_text(),
+m_calls(),
+m_current()
 {
 }
 
@@ -227,13 +229,16 @@ int CM17TS::run()
 		return 1;
 	}
 
-	m_volume  = m_conf.getVolume();
+	m_volume = m_conf.getVolume();
 	setVolume(m_volume);
 
 	LogMessage("M17TS-%s is running", VERSION);
 
 	CTimer timer(1000U, 0U, 100U);
 	timer.start();
+
+	CTimer textTimer(1000U, 5U);
+	textTimer.start();
 
 	sendCommand("bkcmd=2");
 
@@ -267,6 +272,12 @@ int CM17TS::run()
 				::memset(endBuffer, 0x00U, 3U);
 				screenIdx = 0U;
 			}
+		}
+
+		textTimer.clock(20U);
+		if (textTimer.isRunning() && textTimer.hasExpired()) {
+			showText();
+			textTimer.start();
 		}
 
 		timer.clock(20U);
@@ -337,8 +348,11 @@ void CM17TS::parseCommand(char* command)
 		else
 			sendCommand("TX.txt=\"\"");
 	} else if (::strcmp(ptrs.at(0U), "TEXT") == 0) {
-		std::string text = std::string(ptrs.at(1U));
-		showText(text);
+		m_text = std::string(ptrs.at(1U));
+		showText();
+	} else if (::strcmp(ptrs.at(0U), "CALLS") == 0) {
+		m_calls = std::string(ptrs.at(1U));
+		showText();
 	} else if (::strcmp(ptrs.at(0U), "RSSI") == 0) {
 		int rssi = ::atoi(ptrs.at(1U));
 		showRSSI(rssi);
@@ -483,6 +497,8 @@ void CM17TS::showRX(bool end, const std::string& source, const std::string& dest
 
 		m_source.clear();
 		m_text.clear();
+		m_calls.clear();
+		m_current.clear();
 
 		sendCommand("S_METER.val=0");
 		sendCommand("SOURCE.txt=\"\"");
@@ -493,20 +509,32 @@ void CM17TS::showRX(bool end, const std::string& source, const std::string& dest
 		m_source  = source;
 
 		char text[100U];
-		::sprintf(text, "SOURCE.txt=\"%s\"", source.c_str());
+		::sprintf(text, "SOURCE.txt=\"%s > %s\"", source.c_str(), destination.c_str());
 		sendCommand(text);
 
 		sendCommand("RX.txt=\"RX\"");
 	}
 }
 
-void CM17TS::showText(const std::string& value)
+void CM17TS::showText()
 {
-	m_text = value;
+	if (m_text.empty() && m_calls.empty())
+		return;
 
-	char text[100U];
-	::sprintf(text, "TEXT.txt=\"%s\"", value.c_str());
-	sendCommand(text);
+	if (m_text.empty())
+		m_current = m_calls;
+	else if (m_calls.empty())
+		m_current = m_text;
+	else if (m_current == m_text)
+		m_current = m_calls;
+	else if (m_current == m_calls)
+		m_current = m_text;
+
+	if (!m_current.empty()) {
+		char text[100U];
+		::sprintf(text, "TEXT.txt=\"%s\"", m_current.c_str());
+		sendCommand(text);
+	}
 }
 
 void CM17TS::showRSSI(int rssi)
