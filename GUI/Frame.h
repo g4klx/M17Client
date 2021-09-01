@@ -44,7 +44,6 @@ public:
 	virtual void onTX(wxCommandEvent& event);
 
 	virtual void onVolume(wxScrollEvent& event);
-	virtual void onMicGain(wxScrollEvent& event);
 
 	virtual void onTimer(wxTimerEvent& event);
 
@@ -73,7 +72,6 @@ private:
 	wxToggleButton* m_transmit;
 	wxStaticText*   m_status;
 	wxSlider*       m_volume;
-	wxSlider*       m_micGain;
 	wxStaticText*   m_hrdSource;
 	wxStaticText*   m_hrdDestination;
 	wxStaticText*   m_hrdText;

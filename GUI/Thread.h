@@ -37,7 +37,6 @@ public:
 	virtual bool setTransmit(bool transmit);
 
 	virtual bool setVolume(unsigned int volume);
-	virtual bool setMicGain(unsigned int micGain);
 
 	virtual void* Entry();
 	virtual void  kill();

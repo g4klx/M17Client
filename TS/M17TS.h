@@ -28,8 +28,7 @@
 
 enum SLIDER_ID {
 	SI_NONE,
-	SI_VOLUME,
-	SI_MIC_GAIN
+	SI_VOLUME
 };
 
 class CM17TS
@@ -61,7 +60,6 @@ private:
 
 	SLIDER_ID    m_slider;
 	unsigned int m_volume;
-	unsigned int m_micGain;
 
 	unsigned int m_sMeter;
 
@@ -81,18 +79,15 @@ private:
 	void showRSSI(int value);
 	
 	void volumeChanged();
-	void micGainChanged();
 
 	void gotoPage0();
 	void gotoPage1();
-	void gotoPage2();
 
 	bool getChannels();
 	bool setChannel(const std::string& channel);
 	bool getDestinations();
 	bool setDestination(const std::string& destination);
 	bool setVolume(unsigned int volume);
-	bool setMicGain(unsigned int micGain);
 	bool setTransmit(bool transmit);
 
 	void sendCommand(const char* command);

@@ -37,7 +37,6 @@ enum {
 	Button_Transmit,
 
 	Slider_Volume,
-	Slider_MicGain,
 	
 	Timer_Timer
 };
@@ -61,8 +60,7 @@ BEGIN_EVENT_TABLE(CFrame, wxFrame)
 	EVT_CHOICE(Choice_Channels,     CFrame::onChannel)
 	EVT_CHOICE(Choice_Destinations, CFrame::onDestination)
 
-	EVT_COMMAND_SCROLL(Slider_Volume,  CFrame::onVolume)
-	EVT_COMMAND_SCROLL(Slider_MicGain, CFrame::onMicGain)
+	EVT_COMMAND_SCROLL(Slider_Volume, CFrame::onVolume)
 
 	EVT_TIMER(Timer_Timer, CFrame::onTimer)
 
@@ -84,7 +82,6 @@ m_destinations(NULL),
 m_transmit(NULL),
 m_status(NULL),
 m_volume(NULL),
-m_micGain(NULL),
 m_hrdSource(NULL),
 m_hrdDestination(NULL),
 m_hrdText(NULL),
@@ -124,13 +121,6 @@ m_timer(this, Timer_Timer)
 	int volume = m_conf.getVolume();
 	m_volume = new wxSlider(panel, Slider_Volume, volume, 0, 500, wxDefaultPosition, wxSize(CONTROL_WIDTH, -1));
 	panelSizer->Add(m_volume, wxGBPosition(1, 3), wxDefaultSpan, wxALL, BORDER_SIZE);
-
-	wxStaticText* micGainLabel = new wxStaticText(panel, -1, wxT("Mic. Gain"), wxDefaultPosition, wxSize(LABEL_WIDTH, -1), wxALIGN_RIGHT);
-	panelSizer->Add(micGainLabel, wxGBPosition(1, 4), wxDefaultSpan, wxALL, BORDER_SIZE);	
-
-	int micGain = m_conf.getMicGain();
-	m_micGain = new wxSlider(panel, Slider_MicGain, micGain, 0, 500, wxDefaultPosition, wxSize(CONTROL_WIDTH, -1));
-	panelSizer->Add(m_micGain, wxGBPosition(1, 5), wxDefaultSpan, wxALL, BORDER_SIZE);
 
 	wxStaticBoxSizer* info1Sizer = new wxStaticBoxSizer(new wxStaticBox(panel, -1, _("Current")), wxVERTICAL);
 
@@ -329,16 +319,6 @@ void CFrame::onVolume(wxScrollEvent& event)
 	m_conf.write();
 
 	::wxGetApp().setVolume((unsigned int)volume);
-}
-
-void CFrame::onMicGain(wxScrollEvent& event)
-{
-	int micGain = event.GetPosition();
-
-	m_conf.setMicGain(micGain);
-	m_conf.write();
-
-	::wxGetApp().setMicGain((unsigned int)micGain);
 }
 
 void CFrame::onTX(wxCommandEvent& event)

@@ -112,7 +112,6 @@ m_receive(false),
 m_page(0U),
 m_slider(SI_NONE),
 m_volume(50U),
-m_micGain(50U),
 m_sMeter(0U),
 m_source(),
 m_text()
@@ -231,9 +230,6 @@ int CM17TS::run()
 	m_volume  = m_conf.getVolume();
 	setVolume(m_volume);
 
-	m_micGain = m_conf.getMicGain();
-	setMicGain(m_micGain);
-
 	LogMessage("M17TS-%s is running", VERSION);
 
 	CTimer timer(1000U, 0U, 100U);
@@ -241,7 +237,7 @@ int CM17TS::run()
 
 	sendCommand("bkcmd=2");
 
-	gotoPage2();
+	gotoPage1();
 
 	uint8_t screenBuffer[50U];
 	uint8_t endBuffer[3U] = {0x00U, 0x00U, 0x00U};
@@ -372,38 +368,25 @@ void CM17TS::parseScreen(const uint8_t* command, unsigned int length)
 				gotoPage1();
 			} else if (command[2U] == 9U) {
 				LogMessage("Page 0 LEFT pressed");
-				gotoPage2();
+				gotoPage1();
+			} else if (command[2U] == 11U) {
+				LogMessage("Page 0 VOLUME adjusted");
+				volumeChanged();
 			} else {
 				CUtils::dump(2U, "Button press on page 0 from an unknown button", command, length);
 			}
 		} else if (command[1U] == 1U) {
 			if (command[2U] == 2U) {
-				LogMessage("Page 1 VOLUME adjusted");
-				volumeChanged();
-			} else if (command[2U] == 3U) {
-				LogMessage("Page 1 MIC_GAIN adjusted");
-				micGainChanged();
-			} else if (command[2U] == 6U) {
 				LogMessage("Page 1 RIGHT pressed");
-				gotoPage2();
-			} else if (command[2U] == 7U) {
+				gotoPage0();
+			} else if (command[2U] == 3U) {
 				LogMessage("Page 1 LEFT pressed");
 				gotoPage0();
-			} else {
-				CUtils::dump(2U, "Button press on page 1 from an unknown button", command, length);
-			}
-		} else if (command[1U] == 2U) {
-			if (command[2U] == 2U) {
-				LogMessage("Page 2 RIGHT pressed");
-				gotoPage0();
-			} else if (command[2U] == 3U) {
-				LogMessage("Page 2 LEFT pressed");
-				gotoPage1();
 			} else if (command[2U] == 4U) {
-				LogMessage("Page 2 TRANSMIT pressed");
+				LogMessage("Page 1 TRANSMIT pressed");
 				transmit();
 			} else {
-				CUtils::dump(2U, "Button press on page 2 from an unknown button", command, length);
+				CUtils::dump(2U, "Button press on page 1 from an unknown button", command, length);
 			}
 		} else {
 			CUtils::dump(2U, "Button press from an unknown page", command, length);
@@ -413,11 +396,6 @@ void CM17TS::parseScreen(const uint8_t* command, unsigned int length)
 			case SI_VOLUME:
 				m_volume = (uint32_t(command[4U]) << 24) | (uint32_t(command[3U]) << 16) | (uint32_t(command[2U]) << 8) | (uint32_t(command[1U]) << 0);
 				setVolume(m_volume);
-				m_slider = SI_NONE;
-				break;
-			case SI_MIC_GAIN:
-				m_micGain = (uint32_t(command[4U]) << 24) | (uint32_t(command[3U]) << 16) | (uint32_t(command[2U]) << 8) | (uint32_t(command[1U]) << 0);
-				setMicGain(m_volume);
 				m_slider = SI_NONE;
 				break;
 			default:
@@ -489,12 +467,6 @@ void CM17TS::volumeChanged()
 	sendCommand("get VOLUME.val");
 }
 
-void CM17TS::micGainChanged()
-{
-	m_slider = SI_MIC_GAIN;
-	sendCommand("get MIC_GAIN.val");
-}
-
 void CM17TS::transmit()
 {
 	m_localTX = !m_localTX;
@@ -562,9 +534,12 @@ void CM17TS::gotoPage0()
 	sendCommand("page page0");
 	m_page = 0U;
 
-	if (!m_destinations.empty()) {
-		char text[100U];
+	char text[100U];
 
+	::sprintf(text, "VOLUME.val=%u", m_volume);
+	sendCommand(text);
+
+	if (!m_destinations.empty()) {
 		::sprintf(text, "CHANNEL.txt=\"%s\"", m_channels.at(m_channelIdx).c_str());
 		sendCommand(text);
 
@@ -577,20 +552,6 @@ void CM17TS::gotoPage1()
 {
 	sendCommand("page page1");
 	m_page = 1U;
-
-	char text[100U];
-
-	::sprintf(text, "VOLUME.val=%u", m_volume);
-	sendCommand(text);
-
-	::sprintf(text, "MIC_GAIN.val=%u", m_micGain);
-	sendCommand(text);
-}
-
-void CM17TS::gotoPage2()
-{
-	sendCommand("page page2");
-	m_page = 2U;
 
 	char text[100U];
 
@@ -681,21 +642,6 @@ bool CM17TS::setVolume(unsigned int volume)
 	::strcpy(buffer, "VOL");
 	::strcat(buffer, DELIMITER);
 	::sprintf(buffer + ::strlen(buffer), "%u", volume);
-
-	return m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
-}
-
-bool CM17TS::setMicGain(unsigned int micGain)
-{
-	assert(m_socket != NULL);
-
-	m_conf.setMicGain(micGain);
-	m_conf.write();
-
-	char buffer[20U];
-	::strcpy(buffer, "MIC");
-	::strcat(buffer, DELIMITER);
-	::sprintf(buffer + ::strlen(buffer), "%u", micGain);
 
 	return m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
 }

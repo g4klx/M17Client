@@ -48,9 +48,6 @@ public:
 	void           setVolume(unsigned int value);
 	unsigned int   getVolume() const;
 	
-	void           setMicGain(unsigned int value);
-	unsigned int   getMicGain() const;
-
 	bool write();
 
 private:
@@ -65,7 +62,6 @@ private:
 	std::string    m_channel;
 	std::string    m_destination;
 	unsigned int   m_volume;
-	unsigned int   m_micGain;
 };
 
 #endif

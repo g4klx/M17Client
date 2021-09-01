@@ -179,11 +179,6 @@ bool CApp::setVolume(unsigned int volume)
 	return m_thread->setVolume(volume);
 }
 
-bool CApp::setMicGain(unsigned int micGain)
-{
-	return m_thread->setMicGain(micGain);
-}
-
 void CApp::createThread(const CConf& conf)
 {
 	m_thread = new CThread(conf);

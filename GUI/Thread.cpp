@@ -165,18 +165,6 @@ bool CThread::setVolume(unsigned int volume)
 	return m_socket->write(buffer, ::strlen(buffer));
 }
 
-bool CThread::setMicGain(unsigned int micGain)
-{
-	wxASSERT(m_socket != NULL);
-
-	char buffer[20U];
-	::strcpy(buffer, "MIC");
-	::strcat(buffer, DELIMITER);
-	::sprintf(buffer + ::strlen(buffer), "%u", micGain);
-
-	return m_socket->write(buffer, ::strlen(buffer));
-}
-
 bool CThread::setTransmit(bool transmit)
 {
 	wxASSERT(m_socket != NULL);

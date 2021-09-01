@@ -54,13 +54,13 @@ const unsigned char BIT_MASK_TABLE[] = { 0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04
 #define WRITE_BIT(p,i,b) p[(i)>>3] = (b) ? (p[(i)>>3] | BIT_MASK_TABLE[(i)&7]) : (p[(i)>>3] & ~BIT_MASK_TABLE[(i)&7])
 #define READ_BIT(p,i)    (p[(i)>>3] & BIT_MASK_TABLE[(i)&7])
 
-CM17TX::CM17TX(const std::string& callsign, const std::string& text, unsigned int mode, CCodec2& codec3200, CCodec2& codec1600) :
+CM17TX::CM17TX(const std::string& callsign, const std::string& text, unsigned int mode, unsigned int micGain, CCodec2& codec3200, CCodec2& codec1600) :
 m_3200(codec3200),
 m_1600(codec1600),
 m_mode(mode),
 m_source(callsign),
 m_dest(),
-m_micGain(1.0F),
+m_micGain(float(micGain) / 100.0F),
 m_can(0U),
 m_status(TXS_NONE),
 m_audio(5000U, "M17 TX Audio"),
@@ -227,11 +227,6 @@ void CM17TX::setGPS(float latitude, float longitude, float altitude, float speed
 	}
 
 	m_gpsLSF->setMeta(meta);
-}
-
-void CM17TX::setMicGain(unsigned int percentage)
-{
-	m_micGain = float(percentage) / 100.0F;
 }
 
 unsigned int CM17TX::read(unsigned char* data)

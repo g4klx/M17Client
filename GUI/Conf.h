@@ -44,9 +44,6 @@ public:
 	void           setVolume(unsigned int value);
 	unsigned int   getVolume() const;
 	
-	void           setMicGain(unsigned int value);
-	unsigned int   getMicGain() const;
-
 	bool write();
 
 private:
@@ -58,7 +55,6 @@ private:
 	wxString       m_channel;
 	wxString       m_destination;
 	unsigned int   m_volume;
-	unsigned int   m_micGain;
 };
 
 #endif

@@ -320,8 +320,7 @@ int CM17Client::run()
 	if (!m_conf.getModemRSSIMappingFile().empty())
 		rssi->load(m_conf.getModemRSSIMappingFile());
 
-	m_tx = new CM17TX(m_conf.getCallsign(), m_conf.getText(), m_conf.getTXMode(), codec3200, codec1600);
-	m_tx->setMicGain(m_conf.getAudioMicGain());
+	m_tx = new CM17TX(m_conf.getCallsign(), m_conf.getText(), m_conf.getTXMode(), m_conf.getAudioMicGain(), codec3200, codec1600);
 	m_tx->setDestination("ALL");
 
 	m_rx = new CM17RX(m_conf.getCallsign(), rssi, m_conf.getBleep(), codec3200, codec1600);
@@ -532,9 +531,6 @@ void CM17Client::parseCommand(char* command)
 	} else if (::strcmp(ptrs.at(0U), "VOL") == 0) {
 		LogDebug("\tVolume set to %s", ptrs.at(1U));
 		m_rx->setVolume(::atoi(ptrs.at(1U)));
-	} else if (::strcmp(ptrs.at(0U), "MIC") == 0) {
-		LogDebug("\tMic gain set to %s", ptrs.at(1U));
-		m_tx->setMicGain(::atoi(ptrs.at(1U)));
 	} else {
 		LogWarning("\tUnknown command");
 	}
