@@ -320,10 +320,10 @@ void CM17TX::process()
 		m_status = TXS_AUDIO;
 	}
 
-	if (m_status == TXS_AUDIO || m_status == TXS_END) {
+	if (m_status == TXS_AUDIO) {
 		unsigned char data[M17_FRAME_LENGTH_BYTES + 2U];
 
-		data[0U] = TAG_DATA1;
+		data[0U] = TAG_DATA;
 		data[1U] = 0x00U;
 
 		// Generate the sync
@@ -347,16 +347,10 @@ void CM17TX::process()
 
 		CM17Utils::combineFragmentLICHFEC(lich1, lich2, lich3, lich4, data + 2U + M17_SYNC_LENGTH_BYTES);
 
-		uint16_t fn = m_frames;
-		if (m_status == TXS_END) {
-			m_status = TXS_NONE;
-			m_audio.clear();
-			fn |= 0x8000U;
-		}
-
 		unsigned char payload[M17_FN_LENGTH_BYTES + M17_PAYLOAD_LENGTH_BYTES];
 
 		// Add the FN
+		uint16_t fn = m_frames;
 		payload[0U] = (fn >> 8) & 0xFFU;
 		payload[1U] = (fn >> 0) & 0xFFU;
 
@@ -403,6 +397,12 @@ void CM17TX::process()
 
 		m_frames++;
 	}
+
+	if (m_status == TXS_END) {
+		writeQueueEOT();
+		m_status = TXS_NONE;
+		m_audio.clear();
+	}
 }
 
 void CM17TX::end()
@@ -414,7 +414,7 @@ void CM17TX::writeQueue(const unsigned char *data)
 {
 	assert(data != NULL);
 
-	unsigned char len = M17_FRAME_LENGTH_BYTES + 2U;
+	const unsigned char len = M17_FRAME_LENGTH_BYTES + 2U;
 
 	unsigned int space = m_queue.freeSpace();
 	if (space < (len + 1U)) {
@@ -425,6 +425,22 @@ void CM17TX::writeQueue(const unsigned char *data)
 	m_queue.addData(&len, 1U);
 
 	m_queue.addData(data, len);
+}
+
+void CM17TX::writeQueueEOT()
+{
+	const unsigned char len = 1U;
+
+	unsigned int space = m_queue.freeSpace();
+	if (space < (len + 1U)) {
+		LogError("Overflow in the M17 TX queue");
+		return;
+	}
+
+	m_queue.addData(&len, 1U);
+
+	const unsigned char data = TAG_EOT;
+	m_queue.addData(&data, len);
 }
 
 void CM17TX::interleaver(const unsigned char* in, unsigned char* out) const

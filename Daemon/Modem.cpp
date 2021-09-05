@@ -78,6 +78,7 @@ const unsigned char MMDVM_M17_LINK_SETUP = 0x45U;
 const unsigned char MMDVM_M17_STREAM     = 0x46U;
 const unsigned char MMDVM_M17_PACKET     = 0x47U;
 const unsigned char MMDVM_M17_LOST       = 0x48U;
+const unsigned char MMDVM_M17_EOT        = 0x49U;
 
 const unsigned char MMDVM_POCSAG_DATA = 0x50U;
 
@@ -482,7 +483,7 @@ void CModem::clock(unsigned int ms)
 					unsigned char data = m_length - m_offset + 1U;
 					m_rxDStarData.addData(&data, 1U);
 
-					data = TAG_DATA1;
+					data = TAG_DATA;
 					m_rxDStarData.addData(&data, 1U);
 
 					m_rxDStarData.addData(m_buffer + m_offset, m_length - m_offset);
@@ -523,7 +524,7 @@ void CModem::clock(unsigned int ms)
 					if (m_buffer[3U] == (DMR_SYNC_DATA | DT_TERMINATOR_WITH_LC))
 						data = TAG_EOT;
 					else
-						data = TAG_DATA1;
+						data = TAG_DATA;
 					m_rxDMRData1.addData(&data, 1U);
 
 					m_rxDMRData1.addData(m_buffer + m_offset, m_length - m_offset);
@@ -540,7 +541,7 @@ void CModem::clock(unsigned int ms)
 					if (m_buffer[3U] == (DMR_SYNC_DATA | DT_TERMINATOR_WITH_LC))
 						data = TAG_EOT;
 					else
-						data = TAG_DATA1;
+						data = TAG_DATA;
 					m_rxDMRData2.addData(&data, 1U);
 
 					m_rxDMRData2.addData(m_buffer + m_offset, m_length - m_offset);
@@ -578,7 +579,7 @@ void CModem::clock(unsigned int ms)
 					unsigned char data = m_length - m_offset + 1U;
 					m_rxYSFData.addData(&data, 1U);
 
-					data = TAG_DATA1;
+					data = TAG_DATA;
 					m_rxYSFData.addData(&data, 1U);
 
 					m_rxYSFData.addData(m_buffer + m_offset, m_length - m_offset);
@@ -618,7 +619,7 @@ void CModem::clock(unsigned int ms)
 				unsigned char data = m_length - m_offset + 1U;
 				m_rxP25Data.addData(&data, 1U);
 
-				data = TAG_DATA1;
+				data = TAG_DATA;
 				m_rxP25Data.addData(&data, 1U);
 
 				m_rxP25Data.addData(m_buffer + m_offset, m_length - m_offset);
@@ -644,7 +645,7 @@ void CModem::clock(unsigned int ms)
 				unsigned char data = m_length - m_offset + 1U;
 				m_rxNXDNData.addData(&data, 1U);
 
-				data = TAG_DATA1;
+				data = TAG_DATA;
 				m_rxNXDNData.addData(&data, 1U);
 
 				m_rxNXDNData.addData(m_buffer + m_offset, m_length - m_offset);
@@ -684,24 +685,22 @@ void CModem::clock(unsigned int ms)
 				unsigned char data = m_length - 2U;
 				m_rxM17Data.addData(&data, 1U);
 
-				data = TAG_DATA1;
+				data = TAG_DATA;
 				m_rxM17Data.addData(&data, 1U);
 
 				m_rxM17Data.addData(m_buffer + 3U, m_length - 3U);
 			}
 			break;
 
-			case MMDVM_M17_PACKET: {
+			case MMDVM_M17_EOT: {
 				if (m_trace)
-					CUtils::dump(1U, "RX M17 Packet Data", m_buffer, m_length);
+					CUtils::dump(1U, "RX M17 EOT", m_buffer, m_length);
 
-				unsigned char data = m_length - 2U;
+				unsigned char data = 1U;
 				m_rxM17Data.addData(&data, 1U);
 
-				data = TAG_DATA2;
+				data = TAG_EOT;
 				m_rxM17Data.addData(&data, 1U);
-
-				m_rxM17Data.addData(m_buffer + 3U, m_length - 3U);
 			}
 			break;
 
@@ -724,7 +723,7 @@ void CModem::clock(unsigned int ms)
 				unsigned int data1 = m_length - m_offset + 1U;
 				m_rxFMData.addData((unsigned char*)&data1, sizeof(unsigned int));
 
-				unsigned char data2 = TAG_DATA1;
+				unsigned char data2 = TAG_DATA;
 				m_rxFMData.addData(&data2, 1U);
 
 				m_rxFMData.addData(m_buffer + m_offset, m_length - m_offset);
@@ -1056,8 +1055,8 @@ void CModem::clock(unsigned int ms)
 			case MMDVM_M17_STREAM:
 				CUtils::dump(1U, "TX M17 Stream Data", m_buffer, len);
 				break;
-			case MMDVM_M17_PACKET:
-				CUtils::dump(1U, "TX M17 Packet Data", m_buffer, len);
+			case MMDVM_M17_EOT:
+				CUtils::dump(1U, "TX M17 EOT", m_buffer, len);
 				break;
 			}
 		}
@@ -1337,7 +1336,7 @@ bool CModem::writeDStarData(const unsigned char* data, unsigned int length)
 		case TAG_HEADER:
 			buffer[2U] = MMDVM_DSTAR_HEADER;
 			break;
-		case TAG_DATA1:
+		case TAG_DATA:
 			buffer[2U] = MMDVM_DSTAR_DATA;
 			break;
 		case TAG_EOT:
@@ -1376,7 +1375,7 @@ bool CModem::writeDMRData1(const unsigned char* data, unsigned int length)
 	assert(data != NULL);
 	assert(length > 0U);
 
-	if (data[0U] != TAG_DATA1 && data[0U] != TAG_EOT)
+	if (data[0U] != TAG_DATA && data[0U] != TAG_EOT)
 		return false;
 
 	unsigned char buffer[40U];
@@ -1399,7 +1398,7 @@ bool CModem::writeDMRData2(const unsigned char* data, unsigned int length)
 	assert(data != NULL);
 	assert(length > 0U);
 
-	if (data[0U] != TAG_DATA1 && data[0U] != TAG_EOT)
+	if (data[0U] != TAG_DATA && data[0U] != TAG_EOT)
 		return false;
 
 	unsigned char buffer[40U];
@@ -1429,7 +1428,7 @@ bool CModem::writeYSFData(const unsigned char* data, unsigned int length)
 	assert(data != NULL);
 	assert(length > 0U);
 
-	if (data[0U] != TAG_DATA1 && data[0U] != TAG_EOT)
+	if (data[0U] != TAG_DATA && data[0U] != TAG_EOT)
 		return false;
 
 	unsigned char buffer[130U];
@@ -1459,7 +1458,7 @@ bool CModem::writeP25Data(const unsigned char* data, unsigned int length)
 	assert(data != NULL);
 	assert(length > 0U);
 
-	if (data[0U] != TAG_HEADER && data[0U] != TAG_DATA1 && data[0U] != TAG_EOT)
+	if (data[0U] != TAG_HEADER && data[0U] != TAG_DATA && data[0U] != TAG_EOT)
 		return false;
 
 	unsigned char buffer[250U];
@@ -1489,7 +1488,7 @@ bool CModem::writeNXDNData(const unsigned char* data, unsigned int length)
 	assert(data != NULL);
 	assert(length > 0U);
 
-	if (data[0U] != TAG_DATA1 && data[0U] != TAG_EOT)
+	if (data[0U] != TAG_DATA && data[0U] != TAG_EOT)
 		return false;
 
 	unsigned char buffer[130U];
@@ -1519,20 +1518,26 @@ bool CModem::writeM17Data(const unsigned char* data, unsigned int length)
 	assert(data != NULL);
 	assert(length > 0U);
 
-	if (data[0U] != TAG_HEADER && data[0U] != TAG_DATA1 && data[0U] != TAG_EOT)
-		return false;
-
 	unsigned char buffer[130U];
 
 	buffer[0U] = MMDVM_FRAME_START;
 	buffer[1U] = length + 2U;
 
-	if (data[0U] == TAG_HEADER)
-		buffer[2U] = MMDVM_M17_LINK_SETUP;
-	else
-		buffer[2U] = MMDVM_M17_STREAM;
-
-	::memcpy(buffer + 3U, data + 1U, length - 1U);
+	switch (data[0U]) {
+		case TAG_HEADER:
+			buffer[2U] = MMDVM_M17_LINK_SETUP;
+			::memcpy(buffer + 3U, data + 1U, length - 1U);
+			break;
+		case TAG_DATA:
+			buffer[2U] = MMDVM_M17_STREAM;
+			::memcpy(buffer + 3U, data + 1U, length - 1U);
+			break;
+		case TAG_EOT:
+			buffer[2U] = MMDVM_M17_EOT;
+			break;
+		default:
+			return false;
+	}
 
 	unsigned char len = length + 2U;
 	m_txM17Data.addData(&len, 1U);

@@ -83,6 +83,7 @@ private:
 	int                        m_error;
 
 	void writeQueue(const unsigned char* data);
+	void writeQueueEOT();
 
 	void interleaver(const unsigned char* in, unsigned char* out) const;
 	void decorrelator(const unsigned char* in, unsigned char* out) const;
