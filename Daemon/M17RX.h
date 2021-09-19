@@ -60,8 +60,7 @@ private:
 	unsigned int       m_bits;
 	CM17LSF            m_lsf;
 	CM17LSF            m_running;
-	uint16_t           m_textMap;
-	uint16_t           m_textBitMap;
+	uint8_t            m_textBitMap;
 	char*              m_text;
 	CRingBuffer<float> m_queue;
 	CRSSIInterpolator* m_rssiMapper;

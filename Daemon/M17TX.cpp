@@ -80,6 +80,19 @@ m_error(0)
 		if ((text.size() % (M17_META_LENGTH_BYTES - 1U)) > 0U)
 			count++;
 
+		if (count > 4U)
+			count = 4U;
+
+		unsigned char bitMap = 0U;
+		if (count == 1U)
+			bitMap = 0x10U;
+		else if (count == 2U)
+			bitMap = 0x30U;
+		else if (count == 3U)
+			bitMap = 0x70U;
+		else
+			bitMap = 0xF0U;
+
 		for (unsigned char n = 0U; n < count; n++) {
 			CM17LSF* lsf = new CM17LSF;
 			lsf->setSource(callsign);
@@ -90,7 +103,7 @@ m_error(0)
 
 			unsigned char meta[M17_META_LENGTH_BYTES];
 
-			meta[0U] = ((n + 1U) << 4) | (count << 0);
+			meta[0U] = (0x01U << n) | bitMap;
 
 			std::string temp = text.substr(n * (M17_META_LENGTH_BYTES - 1U), M17_META_LENGTH_BYTES - 1U);
 			temp.resize(M17_META_LENGTH_BYTES - 1U, ' ');

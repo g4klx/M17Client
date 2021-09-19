@@ -73,7 +73,6 @@ m_errs(0U),
 m_bits(0U),
 m_lsf(),
 m_running(),
-m_textMap(0x00U),
 m_textBitMap(0x00U),
 m_text(NULL),
 m_queue(25000U, "M17 RX Audio"),
@@ -86,7 +85,7 @@ m_rssiCount(0U),
 m_resampler(NULL),
 m_error(0)
 {
-	m_text = new char[15U * M17_META_LENGTH_BYTES];
+	m_text = new char[4U * M17_META_LENGTH_BYTES];
 
 	m_resampler = ::src_new(SRC_SINC_FASTEST, 1, &m_error);
 }
@@ -221,8 +220,8 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 			m_maxRSSI    = m_rssi;
 			m_aveRSSI    = m_rssi;
 			m_rssiCount  = 1U;
-			m_textMap    = 0x00U;
 			m_textBitMap = 0x00U;
+			::memset(m_text, 0x00U, 4U * M17_META_LENGTH_BYTES);
 
 			addSilence(SILENCE_BLOCK_COUNT);
 
@@ -277,8 +276,8 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 			m_maxRSSI    = m_rssi;
 			m_aveRSSI    = m_rssi;
 			m_rssiCount  = 1U;
-			m_textMap    = 0x00U;
 			m_textBitMap = 0x00U;
+			::memset(m_text, 0x00U, 4U * M17_META_LENGTH_BYTES);
 
 			addSilence(SILENCE_BLOCK_COUNT);
 
@@ -452,20 +451,24 @@ void CM17RX::processLSF(const CM17LSF& lsf)
 				if (meta[0U] != 0x00U) {
 					CUtils::dump(1U, "LSF Text Data", meta, M17_META_LENGTH_BYTES);
 
-					if (m_textMap == 0x00U) {
-						uint8_t count = (meta[0U] >> 0) & 0x0FU;
-						for (uint8_t i = 0U; i < count; i++)
-							m_textMap |= 1U << i;
+					m_textBitMap |= meta[0U];
 
-						::memset(m_text, 0x00U, 15U * M17_META_LENGTH_BYTES);
+					switch (meta[0U] & 0x0FU) {
+						case 0x01U:
+							::memcpy(m_text + 0U,  meta + 1U, M17_META_LENGTH_BYTES - 1U);
+							break;
+						case 0x02U:
+							::memcpy(m_text + 13U, meta + 1U, M17_META_LENGTH_BYTES - 1U);
+							break;
+						case 0x04U:
+							::memcpy(m_text + 26U, meta + 1U, M17_META_LENGTH_BYTES - 1U);
+							break;
+						default:	// 0x08U
+							::memcpy(m_text + 39U, meta + 1U, M17_META_LENGTH_BYTES - 1U);
+							break;
 					}
 
-					unsigned char n = ((meta[0U] >> 4) & 0x0FU) - 1U;
-
-					::memcpy(m_text + n * (M17_META_LENGTH_BYTES - 1U), meta + 1U, M17_META_LENGTH_BYTES - 1U);
-					m_textBitMap |= 1U << n;
-
-					if ((m_textMap ^ m_textBitMap) == 0x00U)
+					if (m_textBitMap == 0x11U || m_textBitMap == 0x33U || m_textBitMap == 0x77U || m_textBitMap == 0xFFU)
 						m_callback->textCallback(m_text);
 				}
 				break;
