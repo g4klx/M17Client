@@ -65,8 +65,7 @@ private:
 
 	std::string  m_source;
 	std::string  m_text;
-	std::string  m_calls;
-	std::string  m_current;
+	std::string  m_callsigns;
 	
 	void parseCommand(char* command);
 	void parseScreen(const uint8_t* command, unsigned int length);
@@ -78,6 +77,7 @@ private:
 
 	void showRX(bool end, const std::string& source, const std::string& destination);
 	void showText();
+	void showCallsigns();
 	void showRSSI(int value);
 	
 	void volumeChanged();

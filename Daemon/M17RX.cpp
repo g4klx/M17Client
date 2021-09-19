@@ -451,25 +451,29 @@ void CM17RX::processLSF(const CM17LSF& lsf)
 				if (meta[0U] != 0x00U) {
 					CUtils::dump(1U, "LSF Text Data", meta, M17_META_LENGTH_BYTES);
 
-					m_textBitMap |= meta[0U];
+					if (m_textBitMap != 0x11U && m_textBitMap != 0x33U && m_textBitMap != 0x77U && m_textBitMap != 0xFFU) {
+						m_textBitMap |= meta[0U];
 
-					switch (meta[0U] & 0x0FU) {
-						case 0x01U:
-							::memcpy(m_text + 0U,  meta + 1U, M17_META_LENGTH_BYTES - 1U);
-							break;
-						case 0x02U:
-							::memcpy(m_text + 13U, meta + 1U, M17_META_LENGTH_BYTES - 1U);
-							break;
-						case 0x04U:
-							::memcpy(m_text + 26U, meta + 1U, M17_META_LENGTH_BYTES - 1U);
-							break;
-						default:	// 0x08U
-							::memcpy(m_text + 39U, meta + 1U, M17_META_LENGTH_BYTES - 1U);
-							break;
+						switch (meta[0U] & 0x0FU) {
+							case 0x01U:
+								::memcpy(m_text + 0U,  meta + 1U, M17_META_LENGTH_BYTES - 1U);
+								break;
+							case 0x02U:
+								::memcpy(m_text + 13U, meta + 1U, M17_META_LENGTH_BYTES - 1U);
+								break;
+							case 0x04U:
+								::memcpy(m_text + 26U, meta + 1U, M17_META_LENGTH_BYTES - 1U);
+								break;
+							default:	// 0x08U
+								::memcpy(m_text + 39U, meta + 1U, M17_META_LENGTH_BYTES - 1U);
+								break;
+						}
+
+						if (m_textBitMap == 0x11U || m_textBitMap == 0x33U || m_textBitMap == 0x77U || m_textBitMap == 0xFFU) {
+							LogMessage("Text Data: \"%s\"", m_text);
+							m_callback->textCallback(m_text);
+						}
 					}
-
-					if (m_textBitMap == 0x11U || m_textBitMap == 0x33U || m_textBitMap == 0x77U || m_textBitMap == 0xFFU)
-						m_callback->textCallback(m_text);
 				}
 				break;
 
@@ -509,7 +513,7 @@ void CM17RX::processLSF(const CM17LSF& lsf)
 						speed = float(meta[13U]) / 2.2369F;
 					}
 
-					LogDebug("RX GPS Data: Lat=%f deg Long=%f deg Alt=%f m Speed=%f m/s Track=%f deg Type=%s", latitude, longitude, altitude, speed, track, type.c_str());
+					LogMessage("RX GPS Data: Lat=%f deg Long=%f deg Alt=%f m Speed=%f m/s Track=%f deg Type=%s", latitude, longitude, altitude, speed, track, type.c_str());
 				}
 				break;
 
@@ -525,6 +529,8 @@ void CM17RX::processLSF(const CM17LSF& lsf)
 
 						callsigns += " @ " + callsign;
 					}
+
+					LogMessage("Extra Callsign Data: %s", callsigns.c_str());
 
 					m_callback->callsignsCallback(callsigns.c_str());
 				}

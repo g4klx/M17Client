@@ -115,8 +115,7 @@ m_volume(50U),
 m_sMeter(0U),
 m_source(),
 m_text(),
-m_calls(),
-m_current()
+m_callsigns()
 {
 }
 
@@ -237,9 +236,6 @@ int CM17TS::run()
 	CTimer timer(1000U, 0U, 100U);
 	timer.start();
 
-	CTimer textTimer(1000U, 5U);
-	textTimer.start();
-
 	sendCommand("bkcmd=2");
 
 	gotoPage1();
@@ -272,12 +268,6 @@ int CM17TS::run()
 				::memset(endBuffer, 0x00U, 3U);
 				screenIdx = 0U;
 			}
-		}
-
-		textTimer.clock(20U);
-		if (textTimer.isRunning() && textTimer.hasExpired()) {
-			showText();
-			textTimer.start();
 		}
 
 		timer.clock(20U);
@@ -351,8 +341,8 @@ void CM17TS::parseCommand(char* command)
 		m_text = std::string(ptrs.at(1U));
 		showText();
 	} else if (::strcmp(ptrs.at(0U), "CALLS") == 0) {
-		m_calls = std::string(ptrs.at(1U));
-		showText();
+		m_callsigns = std::string(ptrs.at(1U));
+		showCallsigns();
 	} else if (::strcmp(ptrs.at(0U), "RSSI") == 0) {
 		int rssi = ::atoi(ptrs.at(1U));
 		showRSSI(rssi);
@@ -497,11 +487,11 @@ void CM17TS::showRX(bool end, const std::string& source, const std::string& dest
 
 		m_source.clear();
 		m_text.clear();
-		m_calls.clear();
-		m_current.clear();
+		m_callsigns.clear();
 
 		sendCommand("S_METER.val=0");
 		sendCommand("SOURCE.txt=\"\"");
+		sendCommand("CALLSIGNS.txt=\"\"");
 		sendCommand("TEXT.txt=\"\"");
 		sendCommand("RX.txt=\"\"");
 	} else {
@@ -518,23 +508,18 @@ void CM17TS::showRX(bool end, const std::string& source, const std::string& dest
 
 void CM17TS::showText()
 {
-	if (m_text.empty() && m_calls.empty())
-		return;
+	char text[100U];
+	::sprintf(text, "TEXT.txt=\"%s\"", m_text.c_str());
 
-	if (m_text.empty())
-		m_current = m_calls;
-	else if (m_calls.empty())
-		m_current = m_text;
-	else if (m_current == m_text)
-		m_current = m_calls;
-	else if (m_current == m_calls)
-		m_current = m_text;
+	sendCommand(text);
+}
 
-	if (!m_current.empty()) {
-		char text[100U];
-		::sprintf(text, "TEXT.txt=\"%s\"", m_current.c_str());
-		sendCommand(text);
-	}
+void CM17TS::showCallsigns()
+{
+	char text[100U];
+	::sprintf(text, "CALLSIGNS.txt=\"%s\"", m_callsigns.c_str());
+
+	sendCommand(text);
 }
 
 void CM17TS::showRSSI(int rssi)
@@ -550,7 +535,7 @@ void CM17TS::showRSSI(int rssi)
 			m_sMeter = 100U;
 	}
 
-	if (m_page == 2U) {
+	if (m_page == 1U) {
 		char text[100U];
 		::sprintf(text, "S_METER.val=%u", m_sMeter);
 		sendCommand(text);
@@ -592,6 +577,9 @@ void CM17TS::gotoPage1()
 	}
 
 	::sprintf(text, "SOURCE.txt=\"%s\"", m_source.c_str());
+	sendCommand(text);
+
+	::sprintf(text, "CALLSIGNS.txt=\"%s\"", m_callsigns.c_str());
 	sendCommand(text);
 
 	::sprintf(text, "TEXT.txt=\"%s\"", m_text.c_str());
