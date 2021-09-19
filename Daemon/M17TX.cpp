@@ -399,7 +399,17 @@ void CM17TX::process()
 	}
 
 	if (m_status == TXS_END) {
-		writeQueueEOT();
+		unsigned char data[M17_FRAME_LENGTH_BYTES + 2U];
+
+		data[0U] = TAG_EOT;
+		data[1U] = 0x00U;
+
+		// Generate the sync
+		for (unsigned int i = 0U; i < M17_FRAME_LENGTH_BYTES; i += M17_SYNC_LENGTH_BYTES)
+			addEOTSync(data + 2U + i);
+
+		writeQueue(data);
+
 		m_status = TXS_NONE;
 		m_audio.clear();
 	}
@@ -425,22 +435,6 @@ void CM17TX::writeQueue(const unsigned char *data)
 	m_queue.addData(&len, 1U);
 
 	m_queue.addData(data, len);
-}
-
-void CM17TX::writeQueueEOT()
-{
-	const unsigned char len = 1U;
-
-	unsigned int space = m_queue.freeSpace();
-	if (space < (len + 1U)) {
-		LogError("Overflow in the M17 TX queue");
-		return;
-	}
-
-	m_queue.addData(&len, 1U);
-
-	const unsigned char data = TAG_EOT;
-	m_queue.addData(&data, len);
 }
 
 void CM17TX::interleaver(const unsigned char* in, unsigned char* out) const
@@ -477,5 +471,12 @@ void CM17TX::addStreamSync(unsigned char* data)
 	assert(data != NULL);
 
 	::memcpy(data, M17_STREAM_SYNC_BYTES, M17_SYNC_LENGTH_BYTES);
+}
+
+void CM17TX::addEOTSync(unsigned char* data)
+{
+	assert(data != NULL);
+
+	::memcpy(data, M17_EOT_SYNC_BYTES, M17_SYNC_LENGTH_BYTES);
 }
 
