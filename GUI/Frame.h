@@ -54,6 +54,7 @@ public:
 	virtual void showReceive(CReceiveData* data);
 	virtual void showRSSI(int rssi);
 	virtual void showText(const wxString& text);
+	virtual void showCallsigns(const wxString& callsigns);
 	virtual void error(const wxString& error);
 
 	virtual void onChannels(wxEvent& event);
@@ -63,6 +64,7 @@ public:
 	virtual void onReceive(wxEvent& event);
 	virtual void onRSSI(wxEvent& event);
 	virtual void onText(wxEvent& event);
+	virtual void onCallsigns(wxEvent& event);
 	virtual void onError(wxEvent& event);
 
 private:
@@ -75,6 +77,7 @@ private:
 	wxStaticText*   m_hrdSource;
 	wxStaticText*   m_hrdDestination;
 	wxStaticText*   m_hrdText;
+	wxStaticText*   m_hrdCallsigns;
 	wxStaticText*   m_hrdRSSI;
 	wxListCtrl*     m_heard;
 	wxTimer         m_timer;

@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2010-2015,2018,2021 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2010,2021 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -15,18 +15,31 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
- 
-#ifndef	Version_H
-#define	Version_H
 
-#include <wx/wx.h>
+#include "CallsignsEvent.h"
 
-const wxString VENDOR_NAME = wxT("G4KLX");
+CCallsignsEvent::CCallsignsEvent(const wxString& callsigns, wxEventType type, int id) :
+wxEvent(id, type),
+m_callsigns(callsigns)
+{
+}
 
-#if defined(__WXDEBUG__)
-const wxString VERSION = wxT("20210920 - DEBUG");
-#else
-const wxString VERSION = wxT("20210920");
-#endif
+CCallsignsEvent::CCallsignsEvent(const CCallsignsEvent& event) :
+wxEvent(event),
+m_callsigns(event.m_callsigns)
+{
+}
 
-#endif
+CCallsignsEvent::~CCallsignsEvent()
+{
+}
+
+wxString CCallsignsEvent::getCallsigns() const
+{
+	return m_callsigns;
+}
+
+wxEvent* CCallsignsEvent::Clone() const
+{
+	return new CCallsignsEvent(*this);
+}

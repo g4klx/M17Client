@@ -139,6 +139,11 @@ void CApp::showText(const wxString& text) const
 	m_frame->GetEventHandler()->CallAfter(boost::bind(&CFrame::showText, m_frame, text));
 }
 
+void CApp::showCallsigns(const wxString& callsigns) const
+{
+	m_frame->GetEventHandler()->CallAfter(boost::bind(&CFrame::showCallsigns, m_frame, callsigns));
+}
+
 void CApp::showRSSI(int rssi) const
 {
 	m_frame->GetEventHandler()->CallAfter(boost::bind(&CFrame::showRSSI, m_frame, rssi));

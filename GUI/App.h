@@ -46,6 +46,7 @@ public:
 	virtual void showTransmit(bool tx) const;
 	virtual void showReceive(CReceiveData* data) const;
 	virtual void showText(const wxString& text) const;
+	virtual void showCallsigns(const wxString& callsigns) const;
 	virtual void showRSSI(int rssi) const;
 
 	virtual bool getChannels();

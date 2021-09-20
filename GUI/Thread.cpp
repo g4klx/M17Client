@@ -86,6 +86,9 @@ void* CThread::Entry()
 			} else if (::strcmp(ptrs.at(0U), "TEXT") == 0) {
 				wxString text = wxString(ptrs.at(1U));
 				::wxGetApp().showText(text);
+			} else if (::strcmp(ptrs.at(0U), "CALLS") == 0) {
+				wxString callsigns = wxString(ptrs.at(1U));
+				::wxGetApp().showCallsigns(callsigns);
 			} else if (::strcmp(ptrs.at(0U), "RSSI") == 0) {
 				int rssi = std::stoi(ptrs.at(1U));
 				::wxGetApp().showRSSI(rssi);

@@ -18,6 +18,7 @@
 
 #include "Frame.h"
 #include "DestinationsEvent.h"
+#include "CallsignsEvent.h"
 #include "ChannelsEvent.h"
 #include "TransmitEvent.h"
 #include "ReceiveEvent.h"
@@ -46,6 +47,7 @@ DEFINE_EVENT_TYPE(DESTINATIONS_EVENT)
 DEFINE_EVENT_TYPE(TRANSMIT_EVENT)
 DEFINE_EVENT_TYPE(RECEIVE_EVENT)
 DEFINE_EVENT_TYPE(TEXT_EVENT)
+DEFINE_EVENT_TYPE(CALLSIGNS_EVENT)
 DEFINE_EVENT_TYPE(RSSI_EVENT)
 DEFINE_EVENT_TYPE(ERROR_EVENT)
 
@@ -67,11 +69,12 @@ BEGIN_EVENT_TABLE(CFrame, wxFrame)
 	EVT_CUSTOM(CHANNELS_EVENT,     wxID_ANY, CFrame::onChannels)
 	EVT_CUSTOM(DESTINATIONS_EVENT, wxID_ANY, CFrame::onDestinations)
 
-	EVT_CUSTOM(TRANSMIT_EVENT, wxID_ANY, CFrame::onTransmit)
-	EVT_CUSTOM(RECEIVE_EVENT,  wxID_ANY, CFrame::onReceive)
-	EVT_CUSTOM(TEXT_EVENT,     wxID_ANY, CFrame::onText)
-	EVT_CUSTOM(RSSI_EVENT,     wxID_ANY, CFrame::onRSSI)
-	EVT_CUSTOM(ERROR_EVENT,    wxID_ANY, CFrame::onError)
+	EVT_CUSTOM(TRANSMIT_EVENT,  wxID_ANY, CFrame::onTransmit)
+	EVT_CUSTOM(RECEIVE_EVENT,   wxID_ANY, CFrame::onReceive)
+	EVT_CUSTOM(TEXT_EVENT,      wxID_ANY, CFrame::onText)
+	EVT_CUSTOM(CALLSIGNS_EVENT, wxID_ANY, CFrame::onCallsigns)
+	EVT_CUSTOM(RSSI_EVENT,      wxID_ANY, CFrame::onRSSI)
+	EVT_CUSTOM(ERROR_EVENT,     wxID_ANY, CFrame::onError)
 END_EVENT_TABLE()
 
 CFrame::CFrame(CConf& conf, const wxString& title) :
@@ -85,6 +88,7 @@ m_volume(NULL),
 m_hrdSource(NULL),
 m_hrdDestination(NULL),
 m_hrdText(NULL),
+m_hrdCallsigns(NULL),
 m_hrdRSSI(NULL),
 m_heard(NULL),
 m_timer(this, Timer_Timer)
@@ -138,17 +142,23 @@ m_timer(this, Timer_Timer)
 	m_hrdDestination = new wxStaticText(panel, -1, wxEmptyString, wxDefaultPosition, wxSize(CONTROL_WIDTH, -1));
 	info2Sizer->Add(m_hrdDestination, wxGBPosition(0, 3), wxDefaultSpan, wxALL, BORDER_SIZE);
 
-	wxStaticText* hrdTextLabel = new wxStaticText(panel, -1, _("Text:"), wxDefaultPosition, wxSize(LABEL_WIDTH, -1), wxALIGN_RIGHT);
-	info2Sizer->Add(hrdTextLabel, wxGBPosition(1, 0), wxDefaultSpan, wxALL, BORDER_SIZE);
+	wxStaticText* hrdCallsignsLabel = new wxStaticText(panel, -1, _("Callsigns:"), wxDefaultPosition, wxSize(LABEL_WIDTH, -1), wxALIGN_RIGHT);
+	info2Sizer->Add(hrdCallsignsLabel, wxGBPosition(1, 0), wxDefaultSpan, wxALL, BORDER_SIZE);
 
-	m_hrdText = new wxStaticText(panel, -1, wxEmptyString, wxDefaultPosition, wxSize(CONTROL_WIDTH, -1));
-	info2Sizer->Add(m_hrdText, wxGBPosition(1, 1), wxDefaultSpan, wxALL, BORDER_SIZE);
+	m_hrdCallsigns = new wxStaticText(panel, -1, wxEmptyString, wxDefaultPosition, wxSize(CONTROL_WIDTH, -1));
+	info2Sizer->Add(m_hrdCallsigns, wxGBPosition(1, 1), wxDefaultSpan, wxALL, BORDER_SIZE);
 
 	wxStaticText* hrdRSSILabel = new wxStaticText(panel, -1, _("RSSI:"), wxDefaultPosition, wxSize(LABEL_WIDTH, -1), wxALIGN_RIGHT);
 	info2Sizer->Add(hrdRSSILabel, wxGBPosition(1, 2), wxDefaultSpan, wxALL, BORDER_SIZE);
 
 	m_hrdRSSI = new wxStaticText(panel, -1, wxEmptyString, wxDefaultPosition, wxSize(LABEL_WIDTH * 3U, -1));
 	info2Sizer->Add(m_hrdRSSI, wxGBPosition(1, 3), wxGBSpan(1, 3), wxALL, BORDER_SIZE);
+
+	wxStaticText* hrdTextLabel = new wxStaticText(panel, -1, _("Text:"), wxDefaultPosition, wxSize(LABEL_WIDTH, -1), wxALIGN_RIGHT);
+	info2Sizer->Add(hrdTextLabel, wxGBPosition(2, 0), wxDefaultSpan, wxALL, BORDER_SIZE);
+
+	m_hrdText = new wxStaticText(panel, -1, wxEmptyString, wxDefaultPosition, wxSize(CONTROL_WIDTH, -1));
+	info2Sizer->Add(m_hrdText, wxGBPosition(2, 1), wxGBSpan(3, 1), wxALL, BORDER_SIZE);
 
 	info1Sizer->Add(info2Sizer);
 
@@ -161,8 +171,10 @@ m_timer(this, Timer_Timer)
 	m_heard->SetColumnWidth(1L, CALLSIGN_WIDTH);
 	m_heard->InsertColumn(2L, _("Dest"));
 	m_heard->SetColumnWidth(2L, MYCALLSIGN_WIDTH);
-	m_heard->InsertColumn(3L, _("Text"));
-	m_heard->SetColumnWidth(3L, CALLSIGN_WIDTH);
+	m_heard->InsertColumn(3L, _("Callsigns"));
+	m_heard->SetColumnWidth(3L, CALLSIGNS_WIDTH);
+	m_heard->InsertColumn(4L, _("Text"));
+	m_heard->SetColumnWidth(4L, TEXT_WIDTH);
 	panelSizer->Add(m_heard, wxGBPosition(5, 0), wxGBSpan(11, 6), wxALL | wxEXPAND, BORDER_SIZE);
 
 	panel->SetSizer(panelSizer);
@@ -238,6 +250,13 @@ void CFrame::showReceive(CReceiveData* data)
 void CFrame::showText(const wxString& text)
 {
 	CTextEvent event(text, TEXT_EVENT);
+
+	AddPendingEvent(event);
+}
+
+void CFrame::showCallsigns(const wxString& callsigns)
+{
+	CTextEvent event(callsigns, CALLSIGNS_EVENT);
 
 	AddPendingEvent(event);
 }
@@ -392,11 +411,13 @@ void CFrame::onReceive(wxEvent& event)
 		m_heard->SetItem(0L, 2, destination);
 
 		m_hrdText->SetLabel(wxEmptyString);
+		m_hrdCallsigns->SetLabel(wxEmptyString);
 		m_hrdRSSI->SetLabel(wxEmptyString);
 	} else {
 		m_hrdSource->SetLabel(wxEmptyString);
 		m_hrdDestination->SetLabel(wxEmptyString);
 		m_hrdText->SetLabel(wxEmptyString);
+		m_hrdCallsigns->SetLabel(wxEmptyString);
 		m_hrdRSSI->SetLabel(wxEmptyString);
 	}
 
@@ -410,7 +431,17 @@ void CFrame::onText(wxEvent& event)
 	wxString text = txtEvent.getText();
 
 	m_hrdText->SetLabel(text);
-	m_heard->SetItem(0L, 3, text);
+	m_heard->SetItem(0L, 4, text);
+}
+
+void CFrame::onCallsigns(wxEvent& event)
+{
+	CCallsignsEvent& callsignsEvent = dynamic_cast<CCallsignsEvent&>(event);
+
+	wxString callsigns = callsignsEvent.getCallsigns();
+
+	m_hrdCallsigns->SetLabel(callsigns);
+	m_heard->SetItem(0L, 3, callsigns);
 }
 
 void CFrame::onRSSI(wxEvent& event)
