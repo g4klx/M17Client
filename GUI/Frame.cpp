@@ -113,18 +113,18 @@ m_timer(this, Timer_Timer)
 	m_destinations = new wxChoice(panel, Choice_Destinations, wxDefaultPosition, wxSize(CONTROL_WIDTH, CONTROL_HEIGHT));
 	panelSizer->Add(m_destinations, wxGBPosition(0, 3), wxDefaultSpan, wxALL, BORDER_SIZE);
 
-	m_transmit = new wxToggleButton(panel, Button_Transmit, _("Transmit"), wxDefaultPosition, wxSize(CONTROL_WIDTH, -1));
-	panelSizer->Add(m_transmit, wxGBPosition(1, 0), wxDefaultSpan, wxALL, BORDER_SIZE);
-
-	m_status = new wxStaticText(panel, -1, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE);
-	panelSizer->Add(m_status, wxGBPosition(1, 1), wxDefaultSpan, wxALL, BORDER_SIZE);
-
 	wxStaticText* volumeLabel = new wxStaticText(panel, -1, wxT("Volume"), wxDefaultPosition, wxSize(LABEL_WIDTH, -1), wxALIGN_RIGHT);
-	panelSizer->Add(volumeLabel, wxGBPosition(1, 2), wxDefaultSpan, wxALL, BORDER_SIZE);
+	panelSizer->Add(volumeLabel, wxGBPosition(0, 4), wxDefaultSpan, wxALL, BORDER_SIZE);
 
 	int volume = m_conf.getVolume();
 	m_volume = new wxSlider(panel, Slider_Volume, volume, 0, 500, wxDefaultPosition, wxSize(CONTROL_WIDTH, -1));
-	panelSizer->Add(m_volume, wxGBPosition(1, 3), wxDefaultSpan, wxALL, BORDER_SIZE);
+	panelSizer->Add(m_volume, wxGBPosition(0, 5), wxDefaultSpan, wxALL, BORDER_SIZE);
+
+	m_transmit = new wxToggleButton(panel, Button_Transmit, _("Transmit"), wxDefaultPosition, wxSize(CONTROL_WIDTH, -1));
+	panelSizer->Add(m_transmit, wxGBPosition(1, 1), wxDefaultSpan, wxALL, BORDER_SIZE);
+
+	m_status = new wxStaticText(panel, -1, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE);
+	panelSizer->Add(m_status, wxGBPosition(1, 2), wxDefaultSpan, wxALL, BORDER_SIZE);
 
 	wxStaticBoxSizer* info1Sizer = new wxStaticBoxSizer(new wxStaticBox(panel, -1, _("Current")), wxVERTICAL);
 
