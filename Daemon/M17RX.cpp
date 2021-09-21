@@ -75,6 +75,7 @@ m_lsf(),
 m_running(),
 m_textBitMap(0x00U),
 m_text(NULL),
+m_callsigns(),
 m_queue(25000U, "M17 RX Audio"),
 m_rssiMapper(rssiMapper),
 m_rssi(0U),
@@ -221,6 +222,7 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 			m_aveRSSI    = m_rssi;
 			m_rssiCount  = 1U;
 			m_textBitMap = 0x00U;
+			m_callsigns.clear();
 			::memset(m_text, 0x00U, 4U * M17_META_LENGTH_BYTES);
 
 			addSilence(SILENCE_BLOCK_COUNT);
@@ -277,6 +279,7 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 			m_aveRSSI    = m_rssi;
 			m_rssiCount  = 1U;
 			m_textBitMap = 0x00U;
+			m_callsigns.clear();
 			::memset(m_text, 0x00U, 4U * M17_META_LENGTH_BYTES);
 
 			addSilence(SILENCE_BLOCK_COUNT);
@@ -449,9 +452,9 @@ void CM17RX::processLSF(const CM17LSF& lsf)
 		switch (lsf.getEncryptionSubType()) {
 			case M17_ENCRYPTION_SUB_TYPE_TEXT:
 				if (meta[0U] != 0x00U) {
-					CUtils::dump(1U, "LSF Text Data", meta, M17_META_LENGTH_BYTES);
-
 					if (m_textBitMap != 0x11U && m_textBitMap != 0x33U && m_textBitMap != 0x77U && m_textBitMap != 0xFFU) {
+						CUtils::dump(1U, "LSF Text Data", meta, M17_META_LENGTH_BYTES);
+
 						m_textBitMap |= meta[0U];
 
 						switch (meta[0U] & 0x0FU) {
@@ -517,22 +520,22 @@ void CM17RX::processLSF(const CM17LSF& lsf)
 				}
 				break;
 
-			case M17_ENCRYPTION_SUB_TYPE_CALLSIGNS: {
+			case M17_ENCRYPTION_SUB_TYPE_CALLSIGNS:
+				if (m_callsigns.empty()) {
 					CUtils::dump(1U, "LSF Callsign Data", meta, M17_META_LENGTH_BYTES);
 
-					std::string callsigns;
-					CM17Utils::decodeCallsign(meta + 0U, callsigns);
+					CM17Utils::decodeCallsign(meta + 0U, m_callsigns);
 
 					if (::memcmp(meta + 6U, "\x00\x00\x00\x00\x00\x00", 6U) != 0) {
 						std::string callsign;
 						CM17Utils::decodeCallsign(meta + 6U, callsign);
 
-						callsigns += " @ " + callsign;
+						m_callsigns += " @ " + callsign;
 					}
 
-					LogMessage("Extra Callsign Data: %s", callsigns.c_str());
+					LogMessage("Extra Callsign Data: %s", m_callsigns.c_str());
 
-					m_callback->callsignsCallback(callsigns.c_str());
+					m_callback->callsignsCallback(m_callsigns.c_str());
 				}
 				break;
 

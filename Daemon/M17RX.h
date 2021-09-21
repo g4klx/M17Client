@@ -62,6 +62,7 @@ private:
 	CM17LSF            m_running;
 	uint8_t            m_textBitMap;
 	char*              m_text;
+	std::string        m_callsigns;
 	CRingBuffer<float> m_queue;
 	CRSSIInterpolator* m_rssiMapper;
 	unsigned char      m_rssi;
