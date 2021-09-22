@@ -256,7 +256,7 @@ void CFrame::showText(const wxString& text)
 
 void CFrame::showCallsigns(const wxString& callsigns)
 {
-	CTextEvent event(callsigns, CALLSIGNS_EVENT);
+	CCallsignsEvent event(callsigns, CALLSIGNS_EVENT);
 
 	AddPendingEvent(event);
 }

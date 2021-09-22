@@ -28,13 +28,13 @@ const unsigned int CONTROL_WIDTH  = 130U;
 const unsigned int CONTROL_HEIGHT = 35U;
 const unsigned int DONGLE_WIDTH   = 190U;
 
-const unsigned int HEARD_WIDTH   = 985U;
+const unsigned int HEARD_WIDTH   = 935U;
 const unsigned int HEARD_HEIGHT  = 300U;
 
 const unsigned int DATETIME_WIDTH   = 135U;
 const unsigned int CALLSIGN_WIDTH   = 100U;
 const unsigned int MYCALLSIGN_WIDTH = 100U;
-const unsigned int CALLSIGNS_WIDTH  = 250U;
+const unsigned int CALLSIGNS_WIDTH  = 200U;
 const unsigned int TEXT_WIDTH       = 400U;
 #else
 const unsigned int BORDER_SIZE    = 5U;
@@ -43,13 +43,13 @@ const unsigned int CONTROL_WIDTH  = 150U;
 const unsigned int CONTROL_HEIGHT = 35U;
 const unsigned int DONGLE_WIDTH   = 250U;
 
-const unsigned int HEARD_WIDTH   = 1060U;
+const unsigned int HEARD_WIDTH   = 970U;
 const unsigned int HEARD_HEIGHT  = 350U;
 
 const unsigned int DATETIME_WIDTH   = 150U;
 const unsigned int CALLSIGN_WIDTH   = 100U;
 const unsigned int MYCALLSIGN_WIDTH = 120U;
-const unsigned int CALLSIGNS_WIDTH  = 250U;
+const unsigned int CALLSIGNS_WIDTH  = 200U;
 const unsigned int TEXT_WIDTH       = 400U;
 #endif
 

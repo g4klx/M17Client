@@ -24,7 +24,6 @@
 #include <wx/tokenzr.h>
 #include <wx/config.h>
 #include <wx/filename.h>
-#include <boost/bind.hpp>
 
 wxIMPLEMENT_APP(CApp);
 
@@ -114,44 +113,44 @@ void CApp::OnAssertFailure(const wxChar* file, int line, const wxChar* func, con
 
 void CApp::setChannels(const wxArrayString& channels) const
 {
-	m_frame->GetEventHandler()->CallAfter(boost::bind(&CFrame::setChannels, m_frame, channels));
+	m_frame->setChannels(channels);
 }
 
 void CApp::setDestinations(const wxArrayString& destinations) const
 {
-	m_frame->GetEventHandler()->CallAfter(boost::bind(&CFrame::setDestinations, m_frame, destinations));
+	m_frame->setDestinations(destinations);
 }
 
 void CApp::showTransmit(bool tx) const
 {
-	m_frame->GetEventHandler()->CallAfter(boost::bind(&CFrame::showTransmit, m_frame, tx));
+	m_frame->showTransmit(tx);
 }
 
 void CApp::showReceive(CReceiveData* data) const
 {
 	wxASSERT(data != NULL);
 	
-	m_frame->GetEventHandler()->CallAfter(boost::bind(&CFrame::showReceive, m_frame, data));
+	m_frame->showReceive(data);
 }
 
 void CApp::showText(const wxString& text) const
 {
-	m_frame->GetEventHandler()->CallAfter(boost::bind(&CFrame::showText, m_frame, text));
+	m_frame->showText(text);
 }
 
 void CApp::showCallsigns(const wxString& callsigns) const
 {
-	m_frame->GetEventHandler()->CallAfter(boost::bind(&CFrame::showCallsigns, m_frame, callsigns));
+	m_frame->showCallsigns(callsigns);
 }
 
 void CApp::showRSSI(int rssi) const
 {
-	m_frame->GetEventHandler()->CallAfter(boost::bind(&CFrame::showRSSI, m_frame, rssi));
+	m_frame->showRSSI(rssi);
 }
 
 void CApp::error(const wxString& text) const
 {
-	m_frame->GetEventHandler()->CallAfter(boost::bind(&CFrame::error, m_frame, text));
+	m_frame->error(text);
 }
 
 bool CApp::getChannels()
