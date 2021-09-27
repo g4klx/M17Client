@@ -40,10 +40,10 @@ enum TX_STATUS {
 
 class CM17TX {
 public:
-	CM17TX(const std::string& callsign, const std::string& text, unsigned int mode, unsigned int micGain, CCodec2& codec3200, CCodec2& codec1600);
+	CM17TX(const std::string& callsign, const std::string& text, unsigned int micGain, CCodec2& codec3200, CCodec2& codec1600);
 	~CM17TX();
 
-	void setCAN(unsigned int can);
+	void setParams(unsigned int can, unsigned int mode);
 
 	void setDestination(const std::string& callsign);
 

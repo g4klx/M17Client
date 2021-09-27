@@ -54,10 +54,10 @@ const unsigned char BIT_MASK_TABLE[] = { 0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04
 #define WRITE_BIT(p,i,b) p[(i)>>3] = (b) ? (p[(i)>>3] | BIT_MASK_TABLE[(i)&7]) : (p[(i)>>3] & ~BIT_MASK_TABLE[(i)&7])
 #define READ_BIT(p,i)    (p[(i)>>3] & BIT_MASK_TABLE[(i)&7])
 
-CM17TX::CM17TX(const std::string& callsign, const std::string& text, unsigned int mode, unsigned int micGain, CCodec2& codec3200, CCodec2& codec1600) :
+CM17TX::CM17TX(const std::string& callsign, const std::string& text, unsigned int micGain, CCodec2& codec3200, CCodec2& codec1600) :
 m_3200(codec3200),
 m_1600(codec1600),
-m_mode(mode),
+m_mode(3200U),
 m_source(callsign),
 m_dest(),
 m_micGain(float(micGain) / 100.0F),
@@ -97,7 +97,7 @@ m_error(0)
 			CM17LSF* lsf = new CM17LSF;
 			lsf->setSource(callsign);
 			lsf->setPacketStream(M17_STREAM_TYPE);
-			lsf->setDataType(m_mode == 1600U ? M17_DATA_TYPE_VOICE_DATA : M17_DATA_TYPE_VOICE);
+			lsf->setDataType(M17_DATA_TYPE_VOICE);
 			lsf->setEncryptionType(M17_ENCRYPTION_TYPE_NONE);
 			lsf->setEncryptionSubType(M17_ENCRYPTION_SUB_TYPE_TEXT);
 
@@ -117,7 +117,7 @@ m_error(0)
 		CM17LSF* lsf = new CM17LSF;
 		lsf->setSource(callsign);
 		lsf->setPacketStream(M17_STREAM_TYPE);
-		lsf->setDataType(m_mode == 1600U ? M17_DATA_TYPE_VOICE_DATA : M17_DATA_TYPE_VOICE);
+		lsf->setDataType(M17_DATA_TYPE_VOICE);
 		lsf->setEncryptionType(M17_ENCRYPTION_TYPE_NONE);
 		lsf->setEncryptionSubType(M17_ENCRYPTION_SUB_TYPE_TEXT);
 		lsf->setMeta(M17_NULL_META);
@@ -146,12 +146,15 @@ bool CM17TX::isTX() const
 	return m_status != TXS_NONE;
 }
 
-void CM17TX::setCAN(unsigned int can)
+void CM17TX::setParams(unsigned int can, unsigned int mode)
 {
-	m_can = can;
+	m_can  = can;
+	m_mode = mode;
 	
-	for (std::vector<CM17LSF*>::iterator it = m_textLSF.begin(); it != m_textLSF.end(); ++it)
+	for (std::vector<CM17LSF*>::iterator it = m_textLSF.begin(); it != m_textLSF.end(); ++it) {
 		(*it)->setCAN(can);
+		(*it)->setDataType(mode == 1600U ? M17_DATA_TYPE_VOICE_DATA : M17_DATA_TYPE_VOICE);
+	}
 }
 
 void CM17TX::setDestination(const std::string& callsign)

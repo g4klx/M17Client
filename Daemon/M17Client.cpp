@@ -320,7 +320,7 @@ int CM17Client::run()
 	if (!m_conf.getModemRSSIMappingFile().empty())
 		rssi->load(m_conf.getModemRSSIMappingFile());
 
-	m_tx = new CM17TX(m_conf.getCallsign(), m_conf.getText(), m_conf.getTXMode(), m_conf.getAudioMicGain(), codec3200, codec1600);
+	m_tx = new CM17TX(m_conf.getCallsign(), m_conf.getText(), m_conf.getAudioMicGain(), codec3200, codec1600);
 	m_tx->setDestination("ALL");
 
 	m_rx = new CM17RX(m_conf.getCallsign(), rssi, m_conf.getBleep(), codec3200, codec1600);
@@ -334,7 +334,7 @@ int CM17Client::run()
 					m_codePlug->getData().at(0U).m_txFrequency);
 	}
 #endif
-	m_tx->setCAN(m_codePlug->getData().at(0U).m_can);
+	m_tx->setParams(m_codePlug->getData().at(0U).m_can, m_codePlug->getData().at(0U).m_mode);
 
 	CSoundCard sound(m_conf.getAudioInputDevice(), m_conf.getAudioOutputDevice(), SOUNDCARD_SAMPLE_RATE, SOUNDCARD_BLOCK_SIZE);
 	sound.setCallback(this);
@@ -564,7 +564,7 @@ bool CM17Client::processChannelRequest(const char* channel)
 			if (m_hamLib != NULL)
 				m_hamLib->setFrequency(chan.m_rxFrequency, chan.m_txFrequency);
 #endif
-			m_tx->setCAN(chan.m_can);
+			m_tx->setParams(chan.m_can, chan.m_mode);
 			return true;
 		}
 	}
