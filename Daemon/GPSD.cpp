@@ -85,8 +85,13 @@ bool CGPSD::getData(float& latitude, float& longitude, float& altitude, float& s
 	if (m_timer.isRunning() && !m_timer.hasExpired())
 		return false;
 
+#if GPSD_API_MAJOR_VERSION >= 10
+	if (m_gpsdData.fix.mode == MODE_NOT_SEEN || m_gpsdData.fix.mode == MODE_NO_FIX)
+		return false;
+#else
 	if (m_gpsdData.status != STATUS_FIX)
 		return false;
+#endif
 
 	bool latlonSet = (m_gpsdData.set & LATLON_SET) == LATLON_SET;
 	if (!latlonSet)

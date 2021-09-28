@@ -169,6 +169,8 @@ void CM17TX::setGPS(float latitude, float longitude, float altitude, float speed
 {
 	LogDebug("GPS Data: Lat=%f deg Long=%f deg Alt=%f m Speed=%f m/s Track=%f deg Type=%s", latitude, longitude, altitude, speed, track, type.c_str());
 
+	delete m_gpsLSF;
+
 	m_gpsLSF = new CM17LSF;
 	m_gpsLSF->setSource(m_source);
 	m_gpsLSF->setDest(m_dest);
