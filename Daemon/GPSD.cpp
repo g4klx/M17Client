@@ -105,6 +105,8 @@ bool CGPSD::getData(float& latitude, float& longitude, float& altitude, float& s
 	longitude = float(m_gpsdData.fix.longitude);
 #if GPSD_API_MAJOR_VERSION >= 9
 	altitude  = float(m_gpsdData.fix.altMSL);
+	if (isnanf(altitude))
+		altitude  = float(m_gpsdData.fix.altitude);
 #else
 	altitude  = float(m_gpsdData.fix.altitude);
 #endif

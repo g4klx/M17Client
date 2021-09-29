@@ -167,6 +167,9 @@ void CM17TX::setDestination(const std::string& callsign)
 
 void CM17TX::setGPS(float latitude, float longitude, float altitude, float speed, float track, const std::string& type)
 {
+	if (m_status == TXS_NONE)
+		return;
+
 	LogDebug("GPS Data: Lat=%f deg Long=%f deg Alt=%f m Speed=%f m/s Track=%f deg Type=%s", latitude, longitude, altitude, speed, track, type.c_str());
 
 	delete m_gpsLSF;
