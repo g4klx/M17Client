@@ -43,6 +43,8 @@ public:
 
 	void setVolume(unsigned int percentage);
 
+	void setGPS(float lat, float lon);
+
 	bool write(unsigned char* data, unsigned int len);
 
 	unsigned int read(float* audio, unsigned int len);
@@ -72,6 +74,8 @@ private:
 	unsigned int       m_rssiCount;
 	SRC_STATE*         m_resampler;
 	int                m_error;
+	float              m_myLat;
+	float              m_myLon;
 
 	void writeQueue(const float *audio, unsigned int len);
 
@@ -84,6 +88,9 @@ private:
 	void processLSF(const CM17LSF& lsf);
 
 	void addSilence(unsigned int n);
+
+	void calcBD(float srcLat, float srcLon, float dstLat, float dstLon, float& bearing, float& distance) const;
+	std::string calcLocator(float latitude, float longitude) const;
 
 	void end();
 

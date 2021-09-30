@@ -52,7 +52,14 @@ public:
 	virtual void statusCallback(const std::string& source, const std::string& dest, bool end);
 	virtual void textCallback(const char* text);
 	virtual void rssiCallback(int rssi);
-	virtual void gpsCallback();
+	virtual void gpsCallbackBD(float latitude, float longitude, float altitude, float track, float speed, float bearing, float distance, const std::string& locator);
+	virtual void gpsCallbackBD(float latitude, float longitude, float track, float speed, float bearing, float distance, const std::string& locator);
+	virtual void gpsCallbackBD(float latitude, float longitude, float altitude, float bearing, float distance, const std::string& locator);
+	virtual void gpsCallbackBD(float latitude, float longitude, float bearing, float distance, const std::string& locator);
+	virtual void gpsCallback(float latitude, float longitude, float altitude, float track, float speed, const std::string& locator);
+	virtual void gpsCallback(float latitude, float longitude, float track, float speed, const std::string& locator);
+	virtual void gpsCallback(float latitude, float longitude, float altitude, const std::string& locator);
+	virtual void gpsCallback(float latitude, float longitude, const std::string& locator);
 	virtual void callsignsCallback(const char* callsigns);
 
 private:

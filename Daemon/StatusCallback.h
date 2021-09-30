@@ -24,7 +24,15 @@ public:
 
 	virtual void rssiCallback(int rssi) = 0;
 
-	virtual void gpsCallback() = 0;
+	virtual void gpsCallbackBD(float latitude, float longitude, float altitude, float track, float speed, float bearing, float distance, const std::string& locator) = 0;
+	virtual void gpsCallbackBD(float latitude, float longitude, float track, float speed, float bearing, float distance, const std::string& locator) = 0;
+	virtual void gpsCallbackBD(float latitude, float longitude, float altitude, float bearing, float distance, const std::string& locator) = 0;
+	virtual void gpsCallbackBD(float latitude, float longitude, float bearing, float distance, const std::string& locator) = 0;
+
+	virtual void gpsCallback(float latitude, float longitude, float altitude, float track, float speed, const std::string& locator) = 0;
+	virtual void gpsCallback(float latitude, float longitude, float track, float speed, const std::string& locator) = 0;
+	virtual void gpsCallback(float latitude, float longitude, float altitude, const std::string& locator) = 0;
+	virtual void gpsCallback(float latitude, float longitude, const std::string& locator) = 0;
 
 	virtual void callsignsCallback(const char* callsigns) = 0;
 

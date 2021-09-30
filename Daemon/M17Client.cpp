@@ -383,8 +383,10 @@ int CM17Client::run()
 		if (m_gpsd != NULL) {
 			float latiude, longitude, altitude, speed, track;
 			bool ret = m_gpsd->getData(latiude, longitude, altitude, speed, track);
-			if (ret)
+			if (ret) {
+				m_rx->setGPS(latitude, longitude);
 				m_tx->setGPS(latiude, longitude, altitude, speed, track, m_conf.getGPSType());
+			}
 		}
 #endif
 
@@ -652,9 +654,116 @@ void CM17Client::rssiCallback(int rssi)
 	m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
 }
 
-void CM17Client::gpsCallback()
+void CM17Client::gpsCallbackBD(float latitude, float longitude, float altitude, float track, float speed, float bearing, float distance, const std::string& locator)
 {
 	assert(m_socket != NULL);
+
+	char buffer[200U];
+	::strcpy(buffer, "GPSBD1");
+	::strcat(buffer, DELIMITER);
+	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%f%s%f%s%f%s%f%s%f", latitude, DELIMITER, longitude, DELIMITER, altitude, DELIMITER, track, DELIMITER, speed, DELIMITER, bearing, DELIMITER, distance);
+	::strcat(buffer, DELIMITER);
+	::strcat(buffer, locator.c_str());
+
+	m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
+}
+
+void CM17Client::gpsCallbackBD(float latitude, float longitude, float track, float speed, float bearing, float distance, const std::string& locator)
+{
+	assert(m_socket != NULL);
+
+	char buffer[200U];
+	::strcpy(buffer, "GPSBD2");
+	::strcat(buffer, DELIMITER);
+	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%f%s%f%s%f%s%f", latitude, DELIMITER, longitude, DELIMITER, track, DELIMITER, speed, DELIMITER, bearing, DELIMITER, distance);
+	::strcat(buffer, DELIMITER);
+	::strcat(buffer, locator.c_str());
+
+	m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
+}
+
+void CM17Client::gpsCallbackBD(float latitude, float longitude, float altitude, float bearing, float distance, const std::string& locator)
+{
+	assert(m_socket != NULL);
+
+	char buffer[200U];
+	::strcpy(buffer, "GPSBD3");
+	::strcat(buffer, DELIMITER);
+	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%f%s%f%s%f", latitude, DELIMITER, longitude, DELIMITER, altitude, DELIMITER, bearing, DELIMITER, distance);
+	::strcat(buffer, DELIMITER);
+	::strcat(buffer, locator.c_str());
+
+	m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
+}
+
+void CM17Client::gpsCallbackBD(float latitude, float longitude, float bearing, float distance, const std::string& locator)
+{
+	assert(m_socket != NULL);
+
+	char buffer[200U];
+	::strcpy(buffer, "GPSBD4");
+	::strcat(buffer, DELIMITER);
+	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%f%s%f", latitude, DELIMITER, longitude, DELIMITER, bearing, DELIMITER, distance);
+	::strcat(buffer, DELIMITER);
+	::strcat(buffer, locator.c_str());
+
+	m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
+}
+
+void CM17Client::gpsCallback(float latitude, float longitude, float altitude, float track, float speed, const std::string& locator)
+{
+	assert(m_socket != NULL);
+
+	char buffer[200U];
+	::strcpy(buffer, "GPS1");
+	::strcat(buffer, DELIMITER);
+	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%f%s%f%s%f", latitude, DELIMITER, longitude, DELIMITER, altitude, DELIMITER, track, DELIMITER, speed);
+	::strcat(buffer, DELIMITER);
+	::strcat(buffer, locator.c_str());
+
+	m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
+}
+
+void CM17Client::gpsCallback(float latitude, float longitude, float track, float speed, const std::string& locator)
+{
+	assert(m_socket != NULL);
+
+	char buffer[200U];
+	::strcpy(buffer, "GPS2");
+	::strcat(buffer, DELIMITER);
+	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%f%s%f", latitude, DELIMITER, longitude, DELIMITER, track, DELIMITER, speed);
+	::strcat(buffer, DELIMITER);
+	::strcat(buffer, locator.c_str());
+
+	m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
+}
+
+void CM17Client::gpsCallback(float latitude, float longitude, float altitude, const std::string& locator)
+{
+	assert(m_socket != NULL);
+
+	char buffer[200U];
+	::strcpy(buffer, "GPS3");
+	::strcat(buffer, DELIMITER);
+	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%f", latitude, DELIMITER, longitude, DELIMITER, altitude);
+	::strcat(buffer, DELIMITER);
+	::strcat(buffer, locator.c_str());
+
+	m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
+}
+
+void CM17Client::gpsCallback(float latitude, float longitude, const std::string& locator)
+{
+	assert(m_socket != NULL);
+
+	char buffer[200U];
+	::strcpy(buffer, "GPS4");
+	::strcat(buffer, DELIMITER);
+	::sprintf(buffer + ::strlen(buffer), "%f%s%f", latitude, DELIMITER, longitude);
+	::strcat(buffer, DELIMITER);
+	::strcat(buffer, locator.c_str());
+
+	m_socket->write(buffer, ::strlen(buffer), m_sockaddr, m_sockaddrLen);
 }
 
 void CM17Client::callsignsCallback(const char* callsigns)

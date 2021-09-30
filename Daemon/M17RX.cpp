@@ -24,6 +24,11 @@
 #include <cstring>
 #include <ctime>
 
+#define	DEG2RAD(x)	((x / 180.0F) * 3.14159F)
+#define	RAD2DEG(x)	((x / 3.14159F) * 180.0F)
+
+const float R = 6371.0F;
+
 const unsigned int  SILENCE_BLOCK_COUNT = 5U;
 
 const unsigned int  BLEEP_FREQ   = 2000U;
@@ -84,7 +89,9 @@ m_minRSSI(0U),
 m_aveRSSI(0U),
 m_rssiCount(0U),
 m_resampler(NULL),
-m_error(0)
+m_error(0),
+m_myLat(999.0F),
+m_myLon(999.0F)
 {
 	m_text = new char[4U * M17_META_LENGTH_BYTES];
 
@@ -113,6 +120,12 @@ unsigned int CM17RX::getVolume() const
 void CM17RX::setVolume(unsigned int percentage)
 {
 	m_volume = float(percentage) / 100.0F;
+}
+
+void CM17RX::setGPS(float lat, float lon)
+{
+	m_myLat = lat;
+	m_myLon = lon;
 }
 
 unsigned int CM17RX::read(float* audio, unsigned int len)
@@ -516,7 +529,32 @@ void CM17RX::processLSF(const CM17LSF& lsf)
 						speed = float(meta[13U]) / 2.2369F;
 					}
 
-					LogMessage("RX GPS Data: Lat=%f deg Long=%f deg Alt=%f m Speed=%f m/s Track=%f deg Type=%s", latitude, longitude, altitude, speed, track, type.c_str());
+					LogDebug("RX GPS Data: Lat=%f deg Long=%f deg Alt=%f m Speed=%f m/s Track=%f deg Type=%s", latitude, longitude, altitude, speed, track, type.c_str());
+
+					std::string locator = calcLocator(latitude, longitude);
+
+					if (m_myLat != 999.0F && m_myLon != 999.0F) {
+						float bearing, distance;
+						calcBD(m_myLat, m_myLon, latitude, longitude, bearing, distance);
+
+						if (altitude != INVALID_GPS_DATA && speed != INVALID_GPS_DATA && track != INVALID_GPS_DATA)
+							m_callback->gpsCallbackBD(latitude, longitude, altitude, track, speed, bearing, distance, locator);
+						else if (altitude == INVALID_GPS_DATA && speed != INVALID_GPS_DATA && track != INVALID_GPS_DATA)
+							m_callback->gpsCallbackBD(latitude, longitude, track, speed, bearing, distance, locator);
+						else if (altitude != INVALID_GPS_DATA && speed == INVALID_GPS_DATA && track == INVALID_GPS_DATA)
+							m_callback->gpsCallbackBD(latitude, longitude, altitude, bearing, distance, locator);
+						else
+							m_callback->gpsCallbackBD(latitude, longitude, bearing, distance, locator);
+					} else {
+						if (altitude != INVALID_GPS_DATA && speed != INVALID_GPS_DATA && track != INVALID_GPS_DATA)
+							m_callback->gpsCallback(latitude, longitude, altitude, track, speed, locator);
+						else if (altitude == INVALID_GPS_DATA && speed != INVALID_GPS_DATA && track != INVALID_GPS_DATA)
+							m_callback->gpsCallback(latitude, longitude, track, speed, locator);
+						else if (altitude != INVALID_GPS_DATA && speed == INVALID_GPS_DATA && track == INVALID_GPS_DATA)
+							m_callback->gpsCallback(latitude, longitude, altitude, locator);
+						else
+							m_callback->gpsCallback(latitude, longitude, locator);
+					}
 				}
 				break;
 
@@ -611,3 +649,63 @@ void CM17RX::addSilence(unsigned int n)
 			writeQueue(&SILENCE, 1U);
 	}
 }
+
+void CM17RX::calcBD(float srcLat, float srcLon, float dstLat, float dstLon, float& bearing, float& distance) const
+{
+	srcLat = DEG2RAD(srcLat);
+	srcLon = DEG2RAD(srcLon);
+	dstLat = DEG2RAD(dstLat);
+	dstLon = DEG2RAD(dstLon);
+
+	float diffLon = dstLon - srcLon;
+
+	distance = ::acos(::sin(srcLat) * ::sin(dstLat) + ::cos(srcLat) * ::cos(dstLat) * ::cos(diffLon)) * R;
+
+	bearing = RAD2DEG(::atan2(::sin(diffLon) * ::cos(dstLat),
+				   ::cos(srcLat) * ::sin(dstLat) - ::sin(srcLat) * ::cos(dstLat) * ::cos(diffLon)));
+
+	if (bearing < 0.0F)
+		bearing += 360.0F;
+}
+
+std::string CM17RX::calcLocator(float latitude, float longitude) const
+{
+	std::string locator;
+
+	latitude += 90.0F;
+
+	if (longitude > 180.0F)
+		longitude -= 360.0F;
+
+	if (longitude < -180.0F)
+		longitude += 360.0F;
+
+	longitude += 180.0F;
+
+	float lon = ::floor(longitude / 20.0F);
+	float lat = ::floor(latitude / 10.0F);
+
+	locator += 'A' + (unsigned int)lon;
+	locator += 'A' + (unsigned int)lat;
+
+	longitude -= lon * 20.0F;
+	latitude  -= lat * 10.0F;
+
+	lon = ::floor(longitude / 2.0F);
+	lat = ::floor(latitude  / 1.0F);
+
+	locator += '0' + (unsigned int)lon;
+	locator += '0' + (unsigned int)lat;
+
+	longitude -= lon * 2.0F;
+	latitude  -= lat * 1.0F;
+
+	lon = ::floor(longitude / (2.0F / 24.0F));
+	lat = ::floor(latitude  / (1.0F / 24.0F));
+
+	locator += 'A' + (unsigned int)lon;
+	locator += 'A' + (unsigned int)lat;
+
+	return locator;
+}
+
