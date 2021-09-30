@@ -659,7 +659,7 @@ void CM17Client::gpsCallbackBD(float latitude, float longitude, float altitude, 
 	assert(m_socket != NULL);
 
 	char buffer[200U];
-	::strcpy(buffer, "GPSBD1");
+	::strcpy(buffer, "GPSBD");
 	::strcat(buffer, DELIMITER);
 	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%f%s%f%s%f%s%f%s%f", latitude, DELIMITER, longitude, DELIMITER, altitude, DELIMITER, track, DELIMITER, speed, DELIMITER, bearing, DELIMITER, distance);
 	::strcat(buffer, DELIMITER);
@@ -673,9 +673,9 @@ void CM17Client::gpsCallbackBD(float latitude, float longitude, float track, flo
 	assert(m_socket != NULL);
 
 	char buffer[200U];
-	::strcpy(buffer, "GPSBD2");
+	::strcpy(buffer, "GPSBD");
 	::strcat(buffer, DELIMITER);
-	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%f%s%f%s%f%s%f", latitude, DELIMITER, longitude, DELIMITER, track, DELIMITER, speed, DELIMITER, bearing, DELIMITER, distance);
+	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%s%f%s%f%s%f%s%f", latitude, DELIMITER, longitude, DELIMITER, DELIMITER, track, DELIMITER, speed, DELIMITER, bearing, DELIMITER, distance);
 	::strcat(buffer, DELIMITER);
 	::strcat(buffer, locator.c_str());
 
@@ -687,9 +687,9 @@ void CM17Client::gpsCallbackBD(float latitude, float longitude, float altitude, 
 	assert(m_socket != NULL);
 
 	char buffer[200U];
-	::strcpy(buffer, "GPSBD3");
+	::strcpy(buffer, "GPSBD");
 	::strcat(buffer, DELIMITER);
-	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%f%s%f%s%f", latitude, DELIMITER, longitude, DELIMITER, altitude, DELIMITER, bearing, DELIMITER, distance);
+	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%f%s%s%s%f%s%f", latitude, DELIMITER, longitude, DELIMITER, altitude, DELIMITER, DELIMITER, DELIMITER, bearing, DELIMITER, distance);
 	::strcat(buffer, DELIMITER);
 	::strcat(buffer, locator.c_str());
 
@@ -701,9 +701,9 @@ void CM17Client::gpsCallbackBD(float latitude, float longitude, float bearing, f
 	assert(m_socket != NULL);
 
 	char buffer[200U];
-	::strcpy(buffer, "GPSBD4");
+	::strcpy(buffer, "GPSBD");
 	::strcat(buffer, DELIMITER);
-	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%f%s%f", latitude, DELIMITER, longitude, DELIMITER, bearing, DELIMITER, distance);
+	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%s%s%s%f%s%f", latitude, DELIMITER, longitude, DELIMITER, DELIMITER, DELIMITER, DELIMITER, bearing, DELIMITER, distance);
 	::strcat(buffer, DELIMITER);
 	::strcat(buffer, locator.c_str());
 
@@ -715,7 +715,7 @@ void CM17Client::gpsCallback(float latitude, float longitude, float altitude, fl
 	assert(m_socket != NULL);
 
 	char buffer[200U];
-	::strcpy(buffer, "GPS1");
+	::strcpy(buffer, "GPS");
 	::strcat(buffer, DELIMITER);
 	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%f%s%f%s%f", latitude, DELIMITER, longitude, DELIMITER, altitude, DELIMITER, track, DELIMITER, speed);
 	::strcat(buffer, DELIMITER);
@@ -729,9 +729,9 @@ void CM17Client::gpsCallback(float latitude, float longitude, float track, float
 	assert(m_socket != NULL);
 
 	char buffer[200U];
-	::strcpy(buffer, "GPS2");
+	::strcpy(buffer, "GPS");
 	::strcat(buffer, DELIMITER);
-	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%f%s%f", latitude, DELIMITER, longitude, DELIMITER, track, DELIMITER, speed);
+	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%s%f%s%f", latitude, DELIMITER, longitude, DELIMITER, DELIMITER, track, DELIMITER, speed);
 	::strcat(buffer, DELIMITER);
 	::strcat(buffer, locator.c_str());
 
@@ -743,9 +743,9 @@ void CM17Client::gpsCallback(float latitude, float longitude, float altitude, co
 	assert(m_socket != NULL);
 
 	char buffer[200U];
-	::strcpy(buffer, "GPS3");
+	::strcpy(buffer, "GPS");
 	::strcat(buffer, DELIMITER);
-	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%f", latitude, DELIMITER, longitude, DELIMITER, altitude);
+	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%f%s%s", latitude, DELIMITER, longitude, DELIMITER, altitude, DELIMITER, DELIMITER);
 	::strcat(buffer, DELIMITER);
 	::strcat(buffer, locator.c_str());
 
@@ -757,9 +757,9 @@ void CM17Client::gpsCallback(float latitude, float longitude, const std::string&
 	assert(m_socket != NULL);
 
 	char buffer[200U];
-	::strcpy(buffer, "GPS4");
+	::strcpy(buffer, "GPS");
 	::strcat(buffer, DELIMITER);
-	::sprintf(buffer + ::strlen(buffer), "%f%s%f", latitude, DELIMITER, longitude);
+	::sprintf(buffer + ::strlen(buffer), "%f%s%f%s%s%s", latitude, DELIMITER, longitude, DELIMITER, DELIMITER, DELIMITER);
 	::strcat(buffer, DELIMITER);
 	::strcat(buffer, locator.c_str());
 
