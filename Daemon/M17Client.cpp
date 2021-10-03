@@ -381,11 +381,11 @@ int CM17Client::run()
 
 #if defined(USE_GPSD)
 		if (m_gpsd != NULL) {
-			float latiude, longitude, altitude, speed, track;
-			bool ret = m_gpsd->getData(latiude, longitude, altitude, speed, track);
+			float latitude, longitude, altitude, speed, track;
+			bool ret = m_gpsd->getData(latitude, longitude, altitude, speed, track);
 			if (ret) {
 				m_rx->setGPS(latitude, longitude);
-				m_tx->setGPS(latiude, longitude, altitude, speed, track, m_conf.getGPSType());
+				m_tx->setGPS(latitude, longitude, altitude, speed, track, m_conf.getGPSType());
 			}
 		}
 #endif
