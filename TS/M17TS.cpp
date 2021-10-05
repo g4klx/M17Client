@@ -346,6 +346,10 @@ void CM17TS::parseCommand(char* command)
 	} else if (::strcmp(ptrs.at(0U), "RSSI") == 0) {
 		int rssi = ::atoi(ptrs.at(1U));
 		showRSSI(rssi);
+	} else if (::strcmp(ptrs.at(0U), "GPS") == 0) {
+		// GPS data without bearing and distance information
+	} else if (::strcmp(ptrs.at(0U), "GPSBD") == 0) {
+		// GPS data with bearing and distance information
 	}
 }
 

@@ -92,6 +92,10 @@ void* CThread::Entry()
 			} else if (::strcmp(ptrs.at(0U), "RSSI") == 0) {
 				int rssi = std::stoi(ptrs.at(1U));
 				::wxGetApp().showRSSI(rssi);
+			} else if (::strcmp(ptrs.at(0U), "GPS") == 0) {
+				// GPS data without bearing and distance information
+			} else if (::strcmp(ptrs.at(0U), "GPSBD") == 0) {
+				// GPS data with bearing and distance information
 			}
 		}
 
