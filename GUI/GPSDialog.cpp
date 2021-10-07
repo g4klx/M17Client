@@ -20,19 +20,16 @@
 #include "GPSCompass.h"
 #include "Defs.h"
 
-BEGIN_EVENT_TABLE(CGPSDialog, wxDialog)
-	EVT_BUTTON(wxID_OK, CGPSDialog::onOK)
-END_EVENT_TABLE()
 
 CGPSDialog::CGPSDialog(wxWindow* parent, int id, float latitude, float longitude, const wxString& locator,
 			const std::optional<float>& altitude,
 			const std::optional<float>& speed, const std::optional<float>& track,
 			const std::optional<float>& bearing, const std::optional<float>& distance) :
-wxDialog(parent, id, wxString(_("GPS Data")))
+wxDialog(parent, id, wxString(_("GPS Data")), wxDefaultPosition, wxSize(GPSDIALOG_WIDTH, GPSDIALOG_HEIGHT))
 {
 	wxBoxSizer* mainSizer = new wxBoxSizer(wxHORIZONTAL);
 
-	CGPSCompass* compass = new CGPSCompass(this, -1, bearing, wxDefaultPosition, wxSize(COMPASS_WIDTH, COMPASS_HEIGHT));
+	CGPSCompass* compass = new CGPSCompass(this, -1, bearing);
 	mainSizer->Add(compass, 0, wxALL, BORDER_SIZE);
 
 	wxBoxSizer* textSizer = new wxBoxSizer(wxVERTICAL);
@@ -40,53 +37,52 @@ wxDialog(parent, id, wxString(_("GPS Data")))
 	wxString text;
 
 	if (latitude < 0.0F)
-		text.Printf(wxT("%f\u2103 S"), -latitude);
+		text.Printf(_("Latitude: %.4f\xB0 S"), -latitude);
 	else
-		text.Printf(wxT("%f\u2103 N"), latitude);
+		text.Printf(_("Latitude: %.4f\xB0 N"), latitude);
 
 	wxStaticText* temp = new wxStaticText(this, -1, text);
 	textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 
 	if (longitude < 0.0F)
-		text.Printf(wxT("%f\u2103 W"), -longitude);
+		text.Printf(_("Longitude: %.4f\xB0 W"), -longitude);
 	else
-		text.Printf(wxT("%f\u2103 E"), longitude);
+		text.Printf(_("Longitude: %.4f\xB0 E"), longitude);
 
 	temp = new wxStaticText(this, -1, text);
 	textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 
-	temp = new wxStaticText(this, -1, locator);
+	text.Printf(_("Locator: %s"), locator.c_str());
+	temp = new wxStaticText(this, -1, text);
 	textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 
 	if (altitude) {
-		text.Printf(wxT("%fm"), altitude.value());
+		text.Printf(_("Altitude: %.1fm"), altitude.value());
 		temp = new wxStaticText(this, -1, text);
 		textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 	}
 
 	if (speed && track) {
-		text.Printf(wxT("%fkm/h"), speed.value());
+		text.Printf(_("Speed: %.1fkm/h"), speed.value());
 		temp = new wxStaticText(this, -1, text);
 		textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 
-		text.Printf(wxT("%f\u2103"), track.value());
+		text.Printf(_("Track: %.0f\xB0"), track.value());
 		temp = new wxStaticText(this, -1, text);
 		textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 	}
 
 	if (bearing && distance) {
-		text.Printf(wxT("%f\u2103"), bearing.value());
+		text.Printf(_("Bearing: %.0f\xB0"), bearing.value());
 		temp = new wxStaticText(this, -1, text);
 		textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 
-		text.Printf(wxT("%fkm"), distance.value());
+		text.Printf(_("Distance: %.0fkm"), distance.value());
 		temp = new wxStaticText(this, -1, text);
 		textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 	}
 
 	mainSizer->Add(textSizer, 0, wxALL, BORDER_SIZE);
-
-	mainSizer->Add(CreateButtonSizer(wxOK), 0, wxALL, BORDER_SIZE);
 
 	SetAutoLayout(true);
 	Layout();
@@ -99,15 +95,5 @@ wxDialog(parent, id, wxString(_("GPS Data")))
 
 CGPSDialog::~CGPSDialog()
 {
-}
-
-void CGPSDialog::onOK(wxCommandEvent& WXUNUSED(event))
-{
-	if (IsModal()) {
-		EndModal(wxID_OK);
-	} else {
-		SetReturnCode(wxID_OK);
-		Show(false);
-	}
 }
 

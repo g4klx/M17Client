@@ -31,8 +31,10 @@ const unsigned int DONGLE_WIDTH   = 190U;
 const unsigned int HEARD_WIDTH   = 935U;
 const unsigned int HEARD_HEIGHT  = 300U;
 
-const unsigned int COMPASS_WIDTH  = 400U;
-const unsigned int COMPASS_HEIGHT = 400U;
+const unsigned int COMPASS_RADIUS = 100U;
+
+const unsigned int GPSDIALOG_WIDTH  = 450U;
+const unsigned int GPSDIALOG_HEIGHT = 230U;
 
 const unsigned int DATETIME_WIDTH   = 135U;
 const unsigned int CALLSIGN_WIDTH   = 100U;
@@ -49,8 +51,10 @@ const unsigned int DONGLE_WIDTH   = 250U;
 const unsigned int HEARD_WIDTH   = 970U;
 const unsigned int HEARD_HEIGHT  = 350U;
 
-const unsigned int COMPASS_WIDTH  = 400U;
-const unsigned int COMPASS_HEIGHT = 400U;
+const unsigned int COMPASS_RADIUS = 100U;
+
+const unsigned int GPSDIALOG_WIDTH  = 450U;
+const unsigned int GPSDIALOG_HEIGHT = 230U;
 
 const unsigned int DATETIME_WIDTH   = 150U;
 const unsigned int CALLSIGN_WIDTH   = 100U;

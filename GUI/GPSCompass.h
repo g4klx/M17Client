@@ -26,14 +26,12 @@
 class CGPSCompass : public wxPanel {
 
     public:
-	CGPSCompass(wxWindow* parent, int id, const std::optional<float>& bearing, const wxPoint& pos, const wxSize& size, long style = 0L, const wxString& name = wxPanelNameStr);
+	CGPSCompass(wxWindow* parent, int id, const std::optional<float>& bearing);
 	virtual ~CGPSCompass();
 
 	void onPaint(wxPaintEvent& event);
 
     private:
-    	int       m_width;
-    	int       m_height;
 	wxBitmap* m_background;
 	wxBitmap* m_bitmap;
 

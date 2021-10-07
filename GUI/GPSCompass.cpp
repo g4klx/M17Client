@@ -17,25 +17,27 @@
  */
 
 #include "GPSCompass.h"
+#include "Defs.h"
 
 #include <cmath>
 
 #define	DEG2RAD(x)	((x / 180.0F) * 3.14159F)
 #define	RAD2DEG(x)	((x / 3.14159F) * 180.0F)
 
+const int WIDTH  = COMPASS_RADIUS * 2 + 30;
+const int HEIGHT = COMPASS_RADIUS * 2 + 30;
+
 BEGIN_EVENT_TABLE(CGPSCompass, wxPanel)
 	EVT_PAINT(CGPSCompass::onPaint)
 END_EVENT_TABLE()
 
-CGPSCompass::CGPSCompass(wxWindow* parent, int id, const std::optional<float>& bearing, const wxPoint& pos, const wxSize& size, long style, const wxString& name) :
-wxPanel(parent, id, pos, size, style, name),
-m_width(size.GetWidth()),
-m_height(size.GetHeight()),
+CGPSCompass::CGPSCompass(wxWindow* parent, int id, const std::optional<float>& bearing) :
+wxPanel(parent, id, wxDefaultPosition, wxSize(WIDTH, HEIGHT), 0L, "GPS Compass"),
 m_background(NULL),
 m_bitmap(NULL)
 {
-	m_bitmap     = new wxBitmap(m_width, m_height);
-	m_background = new wxBitmap(m_width, m_height);
+	m_bitmap     = new wxBitmap(WIDTH, HEIGHT);
+	m_background = new wxBitmap(WIDTH, HEIGHT);
 
 	createBackground();
 
@@ -64,22 +66,29 @@ void CGPSCompass::setPointer(float bearing)
 	dc.SetBrush(*wxYELLOW_BRUSH);
 	dc.SetPen(*wxYELLOW_PEN);
 
-	int needleRadius = m_width / 2 - 30;
+	const int needleRadius = COMPASS_RADIUS - 10;
 
-	int centreX = m_width / 2;
-	int centreY = m_height / 2;
+	bearing -= 90.0F;
 
-	int p1x = centreX + needleRadius * ::cos(DEG2RAD(bearing));
-	int p1y = centreY + needleRadius * ::sin(DEG2RAD(bearing));
+	float degrees = bearing;
+	float radians = DEG2RAD(degrees);
+	int p1x = (WIDTH / 2)  + needleRadius * ::cos(radians);
+	int p1y = (HEIGHT / 2) + needleRadius * ::sin(radians);
 
-	int p2x = centreX + needleRadius * ::cos(DEG2RAD(bearing + 145.0f));
-	int p2y = centreY + needleRadius * ::sin(DEG2RAD(bearing + 145.0f));
+	degrees = bearing + 145.0F;
+	radians = DEG2RAD(degrees);
+	int p2x = (WIDTH / 2)  + needleRadius * ::cos(radians);
+	int p2y = (HEIGHT / 2) + needleRadius * ::sin(radians);
 
-	int p3x = centreX + needleRadius / 2 * ::cos(DEG2RAD(bearing + 180.0f));
-	int p3y = centreY + needleRadius / 2 * ::sin(DEG2RAD(bearing + 180.0f));
+	degrees = bearing + 180.0F;
+	radians = DEG2RAD(degrees);
+	int p3x = (WIDTH / 2)  + (needleRadius / 2) * ::cos(radians);
+	int p3y = (HEIGHT / 2) + (needleRadius / 2) * ::sin(radians);
 
-	int p4x = centreX + needleRadius * ::cos(DEG2RAD(bearing - 145.0f));
-	int p4y = centreY + needleRadius * ::sin(DEG2RAD(bearing - 145.0f));
+	degrees = bearing - 145.0F;
+	radians = DEG2RAD(degrees);
+	int p4x = (WIDTH / 2)  + needleRadius * ::cos(radians);
+	int p4y = (HEIGHT / 2) + needleRadius * ::sin(radians);
 
 	dc.DrawLine(p1x, p1y, p2x, p2y);
 	dc.DrawLine(p2x, p2y, p3x, p3y);
@@ -114,12 +123,14 @@ void CGPSCompass::createBackground()
 	dc.SetBackground(*wxBLACK_BRUSH);
 	dc.Clear();
 
-	dc.SetBrush(*wxWHITE_BRUSH);
+	dc.SetBrush(*wxBLACK_BRUSH);
 	dc.SetPen(*wxWHITE_PEN);
-	dc.DrawCircle(m_width / 2, m_height / 2, m_width / 2 - 20);
+	dc.DrawCircle(WIDTH / 2, HEIGHT / 2, COMPASS_RADIUS);
 
-	int x = m_width / 2 - 10;
-	int y = m_height - 20;
+	int x = WIDTH / 2 - 10;
+	int y = 5;
+
+	dc.SetBrush(*wxWHITE_BRUSH);
 	dc.DrawRectangle(x, y, 20, 20);
 
 	dc.SetPen(*wxBLACK_PEN);
@@ -133,8 +144,8 @@ void CGPSCompass::createBackground()
 	dc.SetTextForeground(*wxBLACK);
 
 	// North
-	x = m_width / 2 - 3;
-	y = m_height - 10;
+	x = WIDTH / 2 - 5;
+	y = 6;
 	dc.DrawText(wxT("N"), x, y);
 
 	dc.SelectObject(wxNullBitmap);

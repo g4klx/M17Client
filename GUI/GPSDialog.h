@@ -32,10 +32,7 @@ class CGPSDialog : public wxDialog {
 			const std::optional<float>& bearing, const std::optional<float>& distance);
 	virtual ~CGPSDialog();
 
-	void onOK(wxCommandEvent& event);
-
     private:
-	DECLARE_EVENT_TABLE()
 };
 
 #endif
