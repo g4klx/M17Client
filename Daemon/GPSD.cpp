@@ -69,7 +69,7 @@ void CGPSD::clock(unsigned int ms)
 	m_timer.clock(ms);
 }
 
-bool CGPSD::getData(float& latitude, float& longitude, float& altitude, float& speed, float& track)
+bool CGPSD::getData(float& latitude, float& longitude, std::optional<float>& altitude, std::optional<float>& speed, std::optional<float>& track)
 {
 	if (!::gps_waiting(&m_gpsdData, 0))
 		return false;
@@ -103,22 +103,24 @@ bool CGPSD::getData(float& latitude, float& longitude, float& altitude, float& s
 
 	latitude  = float(m_gpsdData.fix.latitude);
 	longitude = float(m_gpsdData.fix.longitude);
-#if GPSD_API_MAJOR_VERSION >= 9
-	altitude  = float(m_gpsdData.fix.altMSL);
-	if (isnanf(altitude))
-		altitude  = float(m_gpsdData.fix.altitude);
-#else
-	altitude  = float(m_gpsdData.fix.altitude);
-#endif
-	speed     = float(m_gpsdData.fix.speed);
-	track     = float(m_gpsdData.fix.track);
 
-	if (!altitudeSet)
-		altitude = INVALID_GPS_DATA;
-	if (!speedSet)
-		speed = INVALID_GPS_DATA;
-	if (!trackSet)
-		track = INVALID_GPS_DATA;
+	altitude.reset();
+	if (altitudeSet) {
+#if GPSD_API_MAJOR_VERSION >= 9
+		altitude = float(m_gpsdData.fix.altMSL);
+		if (isnanf(altitude.value()))
+			altitude = float(m_gpsdData.fix.altitude);
+#else
+		altitude = float(m_gpsdData.fix.altitude);
+#endif
+	}
+
+	speed.reset();
+	track.reset();
+	if (speedSet && trackSet) {
+		speed = float(m_gpsdData.fix.speed);
+		track = float(m_gpsdData.fix.track);
+	}
 
 	m_timer.start();
 

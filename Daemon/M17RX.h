@@ -31,6 +31,7 @@
 #include <samplerate.h>
 
 #include <string>
+#include <optional>
 
 class CM17RX {
 public:
@@ -43,39 +44,39 @@ public:
 
 	void setVolume(unsigned int percentage);
 
-	void setGPS(float lat, float lon);
+	void setGPS(float latitude, float longitude);
 
 	bool write(unsigned char* data, unsigned int len);
 
 	unsigned int read(float* audio, unsigned int len);
 
 private:
-	CCodec2&           m_3200;
-	CCodec2&           m_1600;
-	std::string        m_callsign;
-	bool               m_bleep;
-	float              m_volume;
-	IStatusCallback*   m_callback;
-	RPT_RF_STATE       m_state;
-	unsigned int       m_frames;
-	unsigned int       m_errs;
-	unsigned int       m_bits;
-	CM17LSF            m_lsf;
-	CM17LSF            m_running;
-	uint8_t            m_textBitMap;
-	char*              m_text;
-	std::string        m_callsigns;
-	CRingBuffer<float> m_queue;
-	CRSSIInterpolator* m_rssiMapper;
-	unsigned char      m_rssi;
-	unsigned char      m_maxRSSI;
-	unsigned char      m_minRSSI;
-	unsigned int       m_aveRSSI;
-	unsigned int       m_rssiCount;
-	SRC_STATE*         m_resampler;
-	int                m_error;
-	float              m_myLat;
-	float              m_myLon;
+	CCodec2&             m_3200;
+	CCodec2&             m_1600;
+	std::string          m_callsign;
+	bool                 m_bleep;
+	float                m_volume;
+	IStatusCallback*     m_callback;
+	RPT_RF_STATE         m_state;
+	unsigned int         m_frames;
+	unsigned int         m_errs;
+	unsigned int         m_bits;
+	CM17LSF              m_lsf;
+	CM17LSF              m_running;
+	uint8_t              m_textBitMap;
+	char*                m_text;
+	std::string          m_callsigns;
+	CRingBuffer<float>   m_queue;
+	CRSSIInterpolator*   m_rssiMapper;
+	unsigned char        m_rssi;
+	unsigned char        m_maxRSSI;
+	unsigned char        m_minRSSI;
+	unsigned int         m_aveRSSI;
+	unsigned int         m_rssiCount;
+	SRC_STATE*           m_resampler;
+	int                  m_error;
+	std::optional<float> m_latitude;
+	std::optional<float> m_longitude;
 
 	void writeQueue(const float *audio, unsigned int len);
 
@@ -89,7 +90,8 @@ private:
 
 	void addSilence(unsigned int n);
 
-	void calcBD(float srcLat, float srcLon, float dstLat, float dstLon, float& bearing, float& distance) const;
+	void calcBD(const std::optional<float>& srcLat, const std::optional<float>& srcLon,
+			float dstLat, float dstLon, std::optional<float>& bearing, std::optional<float>& distance) const;
 	std::string calcLocator(float latitude, float longitude) const;
 
 	void end();

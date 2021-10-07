@@ -15,6 +15,7 @@
 #define	StatusCallback_H
 
 #include <string>
+#include <optional>
 
 class IStatusCallback {
 public:
@@ -24,15 +25,10 @@ public:
 
 	virtual void rssiCallback(int rssi) = 0;
 
-	virtual void gpsCallbackBD(float latitude, float longitude, float altitude, float track, float speed, float bearing, float distance, const std::string& locator) = 0;
-	virtual void gpsCallbackBD(float latitude, float longitude, float track, float speed, float bearing, float distance, const std::string& locator) = 0;
-	virtual void gpsCallbackBD(float latitude, float longitude, float altitude, float bearing, float distance, const std::string& locator) = 0;
-	virtual void gpsCallbackBD(float latitude, float longitude, float bearing, float distance, const std::string& locator) = 0;
-
-	virtual void gpsCallback(float latitude, float longitude, float altitude, float track, float speed, const std::string& locator) = 0;
-	virtual void gpsCallback(float latitude, float longitude, float track, float speed, const std::string& locator) = 0;
-	virtual void gpsCallback(float latitude, float longitude, float altitude, const std::string& locator) = 0;
-	virtual void gpsCallback(float latitude, float longitude, const std::string& locator) = 0;
+	virtual void gpsCallback(float latitude, float longitude, const std::string& locator,
+			const std::optional<float>& altitude,
+			const std::optional<float>& speed, const std::optional<float>& track,
+			const std::optional<float>& bearing, const std::optional<float>& distance) = 0;
 
 	virtual void callsignsCallback(const char* callsigns) = 0;
 

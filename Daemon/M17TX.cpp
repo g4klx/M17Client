@@ -165,12 +165,15 @@ void CM17TX::setDestination(const std::string& callsign)
 		(*it)->setDest(callsign);
 }
 
-void CM17TX::setGPS(float latitude, float longitude, float altitude, float speed, float track, const std::string& type)
+void CM17TX::setGPS(float latitude, float longitude,
+			std::optional<float>& altitude,
+			std::optional<float>& speed, std::optional<float>& track,
+			const std::string& type)
 {
 	if (m_status == TXS_NONE)
 		return;
 
-	LogDebug("GPS Data: Lat=%f deg Long=%f deg Alt=%f m Speed=%f m/s Track=%f deg Type=%s", latitude, longitude, altitude, speed, track, type.c_str());
+	LogDebug("GPS Data: Lat=%fdeg Long=%fdeg Alt=%fm Speed=%fm/s Track=%fdeg Type=%s", latitude, longitude, altitude.value(), speed.value(), track.value(), type.c_str());
 
 	delete m_gpsLSF;
 
@@ -225,9 +228,8 @@ void CM17TX::setGPS(float latitude, float longitude, float altitude, float speed
 	if (!longE)
 		meta[8U] |= 0x02U;
 
-	if (altitude != INVALID_GPS_DATA) {
-		altitude *= 3.28F;	// m to ft
-		unsigned short height = (unsigned short)(altitude + 1500.5F);
+	if (altitude) {
+		unsigned short height = (unsigned short)(altitude.value() * 3.28F + 1500.5F);
 
 		meta[9U]  = (height >> 8) & 0xFFU;
 		meta[10U] = (height >> 0) & 0xFFU;
@@ -235,14 +237,13 @@ void CM17TX::setGPS(float latitude, float longitude, float altitude, float speed
 		meta[8U] |= 0x04U;
 	}
 	
-	if (speed != INVALID_GPS_DATA && track != INVALID_GPS_DATA) {
-		speed *= 2.2369F;	// m/s to mph
-		unsigned short direction = (unsigned short)(track + 0.5F);
+	if (speed && track) {
+		unsigned short direction = (unsigned short)(track.value() + 0.5F);
 
 		meta[11U] = (direction >> 8) & 0xFFU;
 		meta[12U] = (direction >> 0) & 0xFFU;
 
-		meta[13U] = (unsigned char)(speed + 0.5F);
+		meta[13U] = (unsigned char)(speed.value() * 2.2369F + 0.5F);
 
 		meta[8U] |= 0x08U;
 	}

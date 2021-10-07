@@ -30,6 +30,7 @@
 
 #include <string>
 #include <vector>
+#include <optional>
 
 enum TX_STATUS {
 	TXS_NONE,
@@ -47,7 +48,10 @@ public:
 
 	void setDestination(const std::string& callsign);
 
-	void setGPS(float latitude, float longitude, float altitude, float speed, float track, const std::string& type);
+	void setGPS(float latitude, float longitude,
+			std::optional<float>& altitude,
+			std::optional<float>& speed, std::optional<float>& track,
+			const std::string& type);
 
 	void start();
 

@@ -24,6 +24,7 @@
 #include "Timer.h"
 
 #include <string>
+#include <optional>
 
 #include <gps.h>
 
@@ -34,7 +35,7 @@ public:
 
 	bool open();
 
-	bool getData(float& latitude, float& longitude, float& altitude, float& speed, float& track);
+	bool getData(float& latitude, float& longitude, std::optional<float>& altitude, std::optional<float>& speed, std::optional<float>& track);
 
 	void clock(unsigned int ms);
 

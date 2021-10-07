@@ -90,8 +90,8 @@ m_aveRSSI(0U),
 m_rssiCount(0U),
 m_resampler(NULL),
 m_error(0),
-m_myLat(999.0F),
-m_myLon(999.0F)
+m_latitude(),
+m_longitude()
 {
 	m_text = new char[4U * M17_META_LENGTH_BYTES];
 
@@ -122,10 +122,10 @@ void CM17RX::setVolume(unsigned int percentage)
 	m_volume = float(percentage) / 100.0F;
 }
 
-void CM17RX::setGPS(float lat, float lon)
+void CM17RX::setGPS(float latitude, float longitude)
 {
-	m_myLat = lat;
-	m_myLon = lon;
+	m_latitude  = latitude;
+	m_longitude = longitude;
 }
 
 unsigned int CM17RX::read(float* audio, unsigned int len)
@@ -519,42 +519,25 @@ void CM17RX::processLSF(const CM17LSF& lsf)
 					if ((meta[8U] & 0x01U) == 0x01U) latitude  *= -1.0F;
 					if ((meta[8U] & 0x02U) == 0x02U) longitude *= -1.0F;
 
-					float altitude = INVALID_GPS_DATA;
+					std::optional<float> altitude;
 					if ((meta[8U] & 0x04U) == 0x04U)
 						altitude = (float((meta[9U] << 8) + (meta[10U] << 0)) - 1500.0F) / 3.28F;
 
-					float speed = INVALID_GPS_DATA, track = INVALID_GPS_DATA;
+					std::optional<float> speed, track;
 					if ((meta[8U] & 0x08U) == 0x08U) {
 						track = float((meta[11U] << 8) + (meta[12U] << 0));
 						speed = float(meta[13U]) / 2.2369F;
 					}
 
-					LogDebug("RX GPS Data: Lat=%f deg Long=%f deg Alt=%f m Speed=%f m/s Track=%f deg Type=%s", latitude, longitude, altitude, speed, track, type.c_str());
+					LogDebug("RX GPS Data: Lat=%fdeg Long=%fdeg Alt=%fm Speed=%fm/s Track=%fdeg Type=%s", latitude, longitude, altitude.value(), speed.value(), track.value(), type.c_str());
 
 					std::string locator = calcLocator(latitude, longitude);
 
-					if (m_myLat != 999.0F && m_myLon != 999.0F) {
-						float bearing, distance;
-						calcBD(m_myLat, m_myLon, latitude, longitude, bearing, distance);
+					std::optional<float> bearing, distance;
+					if (m_latitude && m_longitude)
+						calcBD(m_latitude, m_longitude, latitude, longitude, bearing, distance);
 
-						if (altitude != INVALID_GPS_DATA && speed != INVALID_GPS_DATA && track != INVALID_GPS_DATA)
-							m_callback->gpsCallbackBD(latitude, longitude, altitude, track, speed, bearing, distance, locator);
-						else if (altitude == INVALID_GPS_DATA && speed != INVALID_GPS_DATA && track != INVALID_GPS_DATA)
-							m_callback->gpsCallbackBD(latitude, longitude, track, speed, bearing, distance, locator);
-						else if (altitude != INVALID_GPS_DATA && speed == INVALID_GPS_DATA && track == INVALID_GPS_DATA)
-							m_callback->gpsCallbackBD(latitude, longitude, altitude, bearing, distance, locator);
-						else
-							m_callback->gpsCallbackBD(latitude, longitude, bearing, distance, locator);
-					} else {
-						if (altitude != INVALID_GPS_DATA && speed != INVALID_GPS_DATA && track != INVALID_GPS_DATA)
-							m_callback->gpsCallback(latitude, longitude, altitude, track, speed, locator);
-						else if (altitude == INVALID_GPS_DATA && speed != INVALID_GPS_DATA && track != INVALID_GPS_DATA)
-							m_callback->gpsCallback(latitude, longitude, track, speed, locator);
-						else if (altitude != INVALID_GPS_DATA && speed == INVALID_GPS_DATA && track == INVALID_GPS_DATA)
-							m_callback->gpsCallback(latitude, longitude, altitude, locator);
-						else
-							m_callback->gpsCallback(latitude, longitude, locator);
-					}
+					m_callback->gpsCallback(latitude, longitude, locator, altitude, speed, track, bearing, distance);
 				}
 				break;
 
@@ -650,22 +633,23 @@ void CM17RX::addSilence(unsigned int n)
 	}
 }
 
-void CM17RX::calcBD(float srcLat, float srcLon, float dstLat, float dstLon, float& bearing, float& distance) const
+void CM17RX::calcBD(const std::optional<float>& srcLat, const std::optional<float>& srcLon,
+			float dstLat, float dstLon, std::optional<float>& bearing, std::optional<float>& distance) const
 {
-	srcLat = DEG2RAD(srcLat);
-	srcLon = DEG2RAD(srcLon);
-	dstLat = DEG2RAD(dstLat);
-	dstLon = DEG2RAD(dstLon);
+	float srcLatRad = DEG2RAD(srcLat.value());
+	float srcLonRad = DEG2RAD(srcLon.value());
+	float dstLatRad = DEG2RAD(dstLat);
+	float dstLonRad = DEG2RAD(dstLon);
 
-	float diffLon = dstLon - srcLon;
+	float diffLonRad = dstLonRad - srcLonRad;
 
-	distance = ::acos(::sin(srcLat) * ::sin(dstLat) + ::cos(srcLat) * ::cos(dstLat) * ::cos(diffLon)) * R;
+	distance = ::acos(::sin(srcLatRad) * ::sin(dstLatRad) + ::cos(srcLatRad) * ::cos(dstLatRad) * ::cos(diffLonRad)) * R;
 
-	bearing = RAD2DEG(::atan2(::sin(diffLon) * ::cos(dstLat),
-				   ::cos(srcLat) * ::sin(dstLat) - ::sin(srcLat) * ::cos(dstLat) * ::cos(diffLon)));
+	bearing = RAD2DEG(::atan2(::sin(diffLonRad) * ::cos(dstLatRad),
+				   ::cos(srcLatRad) * ::sin(dstLatRad) - ::sin(srcLatRad) * ::cos(dstLatRad) * ::cos(diffLonRad)));
 
-	if (bearing < 0.0F)
-		bearing += 360.0F;
+	if (bearing.value() < 0.0F)
+		bearing = bearing.value() + 360.0F;
 }
 
 std::string CM17RX::calcLocator(float latitude, float longitude) const
