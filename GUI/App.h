@@ -27,6 +27,8 @@
 
 #include <wx/wx.h>
 
+#include <optional>
+
 class CApp : public wxApp {
 
 public:
@@ -48,6 +50,10 @@ public:
 	virtual void showText(const wxString& text) const;
 	virtual void showCallsigns(const wxString& callsigns) const;
 	virtual void showRSSI(int rssi) const;
+	virtual void showGPS(float latitude, float longitude, const wxString& locator,
+			const std::optional<float>& altitude,
+			const std::optional<float>& speed, const std::optional<float>& track,
+			const std::optional<float>& bearing, const std::optional<float>& distance) const;
 
 	virtual bool getChannels();
 	virtual bool getDestinations();

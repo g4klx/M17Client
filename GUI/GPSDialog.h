@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2010-2015,2018,2021 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2021 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -15,14 +15,28 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
- 
-#ifndef	Version_H
-#define	Version_H
+
+#ifndef	GPSDialog_H
+#define	GPSDialog_H
 
 #include <wx/wx.h>
 
-const wxString VENDOR_NAME = wxT("G4KLX");
+#include <optional>
 
-const wxString VERSION = wxT("20211007");
+class CGPSDialog : public wxDialog {
+
+    public:
+	CGPSDialog(wxWindow* parent, int id, float latitude, float longitude, const wxString& locator,
+			const std::optional<float>& altitude,
+			const std::optional<float>& speed, const std::optional<float>& track,
+			const std::optional<float>& bearing, const std::optional<float>& distance);
+	virtual ~CGPSDialog();
+
+	void onOK(wxCommandEvent& event);
+
+    private:
+	DECLARE_EVENT_TABLE()
+};
 
 #endif
+

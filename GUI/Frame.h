@@ -27,6 +27,8 @@
 #include <wx/tglbtn.h>
 #include <wx/listctrl.h>
 
+#include <optional>
+
 class CFrame : public wxFrame {
 public:
 	CFrame(CConf& conf, const wxString& title);
@@ -55,6 +57,10 @@ public:
 	virtual void showRSSI(int rssi);
 	virtual void showText(const wxString& text);
 	virtual void showCallsigns(const wxString& callsigns);
+	virtual void showGPS(float latitude, float longitude, const wxString& locator,
+			const std::optional<float>& altitude,
+			const std::optional<float>& speed, const std::optional<float>& track,
+			const std::optional<float>& bearing, const std::optional<float>& distance);
 	virtual void error(const wxString& error);
 
 	virtual void onChannels(wxEvent& event);
@@ -65,6 +71,7 @@ public:
 	virtual void onRSSI(wxEvent& event);
 	virtual void onText(wxEvent& event);
 	virtual void onCallsigns(wxEvent& event);
+	virtual void onGPS(wxEvent& event);
 	virtual void onError(wxEvent& event);
 
 private:

@@ -21,6 +21,7 @@
 #include "App.h"
 
 #include <vector>
+#include <optional>
 
 const char* DELIMITER = ":";
 
@@ -93,7 +94,31 @@ void* CThread::Entry()
 				int rssi = std::stoi(ptrs.at(1U));
 				::wxGetApp().showRSSI(rssi);
 			} else if (::strcmp(ptrs.at(0U), "GPS") == 0) {
-				// GPS data
+				float latitude   = std::stof(ptrs.at(1U));
+				float longitude  = std::stof(ptrs.at(2U));
+				wxString locator = wxString(ptrs.at(3U));
+
+				std::optional<float> altitude;
+				if (::strlen(ptrs.at(4U)) > 0)
+					altitude = std::stof(ptrs.at(4U));
+
+				std::optional<float> speed;
+				if (::strlen(ptrs.at(5U)) > 0)
+					speed = std::stof(ptrs.at(5U));
+
+				std::optional<float> track;
+				if (::strlen(ptrs.at(6U)) > 0)
+					track = std::stof(ptrs.at(6U));
+
+				std::optional<float> bearing;
+				if (::strlen(ptrs.at(7U)) > 0)
+					bearing = std::stof(ptrs.at(7U));
+
+				std::optional<float> distance;
+				if (::strlen(ptrs.at(8U)) > 0)
+					distance = std::stof(ptrs.at(8U));
+
+				::wxGetApp().showGPS(latitude, longitude, locator, altitude, speed, track, bearing, distance);
 			}
 		}
 

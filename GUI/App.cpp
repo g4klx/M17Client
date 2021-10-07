@@ -148,6 +148,14 @@ void CApp::showRSSI(int rssi) const
 	m_frame->showRSSI(rssi);
 }
 
+void CApp::showGPS(float latitude, float longitude, const wxString& locator,
+			const std::optional<float>& altitude,
+			const std::optional<float>& speed, const std::optional<float>& track,
+			const std::optional<float>& bearing, const std::optional<float>& distance) const
+{
+	m_frame->showGPS(latitude, longitude, locator, altitude, speed, track, bearing, distance);
+}
+
 void CApp::error(const wxString& text) const
 {
 	m_frame->error(text);

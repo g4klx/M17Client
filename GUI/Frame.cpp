@@ -24,7 +24,9 @@
 #include "ReceiveEvent.h"
 #include "ErrorEvent.h"
 #include "TextEvent.h"
+#include "GPSDialog.h"
 #include "RSSIEvent.h"
+#include "GPSEvent.h"
 #include "Version.h"
 #include "App.h"
 
@@ -49,6 +51,7 @@ DEFINE_EVENT_TYPE(RECEIVE_EVENT)
 DEFINE_EVENT_TYPE(TEXT_EVENT)
 DEFINE_EVENT_TYPE(CALLSIGNS_EVENT)
 DEFINE_EVENT_TYPE(RSSI_EVENT)
+DEFINE_EVENT_TYPE(GPS_EVENT)
 DEFINE_EVENT_TYPE(ERROR_EVENT)
 
 BEGIN_EVENT_TABLE(CFrame, wxFrame)
@@ -74,6 +77,7 @@ BEGIN_EVENT_TABLE(CFrame, wxFrame)
 	EVT_CUSTOM(TEXT_EVENT,      wxID_ANY, CFrame::onText)
 	EVT_CUSTOM(CALLSIGNS_EVENT, wxID_ANY, CFrame::onCallsigns)
 	EVT_CUSTOM(RSSI_EVENT,      wxID_ANY, CFrame::onRSSI)
+	EVT_CUSTOM(GPS_EVENT,       wxID_ANY, CFrame::onGPS)
 	EVT_CUSTOM(ERROR_EVENT,     wxID_ANY, CFrame::onError)
 END_EVENT_TABLE()
 
@@ -268,6 +272,16 @@ void CFrame::showRSSI(int rssi)
 	AddPendingEvent(event);
 }
 
+void CFrame::showGPS(float latitude, float longitude, const wxString& locator,
+			const std::optional<float>& altitude,
+			const std::optional<float>& speed, const std::optional<float>& track,
+			const std::optional<float>& bearing, const std::optional<float>& distance)
+{
+	CGPSEvent event(latitude, longitude, locator, altitude, speed, track, bearing, distance, GPS_EVENT);
+
+	AddPendingEvent(event);
+}
+
 void CFrame::error(const wxString& error)
 {
 	CErrorEvent event(error, ERROR_EVENT);
@@ -454,6 +468,17 @@ void CFrame::onRSSI(wxEvent& event)
 	msg.Printf(wxT("%d dBm"), rssi);
 
 	m_hrdRSSI->SetLabel(msg);
+}
+
+void CFrame::onGPS(wxEvent& event)
+{
+	CGPSEvent& gpsEvent = dynamic_cast<CGPSEvent&>(event);
+
+	CGPSDialog* dialog = new CGPSDialog(this, -1, gpsEvent.getLatitude(), gpsEvent.getLongitude(), gpsEvent.getLocator(),
+					gpsEvent.getAltitude(),
+					gpsEvent.getSpeed(), gpsEvent.getTrack(),
+					gpsEvent.getBearing(), gpsEvent.getDistance());
+	dialog->Show();
 }
 
 void CFrame::onError(wxEvent& event)

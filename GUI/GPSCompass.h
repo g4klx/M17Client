@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2010-2015,2018,2021 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2021 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -15,14 +15,34 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
- 
-#ifndef	Version_H
-#define	Version_H
+
+#ifndef	GPSCompass_H
+#define	GPSCompass_H
 
 #include <wx/wx.h>
 
-const wxString VENDOR_NAME = wxT("G4KLX");
+#include <optional>
 
-const wxString VERSION = wxT("20211007");
+class CGPSCompass : public wxPanel {
+
+    public:
+	CGPSCompass(wxWindow* parent, int id, const std::optional<float>& bearing, const wxPoint& pos, const wxSize& size, long style = 0L, const wxString& name = wxPanelNameStr);
+	virtual ~CGPSCompass();
+
+	void onPaint(wxPaintEvent& event);
+
+    private:
+    	int       m_width;
+    	int       m_height;
+	wxBitmap* m_background;
+	wxBitmap* m_bitmap;
+
+	DECLARE_EVENT_TABLE()
+
+	void show(wxDC& dc);
+	void createBackground();
+	void setPointer(float bearing);
+};
 
 #endif
+
