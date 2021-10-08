@@ -130,10 +130,10 @@ void CGPSCompass::createBackground()
 	int x = WIDTH / 2 - 10;
 	int y = 5;
 
-	dc.SetBrush(*wxWHITE_BRUSH);
+	dc.SetPen(*wxBLACK_PEN);
 	dc.DrawRectangle(x, y, 20, 20);
 
-	dc.SetPen(*wxBLACK_PEN);
+	dc.SetPen(*wxWHITE_PEN);
 
 	wxFont font = wxSystemSettings::GetFont(wxSYS_SYSTEM_FONT);
 	font.SetPointSize(11);
@@ -141,7 +141,7 @@ void CGPSCompass::createBackground()
 
 	dc.SetFont(font);
 
-	dc.SetTextForeground(*wxBLACK);
+	dc.SetTextForeground(*wxWHITE);
 
 	// North
 	x = WIDTH / 2 - 5;

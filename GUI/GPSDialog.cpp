@@ -25,7 +25,7 @@ CGPSDialog::CGPSDialog(wxWindow* parent, int id, float latitude, float longitude
 			const std::optional<float>& altitude,
 			const std::optional<float>& speed, const std::optional<float>& track,
 			const std::optional<float>& bearing, const std::optional<float>& distance) :
-wxDialog(parent, id, wxString(_("GPS Data")), wxDefaultPosition, wxSize(GPSDIALOG_WIDTH, GPSDIALOG_HEIGHT))
+wxDialog(parent, id, wxString(wxT("GPS Data")), wxDefaultPosition, wxSize(GPSDIALOG_WIDTH, GPSDIALOG_HEIGHT))
 {
 	wxBoxSizer* mainSizer = new wxBoxSizer(wxHORIZONTAL);
 
@@ -37,47 +37,47 @@ wxDialog(parent, id, wxString(_("GPS Data")), wxDefaultPosition, wxSize(GPSDIALO
 	wxString text;
 
 	if (latitude < 0.0F)
-		text.Printf(_("Latitude: %.4f\xB0 S"), -latitude);
+		text.Printf(wxT("Latitude: %.4f\xB0 S"), -latitude);
 	else
-		text.Printf(_("Latitude: %.4f\xB0 N"), latitude);
+		text.Printf(wxT("Latitude: %.4f\xB0 N"), latitude);
 
 	wxStaticText* temp = new wxStaticText(this, -1, text);
 	textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 
 	if (longitude < 0.0F)
-		text.Printf(_("Longitude: %.4f\xB0 W"), -longitude);
+		text.Printf(wxT("Longitude: %.4f\xB0 W"), -longitude);
 	else
-		text.Printf(_("Longitude: %.4f\xB0 E"), longitude);
+		text.Printf(wxT("Longitude: %.4f\xB0 E"), longitude);
 
 	temp = new wxStaticText(this, -1, text);
 	textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 
-	text.Printf(_("Locator: %s"), locator.c_str());
+	text.Printf(wxT("Locator: %s"), locator.c_str());
 	temp = new wxStaticText(this, -1, text);
 	textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 
 	if (altitude) {
-		text.Printf(_("Altitude: %.1fm"), altitude.value());
+		text.Printf(wxT("Altitude: %.1fm"), altitude.value());
 		temp = new wxStaticText(this, -1, text);
 		textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 	}
 
 	if (speed && track) {
-		text.Printf(_("Speed: %.1fkm/h"), speed.value());
+		text.Printf(wxT("Speed: %.1fkm/h"), speed.value());
 		temp = new wxStaticText(this, -1, text);
 		textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 
-		text.Printf(_("Track: %.0f\xB0"), track.value());
+		text.Printf(wxT("Track: %.0f\xB0"), track.value());
 		temp = new wxStaticText(this, -1, text);
 		textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 	}
 
 	if (bearing && distance) {
-		text.Printf(_("Bearing: %.0f\xB0"), bearing.value());
+		text.Printf(wxT("Bearing: %.0f\xB0"), bearing.value());
 		temp = new wxStaticText(this, -1, text);
 		textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 
-		text.Printf(_("Distance: %.0fkm"), distance.value());
+		text.Printf(wxT("Distance: %.0fkm"), distance.value());
 		temp = new wxStaticText(this, -1, text);
 		textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 	}
