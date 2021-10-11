@@ -25,6 +25,7 @@
 
 #include <vector>
 #include <string>
+#include <optional>
 
 enum SLIDER_ID {
 	SI_NONE,
@@ -79,6 +80,12 @@ private:
 	void showText();
 	void showCallsigns();
 	void showRSSI(int value);
+	void showGPS(float latitude, float longitude, const std::string& locator,
+		const std::optional<float>& altitude,
+		const std::optional<float>& speed, const std::optional<float>& track,
+		const std::optional<float>& bearing, const std::optional<float>& distance);
+
+	void drawPointer(float bearing);
 	
 	void volumeChanged();
 

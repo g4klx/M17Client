@@ -27,6 +27,7 @@
 #include <cassert>
 #include <cstring>
 #include <cstdio>
+#include <cmath>
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -34,12 +35,19 @@
 #include <fcntl.h>
 #include <pwd.h>
 
+#define	DEG2RAD(x)	((x / 180.0F) * 3.14159F)
+#define	RAD2DEG(x)	((x / 3.14159F) * 180.0F)
+
 const char* DELIMITER = ":";
 
 const unsigned int RSSI_BASE = 140U;
 
 static bool m_killed = false;
 static int  m_signal = 0;
+
+const int COMPASS_X = 250;
+const int COMPASS_Y = 180;
+const int COMPASS_R = 160;
 
 static void sigHandler(int signum)
 {
@@ -347,7 +355,31 @@ void CM17TS::parseCommand(char* command)
 		int rssi = ::atoi(ptrs.at(1U));
 		showRSSI(rssi);
 	} else if (::strcmp(ptrs.at(0U), "GPS") == 0) {
-		// GPS data
+		float latitude   = std::stof(ptrs.at(1U));
+		float longitude  = std::stof(ptrs.at(2U));
+		std::string locator = std::string(ptrs.at(3U));
+
+		std::optional<float> altitude;
+		if (::strlen(ptrs.at(4U)) > 0)
+			altitude = std::stof(ptrs.at(4U));
+
+		std::optional<float> speed;
+		if (::strlen(ptrs.at(5U)) > 0)
+			speed = std::stof(ptrs.at(5U));
+
+		std::optional<float> track;
+		if (::strlen(ptrs.at(6U)) > 0)
+			track = std::stof(ptrs.at(6U));
+
+		std::optional<float> bearing;
+		if (::strlen(ptrs.at(7U)) > 0)
+			bearing = std::stof(ptrs.at(7U));
+
+		std::optional<float> distance;
+		if (::strlen(ptrs.at(8U)) > 0)
+			distance = std::stof(ptrs.at(8U));
+
+		showGPS(latitude, longitude, locator, altitude, speed, track, bearing, distance);
 	}
 }
 
@@ -356,43 +388,50 @@ void CM17TS::parseScreen(const uint8_t* command, unsigned int length)
 	assert(command != NULL);
 
 	if (command[0U] == 0x65U) {
-		if (command[1U] == 0U) {
+		if (command[1U] == 1U) {
 			if (command[2U] == 4U) {
-				LogMessage("Page 0 CHAN_UP pressed");
+				LogMessage("Page 1 CHAN_UP pressed");
 				channelChanged(+1);
 			} else if (command[2U] == 5U) {
-				LogMessage("Page 0 CHAN_DOWN pressed");
+				LogMessage("Page 1 CHAN_DOWN pressed");
 				channelChanged(-1);
 			} else if (command[2U] == 6U) {
-				LogMessage("Page 0 DEST_UP pressed");
+				LogMessage("Page 1 DEST_UP pressed");
 				destinationChanged(+1);
 			} else if (command[2U] == 7U) {
-				LogMessage("Page 0 DEST_DOWN pressed");
+				LogMessage("Page 1 DEST_DOWN pressed");
 				destinationChanged(-1);
 			} else if (command[2U] == 8U) {
-				LogMessage("Page 0 RIGHT pressed");
+				LogMessage("Page 1 RIGHT pressed");
 				gotoPage1();
 			} else if (command[2U] == 9U) {
-				LogMessage("Page 0 LEFT pressed");
+				LogMessage("Page 1 LEFT pressed");
 				gotoPage1();
 			} else if (command[2U] == 11U) {
-				LogMessage("Page 0 VOLUME adjusted");
+				LogMessage("Page 1 VOLUME adjusted");
 				volumeChanged();
 			} else {
-				CUtils::dump(2U, "Button press on page 0 from an unknown button", command, length);
+				CUtils::dump(2U, "Button press on page 1 from an unknown button", command, length);
 			}
-		} else if (command[1U] == 1U) {
+		} else if (command[1U] == 2U) {
 			if (command[2U] == 2U) {
-				LogMessage("Page 1 RIGHT pressed");
+				LogMessage("Page 2 RIGHT pressed");
 				gotoPage0();
 			} else if (command[2U] == 3U) {
-				LogMessage("Page 1 LEFT pressed");
+				LogMessage("Page 2 LEFT pressed");
 				gotoPage0();
 			} else if (command[2U] == 4U) {
-				LogMessage("Page 1 TRANSMIT pressed");
+				LogMessage("Page 2 TRANSMIT pressed");
 				transmit();
 			} else {
-				CUtils::dump(2U, "Button press on page 1 from an unknown button", command, length);
+				CUtils::dump(2U, "Button press on page 2 from an unknown button", command, length);
+			}
+		} else if (command[1U] == 3U) {
+			if (command[2U] == 2U) {
+				LogMessage("Page GPS LEFT pressed");
+				gotoPage1();
+			} else {
+				CUtils::dump(2U, "Button press on page 3 from an unknown button", command, length);
 			}
 		} else {
 			CUtils::dump(2U, "Button press from an unknown page", command, length);
@@ -542,6 +581,95 @@ void CM17TS::showRSSI(int rssi)
 		::sprintf(text, "S_METER.val=%u", m_sMeter);
 		sendCommand(text);
 	}
+}
+
+void CM17TS::showGPS(float latitude, float longitude, const std::string& locator,
+	const std::optional<float>& altitude,
+	const std::optional<float>& speed, const std::optional<float>& track,
+	const std::optional<float>& bearing, const std::optional<float>& distance)
+{
+	sendCommand("page GPS");
+	m_page = 2U;
+
+	char text[100U];
+
+	if (latitude < 0.0F)
+		::sprintf(text, "LATITUDE.txt=\"%.4f\xB0 S\"", -latitude);
+	else
+		::sprintf(text, "LATITUDE.txt=\"%.4f\xB0 N\"", latitude);
+	sendCommand(text);
+
+	if (longitude < 0.0F)
+		::sprintf(text, "LONGITUDE.txt=\"%.4f\xB0 W\"", -longitude);
+	else
+		::sprintf(text, "LONGITUDE.txt=\"%.4f\xB0 E\"", longitude);
+	sendCommand(text);
+
+	::sprintf(text, "LOCATOR.txt=\"%s\"", locator.c_str());
+	sendCommand(text);
+
+	if (altitude) {
+		::sprintf(text, "ALTITUDE.txt=\"%.1fm\"", altitude.value());
+		sendCommand(text);
+	}
+
+	if (speed && track) {
+		::sprintf(text, "SPEED.txt=\"%.1fkm/h\"", speed.value());
+		sendCommand(text);
+
+		::sprintf(text, "TRACK.txt=\"%.0f\xB0\"", track.value());
+		sendCommand(text);
+	}
+
+	if (bearing && distance) {
+		::sprintf(text, "BEARING.txt=\"%.0f\xB0\"", bearing.value());
+		sendCommand(text);
+
+		::sprintf(text, "DISTANCE.txt=\"%.0fkm\"", distance.value());
+		sendCommand(text);
+
+		drawPointer(bearing.value());
+	}
+}
+
+void CM17TS::drawPointer(float bearing)
+{
+	// Draw the lines
+	bearing -= 90.0F;
+
+	float degrees = bearing;
+	float radians = DEG2RAD(degrees);
+	int p1x = COMPASS_X + COMPASS_R * ::cos(radians);
+	int p1y = COMPASS_Y + COMPASS_R * ::sin(radians);
+
+	degrees = bearing + 145.0F;
+	radians = DEG2RAD(degrees);
+	int p2x = COMPASS_X + COMPASS_R * ::cos(radians);
+	int p2y = COMPASS_Y + COMPASS_R * ::sin(radians);
+
+	degrees = bearing + 180.0F;
+	radians = DEG2RAD(degrees);
+	int p3x = COMPASS_X + (COMPASS_R / 2) * ::cos(radians);
+	int p3y = COMPASS_Y + (COMPASS_R / 2) * ::sin(radians);
+
+	degrees = bearing - 145.0F;
+	radians = DEG2RAD(degrees);
+	int p4x = COMPASS_X + COMPASS_R * ::cos(radians);
+	int p4y = COMPASS_Y + COMPASS_R * ::sin(radians);
+
+	char text[100U];
+
+	::sprintf(text, "line %d,%d,%d,%d,YELLOW", p1x, p1y, p2x, p2y);
+	sendCommand(text);
+
+	::sprintf(text, "line %d,%d,%d,%d,YELLOW", p2x, p2y, p3x, p3y);
+	sendCommand(text);
+
+	::sprintf(text, "line %d,%d,%d,%d,YELLOW", p3x, p3y, p4x, p4y);
+	sendCommand(text);
+
+	::sprintf(text, "line %d,%d,%d,%d,YELLOW", p4x, p4y, p1x, p1y);
+	sendCommand(text);
 }
 
 void CM17TS::gotoPage0()
