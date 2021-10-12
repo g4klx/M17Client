@@ -31,7 +31,7 @@ CGPSD::CGPSD(const std::string& address, const std::string& port) :
 m_gpsdAddress(address),
 m_gpsdPort(port),
 m_gpsdData(),
-m_timer(1000U, 5U)
+m_timer(1000U, 30U)
 {
 	assert(!address.empty());
 	assert(!port.empty());

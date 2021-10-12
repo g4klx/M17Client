@@ -47,7 +47,7 @@ static int  m_signal = 0;
 
 const int COMPASS_X = 250;
 const int COMPASS_Y = 180;
-const int COMPASS_R = 160;
+const int COMPASS_R = 140;
 
 static void sigHandler(int signum)
 {
@@ -389,49 +389,42 @@ void CM17TS::parseScreen(const uint8_t* command, unsigned int length)
 
 	if (command[0U] == 0x65U) {
 		if (command[1U] == 1U) {
-			if (command[2U] == 4U) {
+			if (command[2U] == 3U) {
 				LogMessage("Page 1 CHAN_UP pressed");
 				channelChanged(+1);
-			} else if (command[2U] == 5U) {
+			} else if (command[2U] == 4U) {
 				LogMessage("Page 1 CHAN_DOWN pressed");
 				channelChanged(-1);
-			} else if (command[2U] == 6U) {
+			} else if (command[2U] == 5U) {
 				LogMessage("Page 1 DEST_UP pressed");
 				destinationChanged(+1);
-			} else if (command[2U] == 7U) {
+			} else if (command[2U] == 6U) {
 				LogMessage("Page 1 DEST_DOWN pressed");
 				destinationChanged(-1);
-			} else if (command[2U] == 8U) {
+			} else if (command[2U] == 7U) {
 				LogMessage("Page 1 RIGHT pressed");
 				gotoPage1();
-			} else if (command[2U] == 9U) {
+			} else if (command[2U] == 8U) {
 				LogMessage("Page 1 LEFT pressed");
 				gotoPage1();
-			} else if (command[2U] == 11U) {
+			} else if (command[2U] == 10U) {
 				LogMessage("Page 1 VOLUME adjusted");
 				volumeChanged();
 			} else {
 				CUtils::dump(2U, "Button press on page 1 from an unknown button", command, length);
 			}
 		} else if (command[1U] == 2U) {
-			if (command[2U] == 2U) {
+			if (command[2U] == 1U) {
 				LogMessage("Page 2 RIGHT pressed");
 				gotoPage0();
-			} else if (command[2U] == 3U) {
+			} else if (command[2U] == 2U) {
 				LogMessage("Page 2 LEFT pressed");
 				gotoPage0();
-			} else if (command[2U] == 4U) {
+			} else if (command[2U] == 3U) {
 				LogMessage("Page 2 TRANSMIT pressed");
 				transmit();
 			} else {
 				CUtils::dump(2U, "Button press on page 2 from an unknown button", command, length);
-			}
-		} else if (command[1U] == 3U) {
-			if (command[2U] == 2U) {
-				LogMessage("Page GPS LEFT pressed");
-				gotoPage1();
-			} else {
-				CUtils::dump(2U, "Button press on page 3 from an unknown button", command, length);
 			}
 		} else {
 			CUtils::dump(2U, "Button press from an unknown page", command, length);
@@ -589,20 +582,19 @@ void CM17TS::showGPS(float latitude, float longitude, const std::string& locator
 	const std::optional<float>& bearing, const std::optional<float>& distance)
 {
 	sendCommand("page GPS");
-	m_page = 2U;
 
 	char text[100U];
 
 	if (latitude < 0.0F)
-		::sprintf(text, "LATITUDE.txt=\"%.4f\xB0 S\"", -latitude);
+		::sprintf(text, "LATITUDE.txt=\"%.3f\xB0 S\"", -latitude);
 	else
-		::sprintf(text, "LATITUDE.txt=\"%.4f\xB0 N\"", latitude);
+		::sprintf(text, "LATITUDE.txt=\"%.3f\xB0 N\"", latitude);
 	sendCommand(text);
 
 	if (longitude < 0.0F)
-		::sprintf(text, "LONGITUDE.txt=\"%.4f\xB0 W\"", -longitude);
+		::sprintf(text, "LONGITUDE.txt=\"%.3f\xB0 W\"", -longitude);
 	else
-		::sprintf(text, "LONGITUDE.txt=\"%.4f\xB0 E\"", longitude);
+		::sprintf(text, "LONGITUDE.txt=\"%.3f\xB0 E\"", longitude);
 	sendCommand(text);
 
 	::sprintf(text, "LOCATOR.txt=\"%s\"", locator.c_str());
@@ -630,10 +622,27 @@ void CM17TS::showGPS(float latitude, float longitude, const std::string& locator
 
 		drawPointer(bearing.value());
 	}
+
+	sendCommand("delay=3000");
+
+	if (m_page == 0U)
+		gotoPage0();
+	else
+		gotoPage1();
 }
 
 void CM17TS::drawPointer(float bearing)
 {
+	char text[100U];
+
+	// Draw the circle
+	::sprintf(text, "cir %d,%d,%d,WHITE", COMPASS_X, COMPASS_Y, COMPASS_R + 10);
+	sendCommand(text);
+
+	// Print the "N"
+	::sprintf(text, "xstr %d,%d,30,30,3,WHITE,BLACK,1,1,1,\"N\"", COMPASS_X - 15, COMPASS_Y - COMPASS_R - 20);
+	sendCommand(text);
+
 	// Draw the lines
 	bearing -= 90.0F;
 
@@ -656,8 +665,6 @@ void CM17TS::drawPointer(float bearing)
 	radians = DEG2RAD(degrees);
 	int p4x = COMPASS_X + COMPASS_R * ::cos(radians);
 	int p4y = COMPASS_Y + COMPASS_R * ::sin(radians);
-
-	char text[100U];
 
 	::sprintf(text, "line %d,%d,%d,%d,YELLOW", p1x, p1y, p2x, p2y);
 	sendCommand(text);

@@ -23,6 +23,6 @@
 
 const wxString VENDOR_NAME = wxT("G4KLX");
 
-const wxString VERSION = wxT("20211008");
+const wxString VERSION = wxT("20211012");
 
 #endif

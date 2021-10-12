@@ -37,17 +37,17 @@ wxDialog(parent, id, wxString(wxT("GPS Data")), wxDefaultPosition, wxSize(GPSDIA
 	wxString text;
 
 	if (latitude < 0.0F)
-		text.Printf(wxT("Latitude: %.4f\xB0 S"), -latitude);
+		text.Printf(wxT("Latitude: %.3f\xB0 S"), -latitude);
 	else
-		text.Printf(wxT("Latitude: %.4f\xB0 N"), latitude);
+		text.Printf(wxT("Latitude: %.3f\xB0 N"), latitude);
 
 	wxStaticText* temp = new wxStaticText(this, -1, text);
 	textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 
 	if (longitude < 0.0F)
-		text.Printf(wxT("Longitude: %.4f\xB0 W"), -longitude);
+		text.Printf(wxT("Longitude: %.3f\xB0 W"), -longitude);
 	else
-		text.Printf(wxT("Longitude: %.4f\xB0 E"), longitude);
+		text.Printf(wxT("Longitude: %.3f\xB0 E"), longitude);
 
 	temp = new wxStaticText(this, -1, text);
 	textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
