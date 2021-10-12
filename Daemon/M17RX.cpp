@@ -643,13 +643,20 @@ void CM17RX::calcBD(const std::optional<float>& srcLat, const std::optional<floa
 
 	float diffLonRad = dstLonRad - srcLonRad;
 
-	distance = ::acos(::sin(srcLatRad) * ::sin(dstLatRad) + ::cos(srcLatRad) * ::cos(dstLatRad) * ::cos(diffLonRad)) * R;
+	float dist = ::acos(::sin(srcLatRad) * ::sin(dstLatRad) + ::cos(srcLatRad) * ::cos(dstLatRad) * ::cos(diffLonRad)) * R;
 
-	bearing = RAD2DEG(::atan2(::sin(diffLonRad) * ::cos(dstLatRad),
-				   ::cos(srcLatRad) * ::sin(dstLatRad) - ::sin(srcLatRad) * ::cos(dstLatRad) * ::cos(diffLonRad)));
+	float bear = RAD2DEG(::atan2(::sin(diffLonRad) * ::cos(dstLatRad),
+			      ::cos(srcLatRad) * ::sin(dstLatRad) - ::sin(srcLatRad) * ::cos(dstLatRad) * ::cos(diffLonRad)));
 
-	if (bearing.value() < 0.0F)
-		bearing = bearing.value() + 360.0F;
+	if (!isnanf(dist))
+		distance = dist;
+
+	if (!isnanf(bear)) {
+		if (bear < 0.0F)
+			bear += 360.0F;
+
+		bearing = bear;
+	}
 }
 
 std::string CM17RX::calcLocator(float latitude, float longitude) const
