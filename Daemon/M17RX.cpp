@@ -526,10 +526,10 @@ void CM17RX::processLSF(const CM17LSF& lsf)
 					std::optional<float> speed, track;
 					if ((meta[8U] & 0x08U) == 0x08U) {
 						track = float((meta[11U] << 8) + (meta[12U] << 0));
-						speed = float(meta[13U]) / 2.2369F;
+						speed = float(meta[13U]) * 1.602F;
 					}
 
-					LogDebug("RX GPS Data: Lat=%fdeg Long=%fdeg Alt=%fm Speed=%fm/s Track=%fdeg Type=%s", latitude, longitude, altitude.value(), speed.value(), track.value(), type.c_str());
+					LogDebug("RX GPS Data: Lat=%fdeg Long=%fdeg Alt=%fm Speed=%fkm/h Track=%fdeg Type=%s", latitude, longitude, altitude.value(), speed.value(), track.value(), type.c_str());
 
 					std::string locator = calcLocator(latitude, longitude);
 

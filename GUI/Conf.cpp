@@ -28,6 +28,7 @@ const wxString  KEY_CHANNEL        = wxT("Channel");
 const wxString  KEY_DESTINATION    = wxT("Destination");
 const wxString  KEY_VOLUME         = wxT("Volume");
 const wxString  KEY_MIC_GAIN       = wxT("MicGain");
+const wxString  KEY_METRIC         = wxT("Metric");
 
 
 CConf::CConf() :
@@ -38,7 +39,8 @@ m_selfAddress(wxT("127.0.0.1")),
 m_selfPort(7659U),
 m_channel(),
 m_destination(),
-m_volume(100U)
+m_volume(100U),
+m_metric(true)
 {
 	m_fileName.AssignHomeDir();
 	m_fileName.SetFullName(wxT(".M17GUI"));
@@ -100,6 +102,9 @@ bool CConf::read()
 		} else if (key.IsSameAs(KEY_VOLUME)) {
 			val.ToULong(&temp);
 			m_volume = (unsigned int)temp;
+		} else if (key.IsSameAs(KEY_METRIC)) {
+			val.ToULong(&temp);
+			m_metric = temp == 1UL;
 		}
 
 		str = file.GetNextLine();
@@ -160,6 +165,11 @@ void CConf::setVolume(unsigned int value)
 	m_volume = value;
 }
 
+bool CConf::getMetric() const
+{
+	return m_metric;
+}
+
 bool CConf::write()
 {
 	wxTextFile file(m_fileName.GetFullPath());
@@ -194,6 +204,8 @@ bool CConf::write()
 	buffer.Printf(wxT("%s=%s"), KEY_DESTINATION.c_str(), m_destination.c_str()); file.AddLine(buffer);
 
 	buffer.Printf(wxT("%s=%u"), KEY_VOLUME.c_str(), m_volume); file.AddLine(buffer);
+
+	buffer.Printf(wxT("%s=%u"), KEY_METRIC.c_str(), m_metric ? 1U : 0U); file.AddLine(buffer);
 
 	bool ret = file.Write();
 	if (!ret) {

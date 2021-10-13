@@ -47,7 +47,9 @@ public:
 
 	void           setVolume(unsigned int value);
 	unsigned int   getVolume() const;
-	
+
+	bool           getMetric() const;
+
 	bool write();
 
 private:
@@ -62,6 +64,7 @@ private:
 	std::string    m_channel;
 	std::string    m_destination;
 	unsigned int   m_volume;
+	bool           m_metric;
 };
 
 #endif

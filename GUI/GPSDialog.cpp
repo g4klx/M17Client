@@ -24,7 +24,8 @@
 CGPSDialog::CGPSDialog(wxWindow* parent, int id, float latitude, float longitude, const wxString& locator,
 			const std::optional<float>& altitude,
 			const std::optional<float>& speed, const std::optional<float>& track,
-			const std::optional<float>& bearing, const std::optional<float>& distance) :
+			const std::optional<float>& bearing, const std::optional<float>& distance,
+			bool isMetric) :
 wxDialog(parent, id, wxString(wxT("GPS Data")), wxDefaultPosition, wxSize(GPSDIALOG_WIDTH, GPSDIALOG_HEIGHT))
 {
 	wxBoxSizer* mainSizer = new wxBoxSizer(wxHORIZONTAL);
@@ -57,13 +58,21 @@ wxDialog(parent, id, wxString(wxT("GPS Data")), wxDefaultPosition, wxSize(GPSDIA
 	textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 
 	if (altitude) {
-		text.Printf(wxT("Altitude: %.1fm"), altitude.value());
+		if (isMetric)
+			text.Printf(wxT("Altitude: %.1f m"), altitude.value());
+		else
+			text.Printf(wxT("Altitude: %.1f ft"), altitude.value() * 3.28F);
+
 		temp = new wxStaticText(this, -1, text);
 		textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 	}
 
 	if (speed && track) {
-		text.Printf(wxT("Speed: %.1fkm/h"), speed.value());
+		if (isMetric)
+			text.Printf(wxT("Speed: %.1f km/h"), speed.value());
+		else
+			text.Printf(wxT("Speed: %.1f mph"), speed.value() / 1.602F);
+
 		temp = new wxStaticText(this, -1, text);
 		textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 
@@ -77,7 +86,11 @@ wxDialog(parent, id, wxString(wxT("GPS Data")), wxDefaultPosition, wxSize(GPSDIA
 		temp = new wxStaticText(this, -1, text);
 		textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 
-		text.Printf(wxT("Distance: %.0fkm"), distance.value());
+		if (isMetric)
+			text.Printf(wxT("Distance: %.0f km"), distance.value());
+		else
+			text.Printf(wxT("Distance: %.0f miles"), distance.value() / 1.602F);
+
 		temp = new wxStaticText(this, -1, text);
 		textSizer->Add(temp, 0, wxALL, BORDER_SIZE);
 	}

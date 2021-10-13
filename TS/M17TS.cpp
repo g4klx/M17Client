@@ -123,7 +123,8 @@ m_volume(50U),
 m_sMeter(0U),
 m_source(),
 m_text(),
-m_callsigns()
+m_callsigns(),
+m_metric(true)
 {
 }
 
@@ -235,6 +236,8 @@ int CM17TS::run()
 		::LogFinalise();
 		return 1;
 	}
+
+	m_metric = m_conf.getMetric();
 
 	m_volume = m_conf.getVolume();
 	setVolume(m_volume);
@@ -601,12 +604,20 @@ void CM17TS::showGPS(float latitude, float longitude, const std::string& locator
 	sendCommand(text);
 
 	if (altitude) {
-		::sprintf(text, "ALTITUDE.txt=\"%.1fm\"", altitude.value());
+		if (m_metric)
+			::sprintf(text, "ALTITUDE.txt=\"%.1f m\"", altitude.value());
+		else
+			::sprintf(text, "ALTITUDE.txt=\"%.1f ft\"", altitude.value() * 3.28F);
+
 		sendCommand(text);
 	}
 
 	if (speed && track) {
-		::sprintf(text, "SPEED.txt=\"%.1fkm/h\"", speed.value());
+		if (m_metric)
+			::sprintf(text, "SPEED.txt=\"%.1f km/h\"", speed.value());
+		else
+			::sprintf(text, "SPEED.txt=\"%.1f mph\"", speed.value() / 1.602F);
+
 		sendCommand(text);
 
 		::sprintf(text, "TRACK.txt=\"%.0f\xB0\"", track.value());
@@ -617,7 +628,11 @@ void CM17TS::showGPS(float latitude, float longitude, const std::string& locator
 		::sprintf(text, "BEARING.txt=\"%.0f\xB0\"", bearing.value());
 		sendCommand(text);
 
-		::sprintf(text, "DISTANCE.txt=\"%.0fkm\"", distance.value());
+		if (m_metric)
+			::sprintf(text, "DISTANCE.txt=\"%.0f km\"", distance.value());
+		else
+			::sprintf(text, "DISTANCE.txt=\"%.0f miles\"", distance.value() / 1.602F);
+
 		sendCommand(text);
 
 		drawPointer(bearing.value());

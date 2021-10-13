@@ -29,7 +29,8 @@ class CGPSDialog : public wxDialog {
 	CGPSDialog(wxWindow* parent, int id, float latitude, float longitude, const wxString& locator,
 			const std::optional<float>& altitude,
 			const std::optional<float>& speed, const std::optional<float>& track,
-			const std::optional<float>& bearing, const std::optional<float>& distance);
+			const std::optional<float>& bearing, const std::optional<float>& distance,
+			bool isMetric);
 	virtual ~CGPSDialog();
 
     private:

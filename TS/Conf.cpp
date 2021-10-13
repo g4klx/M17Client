@@ -33,6 +33,7 @@ const std::string KEY_SELF_PORT      = "SelfPort";
 const std::string KEY_CHANNEL        = "Channel";
 const std::string KEY_DESTINATION    = "Destination";
 const std::string KEY_VOLUME         = "Volume";
+const std::string KEY_METRIC         = "Metric";
 
 
 CConf::CConf() :
@@ -46,7 +47,8 @@ m_selfAddress("127.0.0.1"),
 m_selfPort(7659U),
 m_channel(),
 m_destination(),
-m_volume(100U)
+m_volume(100U),
+m_metric(true)
 {
 	char* home = ::getenv("HOME");
 	if (home != NULL) {
@@ -98,6 +100,8 @@ bool CConf::read()
 			m_destination = std::string(val);
 		else if (key == KEY_VOLUME)
 			m_volume = (unsigned int)::atoi(val);
+		else if (key == KEY_METRIC)
+			m_metric = ::atoi(val) == 1;
 	}
 
 	::fclose(fp);
@@ -170,6 +174,11 @@ void CConf::setVolume(unsigned int value)
 	m_volume = value;
 }
 
+bool CConf::getMetric() const
+{
+	return m_metric;
+}
+
 bool CConf::write()
 {
 	FILE* fp = ::fopen(m_fileName.c_str(), "wt");
@@ -193,6 +202,8 @@ bool CConf::write()
 	::fprintf(fp, "%s=%s\n", KEY_DESTINATION.c_str(), m_destination.c_str());
 
 	::fprintf(fp, "%s=%u\n", KEY_VOLUME.c_str(), m_volume);
+
+	::fprintf(fp, "%s=%u\n", KEY_METRIC.c_str(), m_metric ? 1U : 0U);
 
 	::fclose(fp);
 

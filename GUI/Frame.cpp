@@ -477,7 +477,8 @@ void CFrame::onGPS(wxEvent& event)
 	CGPSDialog* dialog = new CGPSDialog(this, -1, gpsEvent.getLatitude(), gpsEvent.getLongitude(), gpsEvent.getLocator(),
 					gpsEvent.getAltitude(),
 					gpsEvent.getSpeed(), gpsEvent.getTrack(),
-					gpsEvent.getBearing(), gpsEvent.getDistance());
+					gpsEvent.getBearing(), gpsEvent.getDistance(),
+					m_conf.getMetric());
 	dialog->Show();
 }
 

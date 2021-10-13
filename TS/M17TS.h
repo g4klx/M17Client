@@ -67,6 +67,8 @@ private:
 	std::string  m_source;
 	std::string  m_text;
 	std::string  m_callsigns;
+
+	bool         m_metric;
 	
 	void parseCommand(char* command);
 	void parseScreen(const uint8_t* command, unsigned int length);
