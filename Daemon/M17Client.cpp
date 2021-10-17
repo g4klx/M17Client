@@ -21,12 +21,17 @@
 #include "codec2/codec2.h"
 #include "GitVersion.h"
 #include "UDPSocket.h"
-#include "SoundCard.h"
 #include "StopWatch.h"
 #include "Version.h"
 #include "Thread.h"
 #include "Modem.h"
 #include "Log.h"
+
+#if defined(USE_PULSEAUDIO)
+#include "SoundPulse.h"
+#else
+#include "SoundALSA.h"
+#endif
 
 #include <cstdio>
 #include <vector>
@@ -336,9 +341,14 @@ int CM17Client::run()
 #endif
 	m_tx->setParams(m_codePlug->getData().at(0U).m_can, m_codePlug->getData().at(0U).m_mode);
 
-	CSoundCard sound(m_conf.getAudioInputDevice(), m_conf.getAudioOutputDevice(), SOUNDCARD_SAMPLE_RATE, SOUNDCARD_BLOCK_SIZE);
-	sound.setCallback(this);
-	ret = sound.open();
+#if defined(USE_PULSEAUDIO)
+	m_sound = new CSoundPulse(m_conf.getAudioInputDevice(), m_conf.getAudioOutputDevice(), SOUNDCARD_SAMPLE_RATE, SOUNDCARD_BLOCK_SIZE);
+#else
+	m_sound = new CSoundALSA(m_conf.getAudioInputDevice(), m_conf.getAudioOutputDevice(), SOUNDCARD_SAMPLE_RATE, SOUNDCARD_BLOCK_SIZE);
+#endif
+
+	m_sound->setCallback(this);
+	ret = m_sound->open();
 	if (!ret) {
 		LogError("Unable to open the sound card");
 		::LogFinalise();
@@ -465,8 +475,8 @@ int CM17Client::run()
 #endif
 
 	m_socket->close();
+	m_sound->close();
 	modem.close();
-	sound.close();
 
 	delete m_codePlug;
 	delete m_tx;

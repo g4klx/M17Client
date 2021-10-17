@@ -12,28 +12,29 @@
  *	GNU General Public License for more details.
  */
 
-#ifndef	SoundCard_H
-#define	SoundCard_H
+#ifndef	PulseAudio_H
+#define	PulseAudio_H
 
+#include "AudioBackend.h"
 #include "AudioCallback.h"
 #include "Thread.h"
 
 #include <vector>
 #include <string>
 
-#include <alsa/asoundlib.h>
+#include <pulse/simple.h>
 
-class CSoundCardReader : public CThread {
+class CSoundPulseReader : public CThread {
 public:
-	CSoundCardReader(snd_pcm_t* handle, unsigned int blockSize, unsigned int channels, IAudioCallback* callback, int id);
-	virtual ~CSoundCardReader();
+	CSoundPulseReader(pa_simple* handle, unsigned int blockSize, unsigned int channels, IAudioCallback* callback, int id);
+	virtual ~CSoundPulseReader();
 
 	virtual void entry();
 
 	virtual void kill();
 
 private:
-	snd_pcm_t*      m_handle;
+	pa_simple*      m_handle;
 	unsigned int    m_blockSize;
 	unsigned int    m_channels;
 	IAudioCallback* m_callback;
@@ -42,10 +43,10 @@ private:
 	float*          m_samples;
 };
 
-class CSoundCardWriter : public CThread {
+class CSoundPulseWriter : public CThread {
 public:
-	CSoundCardWriter(snd_pcm_t* handle, unsigned int blockSize, unsigned int channels, IAudioCallback* callback, int id);
-	virtual ~CSoundCardWriter();
+	CSoundPulseWriter(pa_simple* handle, unsigned int blockSize, unsigned int channels, IAudioCallback* callback, int id);
+	virtual ~CSoundPulseWriter();
 
 	virtual void entry();
 
@@ -54,19 +55,20 @@ public:
 	virtual bool isBusy() const;
 
 private:
-	snd_pcm_t*      m_handle;
+	pa_simple*      m_handle;
 	unsigned int    m_blockSize;
 	unsigned int    m_channels;
 	IAudioCallback* m_callback;
 	int             m_id;
 	bool            m_killed;
+	bool volatile   m_busy;
 	float*          m_samples;
 };
 
-class CSoundCard {
+class CSoundPulse : public IAudioBackend {
 public:
-	CSoundCard(const std::string& readDevice, const std::string& writeDevice, unsigned int sampleRate, unsigned int blockSize);
-	~CSoundCard();
+	CSoundPulse(const std::string& readDevice, const std::string& writeDevice, unsigned int sampleRate, unsigned int blockSize);
+	~CSoundPulse();
 
 	void setCallback(IAudioCallback* callback, int id = 0);
 	bool open();
@@ -75,14 +77,14 @@ public:
 	bool isWriterBusy() const;
 
 private:
-	std::string       m_readDevice;
-	std::string       m_writeDevice;
-	unsigned int      m_sampleRate;
-	unsigned int      m_blockSize;
-	IAudioCallback*   m_callback;
-	int               m_id;
-	CSoundCardReader* m_reader;
-	CSoundCardWriter* m_writer;
+	std::string        m_readDevice;
+	std::string        m_writeDevice;
+	unsigned int       m_sampleRate;
+	unsigned int       m_blockSize;
+	IAudioCallback*    m_callback;
+	int                m_id;
+	CSoundPulseReader* m_reader;
+	CSoundPulseWriter* m_writer;
 };
 
 #endif

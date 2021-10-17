@@ -8,15 +8,32 @@
 CC      = cc
 CXX     = c++
 CFLAGS  = -g -O3 -Wall -std=c++17 -pthread
-LIBS    = -lpthread -lutil -lasound -lsamplerate
+LIBS    = -lpthread -lutil -lsamplerate
 LDFLAGS = -g
+
+AUDIO  ?= alsa
 
 OBJECTS = \
 		codec2/codebooks.o codec2/codec2.o codec2/kiss_fft.o codec2/lpc.o codec2/nlp.o codec2/pack.o codec2/qbase.o \
 		codec2/quantise.o CodePlug.o Conf.o Golay24128.o GPIO.o GPSD.o HamLib.o Log.o M17Client.o M17Convolution.o \
-		M17CRC.o M17LSF.o M17RX.o M17TX.o M17Utils.o Modem.o ModemPort.o RSSIInterpolator.o SoundCard.o StopWatch.o \
-		Thread.o Timer.o UARTController.o UDPSocket.o Utils.o
-		
+		M17CRC.o M17LSF.o M17RX.o M17TX.o M17Utils.o Modem.o ModemPort.o RSSIInterpolator.o StopWatch.o Thread.o \
+		Timer.o UARTController.o UDPSocket.o Utils.o
+
+ifeq ($(filter $(AUDIO), alsa pulse),)
+$(error error: supported audio backends: alsa, pulse)
+endif
+
+ifeq ($(AUDIO), alsa)
+LIBS    += -lasound
+OBJECTS += SoundALSA.o
+endif
+
+ifeq ($(AUDIO), pulse)
+CFLAGS  += -DUSE_PULSEAUDIO
+LIBS    += -lpulse-simple
+OBJECTS += SoundPulse.o
+endif
+
 all:		M17Client
 
 M17Client:	GitVersion.h $(OBJECTS) 

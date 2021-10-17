@@ -17,12 +17,12 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "SoundCard.h"
+#include "SoundALSA.h"
 #include "Log.h"
 
 #include <cassert>
 
-CSoundCard::CSoundCard(const std::string& readDevice, const std::string& writeDevice, unsigned int sampleRate, unsigned int blockSize) :
+CSoundALSA::CSoundALSA(const std::string& readDevice, const std::string& writeDevice, unsigned int sampleRate, unsigned int blockSize) :
 m_readDevice(readDevice),
 m_writeDevice(writeDevice),
 m_sampleRate(sampleRate),
@@ -36,11 +36,11 @@ m_writer(NULL)
     assert(blockSize > 0U);
 }
 
-CSoundCard::~CSoundCard()
+CSoundALSA::~CSoundALSA()
 {
 }
 
-void CSoundCard::setCallback(IAudioCallback* callback, int id)
+void CSoundALSA::setCallback(IAudioCallback* callback, int id)
 {
 	assert(callback != NULL);
 
@@ -49,7 +49,7 @@ void CSoundCard::setCallback(IAudioCallback* callback, int id)
 	m_id = id;
 }
 
-bool CSoundCard::open()
+bool CSoundALSA::open()
 {
 	int err = 0;
 
@@ -169,8 +169,8 @@ bool CSoundCard::open()
 
 	LogMessage("Opened %s:%s Rate %u", m_writeDevice.c_str(), m_readDevice.c_str(), m_sampleRate);
 
-	m_reader = new CSoundCardReader(recHandle,  m_blockSize, recChannels,  m_callback, m_id);
-	m_writer = new CSoundCardWriter(playHandle, m_blockSize, playChannels, m_callback, m_id);
+	m_reader = new CSoundALSAReader(recHandle,  m_blockSize, recChannels,  m_callback, m_id);
+	m_writer = new CSoundALSAWriter(playHandle, m_blockSize, playChannels, m_callback, m_id);
 
 	m_reader->run();
 	m_writer->run();
@@ -178,7 +178,7 @@ bool CSoundCard::open()
  	return true;
 }
 
-void CSoundCard::close()
+void CSoundALSA::close()
 {
 	m_reader->kill();
 	m_writer->kill();
@@ -187,12 +187,12 @@ void CSoundCard::close()
 	m_writer->wait();
 }
 
-bool CSoundCard::isWriterBusy() const
+bool CSoundALSA::isWriterBusy() const
 {
 	return m_writer->isBusy();
 }
 
-CSoundCardReader::CSoundCardReader(snd_pcm_t* handle, unsigned int blockSize, unsigned int channels, IAudioCallback* callback, int id) :
+CSoundALSAReader::CSoundALSAReader(snd_pcm_t* handle, unsigned int blockSize, unsigned int channels, IAudioCallback* callback, int id) :
 CThread(),
 m_handle(handle),
 m_blockSize(blockSize),
@@ -210,12 +210,12 @@ m_samples(NULL)
 	m_samples = new float[4U * blockSize];
 }
 
-CSoundCardReader::~CSoundCardReader()
+CSoundALSAReader::~CSoundALSAReader()
 {
 	delete[] m_samples;
 }
 
-void CSoundCardReader::entry()
+void CSoundALSAReader::entry()
 {
 	LogMessage("Starting ALSA reader thread");
 
@@ -239,12 +239,12 @@ void CSoundCardReader::entry()
 	::snd_pcm_close(m_handle);
 }
 
-void CSoundCardReader::kill()
+void CSoundALSAReader::kill()
 {
 	m_killed = true;
 }
 
-CSoundCardWriter::CSoundCardWriter(snd_pcm_t* handle, unsigned int blockSize, unsigned int channels, IAudioCallback* callback, int id) :
+CSoundALSAWriter::CSoundALSAWriter(snd_pcm_t* handle, unsigned int blockSize, unsigned int channels, IAudioCallback* callback, int id) :
 CThread(),
 m_handle(handle),
 m_blockSize(blockSize),
@@ -262,12 +262,12 @@ m_samples(NULL)
 	m_samples = new float[4U * blockSize];
 }
 
-CSoundCardWriter::~CSoundCardWriter()
+CSoundALSAWriter::~CSoundALSAWriter()
 {
 	delete[] m_samples;
 }
 
-void CSoundCardWriter::entry()
+void CSoundALSAWriter::entry()
 {
 	LogMessage("Starting ALSA writer thread");
 
@@ -298,12 +298,12 @@ void CSoundCardWriter::entry()
 	::snd_pcm_close(m_handle);
 }
 
-void CSoundCardWriter::kill()
+void CSoundALSAWriter::kill()
 {
 	m_killed = true;
 }
 
-bool CSoundCardWriter::isBusy() const
+bool CSoundALSAWriter::isBusy() const
 {
 	snd_pcm_state_t state = ::snd_pcm_state(m_handle);
 
