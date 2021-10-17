@@ -20,6 +20,7 @@
 #define	M17Client_H
 
 #include "StatusCallback.h"
+#include "AudioBackend.h"
 #include "AudioCallback.h"
 #include "UDPSocket.h"
 #if defined(USE_HAMLIB)
@@ -65,6 +66,7 @@ private:
 	CM17TX*          m_tx;
 	bool             m_tx1;
 	bool             m_tx2;
+	IAudioBackend*   m_sound;
 	CUDPSocket*      m_socket;
 #if defined(USE_HAMLIB)
 	CHamLib*         m_hamLib;
