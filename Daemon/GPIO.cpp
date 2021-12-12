@@ -65,7 +65,7 @@ bool CGPIO::open()
 
 		int ret = ::gpiod_line_request_output(m_status, "M17Client", 0);
 		if (ret == -1) {
-			LogError("Unable to set the Status GPIO pin for input, errno=%d", errno);
+			LogError("Unable to set the Status GPIO pin for output, errno=%d", errno);
 			return false;
 		}
 	}
