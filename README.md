@@ -6,3 +6,4 @@ The M17 Client is split into two parts, the Daemon and the front end. The Daemon
 
 It is hoped to eventually have at least two front ends for the M17 Client, the first a standard GUI which already exists for desktop operation, and a different user interface more geared towards use in a mobile setting with PTT input and other controls via GPIO inputs and possibly a touch screen.
 
+This software is licenced under the GPL v2.
