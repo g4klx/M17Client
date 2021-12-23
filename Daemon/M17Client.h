@@ -62,6 +62,7 @@ public:
 private:
 	CConf            m_conf;
 	CCodePlug*       m_codePlug;
+	CModem*          m_modem;
 	CM17RX*          m_rx;
 	CM17TX*          m_tx;
 	bool             m_tx1;

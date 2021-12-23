@@ -281,6 +281,30 @@ void CModem::setRFParams(unsigned int rxFrequency, int rxOffset, unsigned int tx
 	m_pocsagFrequency = pocsagFrequency + txOffset;
 }
 
+bool CModem::changeFrequency(unsigned int rxFrequency, int rxOffset, unsigned int txFrequency, int txOffset)
+{
+	m_rxFrequency = rxFrequency + rxOffset;
+	m_txFrequency = txFrequency + txOffset;
+
+	bool ret = setFrequency();
+	if (!ret) {
+		m_port->close();
+		delete m_port;
+		m_port = NULL;
+		return false;
+	}
+
+	ret = writeConfig();
+	if (!ret) {
+		m_port->close();
+		delete m_port;
+		m_port = NULL;
+		return false;
+	}
+
+	return true;
+}
+
 void CModem::setModeParams(bool dstarEnabled, bool dmrEnabled, bool ysfEnabled, bool p25Enabled, bool nxdnEnabled, bool m17Enabled, bool pocsagEnabled, bool fmEnabled, bool ax25Enabled, unsigned char mode)
 {
 	m_dstarEnabled  = dstarEnabled;

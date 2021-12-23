@@ -56,6 +56,7 @@ public:
 	void setM17Params(unsigned int txHang);
 	void setAX25Params(int rxTwist, unsigned int txDelay, unsigned int slotTime, unsigned int pPersist);
 	void setTransparentDataParams(unsigned int sendFrameType);
+	bool changeFrequency(unsigned int rxFrequency, int rxOffset, unsigned int txFrequency, int txOffset);
 
 	void setFMCallsignParams(const std::string& callsign, unsigned int callsignSpeed, unsigned int callsignFrequency, unsigned int callsignTime, unsigned int callsignHoldoff, float callsignHighLevel, float callsignLowLevel, bool callsignAtStart, bool callsignAtEnd, bool callsignAtLatch);
 	void setFMAckParams(const std::string& rfAck, unsigned int ackSpeed, unsigned int ackFrequency, unsigned int ackMinTime, unsigned int ackDelay, float ackLevel);
