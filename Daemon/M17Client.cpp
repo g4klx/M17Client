@@ -236,33 +236,33 @@ int CM17Client::run()
 	LogMessage("M17Client-%s is starting", VERSION);
 	LogMessage("Built %s %s (GitID #%.7s)", __TIME__, __DATE__, gitversion);
 
-	CModem modem(false, m_conf.getModemRXInvert(), m_conf.getModemTXInvert(), m_conf.getModemPTTInvert(), m_conf.getModemTXDelay(),
-		     0U, false, m_conf.getModemTrace(), m_conf.getModemDebug());
+	m_modem = new CModem(false, m_conf.getModemRXInvert(), m_conf.getModemTXInvert(), m_conf.getModemPTTInvert(), m_conf.getModemTXDelay(),
+			     0U, false, m_conf.getModemTrace(), m_conf.getModemDebug());
 
-	modem.setPort(new CUARTController(m_conf.getModemPort(), m_conf.getModemSpeed()));
+	m_modem->setPort(new CUARTController(m_conf.getModemPort(), m_conf.getModemSpeed()));
 
 	// By default use the first entry in the code plug file
-	modem.setRFParams(m_codePlug->getData().at(0U).m_rxFrequency, m_conf.getModemRXOffset(),
-			  m_codePlug->getData().at(0U).m_txFrequency, m_conf.getModemTXOffset(),
-			  m_conf.getModemTXDCOffset(), m_conf.getModemRXDCOffset(), m_conf.getModemRFLevel(), 0U);
+	m_modem->setRFParams(m_codePlug->getData().at(0U).m_rxFrequency, m_conf.getModemRXOffset(),
+			     m_codePlug->getData().at(0U).m_txFrequency, m_conf.getModemTXOffset(),
+			     m_conf.getModemTXDCOffset(), m_conf.getModemRXDCOffset(), m_conf.getModemRFLevel(), 0U);
 
 	// Only enable M17
-	modem.setModeParams(false, false, false, false, false, true, false, false, false, MODE_M17);
+	m_modem->setModeParams(false, false, false, false, false, true, false, false, false, MODE_M17);
 
 	// Only set the TX level for M17
-	modem.setLevels(m_conf.getModemRXLevel(), 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, m_conf.getModemTXLevel(), 0.0F, 0.0F, 0.0F);
+	m_modem->setLevels(m_conf.getModemRXLevel(), 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, m_conf.getModemTXLevel(), 0.0F, 0.0F, 0.0F);
 
 	// Set the M17 TX hang time to 0
-	modem.setM17Params(0U);
+	m_modem->setM17Params(0U);
 
-	ret = modem.open();
+	ret = m_modem->open();
 	if (!ret) {
 		LogError("Unable to open the MMDVM");
 		::LogFinalise();
 		return 1;
 	}
 
-	if (!modem.hasM17()) {
+	if (!m_modem->hasM17()) {
 		LogError("Modem is not capable of M17");
 		::LogFinalise();
 		return 1;
@@ -364,18 +364,18 @@ int CM17Client::run()
 		m_tx->process();
 
 		bool tx = false;
-		if (modem.hasM17Space()) {
+		if (m_modem->hasM17Space()) {
 			unsigned char data[M17_FRAME_LENGTH_BYTES];
 			unsigned int len = m_tx->read(data);
 			if (len > 0U) {
-				modem.writeM17Data(data, len);
+				m_modem->writeM17Data(data, len);
 				tx = true;
 			}
 		}
 
 		if (!tx) {
 			unsigned char data[M17_FRAME_LENGTH_BYTES];
-			unsigned int len = modem.readM17Data(data);
+			unsigned int len = m_modem->readM17Data(data);
 			if (len > 0U)
 				m_rx->write(data, len);
 		}
@@ -447,7 +447,7 @@ int CM17Client::run()
 		if (m_gpsd != NULL)
 			m_gpsd->clock(ms);
 #endif
-		modem.clock(ms);
+		m_modem->clock(ms);
 
 		if (ms < 10U)
 			CThread::sleep(10U);
@@ -476,12 +476,13 @@ int CM17Client::run()
 
 	m_socket->close();
 	m_sound->close();
-	modem.close();
+	m_modem->close();
 
 	delete m_codePlug;
 	delete m_tx;
 	delete m_rx;
 	delete m_socket;
+	delete m_modem;
 
 	::LogFinalise();
 
@@ -577,6 +578,10 @@ bool CM17Client::processChannelRequest(const char* channel)
 			if (m_hamLib != NULL)
 				m_hamLib->setFrequency(chan.m_rxFrequency, chan.m_txFrequency);
 #endif
+			if (!m_modem->changeFrequency(chan.m_rxFrequency, m_conf.getModemRXOffset(),
+						      chan.m_txFrequency, m_conf.getModemTXOffset()))
+			    return false;
+
 			m_tx->setParams(chan.m_can, chan.m_mode);
 			return true;
 		}
