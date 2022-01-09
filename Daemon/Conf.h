@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2015,2016,2017,2019,2020,2021 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2015,2016,2017,2019,2020,2021,2022 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -76,7 +76,8 @@ public:
 
 	// The GPIO section
 	bool         getGPIOEnabled() const;
-	unsigned int getGPIOStatusPin() const;
+	unsigned int getGPIOTXPin() const;
+	unsigned int getGPIORCVPin() const;
 	bool         getGPIOPTTInvert() const;
 	unsigned int getGPIOPTTPin() const;
 	bool         getGPIOVolumeInvert() const;
@@ -142,7 +143,8 @@ private:
 	std::string  m_codePlugFile;
 
 	bool         m_gpioEnabled;
-	unsigned int m_gpioStatusPin;
+	unsigned int m_gpioTXPin;
+	unsigned int m_gpioRCVPin;
 	bool         m_gpioPTTInvert;
 	unsigned int m_gpioPTTPin;
 	bool         m_gpioVolumeInvert;

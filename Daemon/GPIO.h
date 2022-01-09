@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2018,2020,2021 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2018,2020,2021,2022 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -27,12 +27,13 @@
 
 class CGPIO {
 public:
-	CGPIO(unsigned int statusPin, bool pttInvert, unsigned int pttPin, bool volumeInvert, unsigned int volumeUpPin, unsigned int volumeDownPin);
+	CGPIO(unsigned int txPin, unsigned int rcvPin, bool pttInvert, unsigned int pttPin, bool volumeInvert, unsigned int volumeUpPin, unsigned int volumeDownPin);
 	~CGPIO();
 
 	bool open();
 
-	void setStatus(bool tx);
+	void setTX(bool tx);
+	void setRCV(bool rcv);
 
 	bool getPTT();
 
@@ -42,14 +43,16 @@ public:
 	void close();
 
 private:
-	unsigned int m_statusPin;
+	unsigned int m_txPin;
+	unsigned int m_rcvPin;
 	bool         m_pttInvert;
 	unsigned int m_pttPin;
 	bool         m_volumeInvert;
 	unsigned int m_volumeUpPin;
 	unsigned int m_volumeDownPin;
 	gpiod_chip*  m_chip;
-	gpiod_line*  m_status;
+	gpiod_line*  m_tx;
+	gpiod_line*  m_rcv;
 	gpiod_line*  m_ptt;
 	gpiod_line*  m_volumeUp;
 	gpiod_line*  m_volumeDown;

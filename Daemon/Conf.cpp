@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2015-2021 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2015-2022 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -75,7 +75,8 @@ m_logFileRoot(),
 m_logFileRotate(true),
 m_codePlugFile("CodePlug.ini"),
 m_gpioEnabled(false),
-m_gpioStatusPin(0U),
+m_gpioTXPin(0U),
+m_gpioRCVPin(0U),
 m_gpioPTTInvert(true),
 m_gpioPTTPin(15U),
 m_gpioVolumeInvert(true),
@@ -239,8 +240,10 @@ bool CConf::read()
 		} else if (section == SECTION_GPIO) {
 			if (::strcmp(key, "Enable") == 0)
 				m_gpioEnabled = ::atoi(value) == 1;
-			else if (::strcmp(key, "Status") == 0)
-				m_gpioStatusPin = (unsigned int)::atoi(value);
+			else if (::strcmp(key, "TX") == 0)
+				m_gpioTXPin = (unsigned int)::atoi(value);
+			else if (::strcmp(key, "RCV") == 0)
+				m_gpioRCVPin = (unsigned int)::atoi(value);
 			else if (::strcmp(key, "PTTInvert") == 0)
 				m_gpioPTTInvert = ::atoi(value) == 1;
 			else if (::strcmp(key, "PTT") == 0)
@@ -451,9 +454,14 @@ bool CConf::getGPIOEnabled() const
 	return m_gpioEnabled;
 }
 
-unsigned int CConf::getGPIOStatusPin() const
+unsigned int CConf::getGPIOTXPin() const
 {
-	return m_gpioStatusPin;
+	return m_gpioTXPin;
+}
+
+unsigned int CConf::getGPIORCVPin() const
+{
+	return m_gpioRCVPin;
 }
 
 bool CConf::getGPIOPTTInvert() const

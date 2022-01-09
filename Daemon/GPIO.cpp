@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2018,2020,2021 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2018,2020,2021,2022 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -29,15 +29,17 @@
 
 #include "cerrno"
 
-CGPIO::CGPIO(unsigned int statusPin, bool pttInvert, unsigned int pttPin, bool volumeInvert, unsigned int volumeUpPin, unsigned int volumeDownPin) :
-m_statusPin(statusPin),
+CGPIO::CGPIO(unsigned int txPin, unsigned int rcvPin, bool pttInvert, unsigned int pttPin, bool volumeInvert, unsigned int volumeUpPin, unsigned int volumeDownPin) :
+m_txPin(txPin),
+m_rcvPin(rcvPin),
 m_pttInvert(pttInvert),
 m_pttPin(pttPin),
 m_volumeInvert(pttInvert),
 m_volumeUpPin(volumeUpPin),
 m_volumeDownPin(volumeDownPin),
 m_chip(NULL),
-m_status(NULL),
+m_tx(NULL),
+m_rcv(NULL),
 m_ptt(NULL),
 m_volumeUp(NULL),
 m_volumeDown(NULL)
@@ -56,16 +58,30 @@ bool CGPIO::open()
 		return false;
 	}
 
-	if (m_statusPin > 0U) {
-		m_status = ::gpiod_chip_get_line(m_chip, m_statusPin);
-		if (m_status == NULL) {
-			LogError("Unable to open the Status GPIO pin, errno=%d", errno);
+	if (m_txPin > 0U) {
+		m_tx = ::gpiod_chip_get_line(m_chip, m_txPin);
+		if (m_tx == NULL) {
+			LogError("Unable to open the TX GPIO pin, errno=%d", errno);
 			return false;
 		}
 
-		int ret = ::gpiod_line_request_output(m_status, "M17Client", 0);
+		int ret = ::gpiod_line_request_output(m_tx, "M17Client", 0);
 		if (ret == -1) {
-			LogError("Unable to set the Status GPIO pin for output, errno=%d", errno);
+			LogError("Unable to set the TX GPIO pin for output, errno=%d", errno);
+			return false;
+		}
+	}
+
+	if (m_rcvPin > 0U) {
+		m_rcv = ::gpiod_chip_get_line(m_chip, m_rcvPin);
+		if (m_rcv == NULL) {
+			LogError("Unable to open the RCV GPIO pin, errno=%d", errno);
+			return false;
+		}
+
+		int ret = ::gpiod_line_request_output(m_rcv, "M17Client", 0);
+		if (ret == -1) {
+			LogError("Unable to set the RCV GPIO pin for output, errno=%d", errno);
 			return false;
 		}
 	}
@@ -115,12 +131,20 @@ bool CGPIO::open()
 	return true;
 }
 
-void CGPIO::setStatus(bool tx)
+void CGPIO::setTX(bool tx)
 {
-	if (m_status == NULL)
+	if (m_tx == NULL)
 		return;
 
-	::gpiod_line_set_value(m_status, tx ? 1 : 0);
+	::gpiod_line_set_value(m_tx, tx ? 1 : 0);
+}
+
+void CGPIO::setRCV(bool rcv)
+{
+	if (m_rcv == NULL)
+		return;
+
+	::gpiod_line_set_value(m_rcv, rcv ? 1 : 0);
 }
 
 bool CGPIO::getPTT()
@@ -178,24 +202,29 @@ void CGPIO::close()
 {
 	assert(m_chip != NULL);
 
-	if (m_status != NULL) {
-		::gpiod_line_release(m_status);
-		m_status  = NULL;
+	if (m_tx != NULL) {
+		::gpiod_line_release(m_tx);
+		m_tx = NULL;
+	}
+
+	if (m_rcv != NULL) {
+		::gpiod_line_release(m_rcv);
+		m_rcv = NULL;
 	}
 
 	if (m_ptt != NULL) {
 		::gpiod_line_release(m_ptt);
-		m_ptt  = NULL;
+		m_ptt = NULL;
 	}
 
 	if (m_volumeUp != NULL) {
 		::gpiod_line_release(m_volumeUp);
-		m_volumeUp  = NULL;
+		m_volumeUp = NULL;
 	}
 
 	if (m_volumeDown != NULL) {
 		::gpiod_line_release(m_volumeDown);
-		m_volumeDown  = NULL;
+		m_volumeDown = NULL;
 	}
 
 	::gpiod_chip_close(m_chip);

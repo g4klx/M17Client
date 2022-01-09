@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2015-2021 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2015-2022 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -308,7 +308,8 @@ int CM17Client::run()
 
 #if defined(USE_GPIO)
 	if (m_conf.getGPIOEnabled()) {
-		m_gpio = new CGPIO(m_conf.getGPIOStatusPin(), m_conf.getGPIOPTTInvert(), m_conf.getGPIOPTTPin(), m_conf.getGPIOVolumeInvert(), m_conf.getGPIOVolumeUpPin(), m_conf.getGPIOVolumeDownPin());
+		m_gpio = new CGPIO(m_conf.getGPIOTXPin(), m_conf.getGPIORCVPin(), m_conf.getGPIOPTTInvert(), m_conf.getGPIOPTTPin(),
+				    m_conf.getGPIOVolumeInvert(), m_conf.getGPIOVolumeUpPin(), m_conf.getGPIOVolumeDownPin());
 		ret = m_gpio->open();
 		if (!ret) {
 			LogError("Unable to open GPIO");
@@ -417,7 +418,7 @@ int CM17Client::run()
 
 			m_tx2 = tx;
 
-			m_gpio->setStatus(m_tx->isTX());
+			m_gpio->setTX(m_tx->isTX());
 
 			bool volumeUp   = m_gpio->getVolumeUp();
 			bool volumeDown = m_gpio->getVolumeDown();
@@ -632,6 +633,11 @@ void CM17Client::sendDestinationList()
 void CM17Client::statusCallback(const std::string& source, const std::string& dest, bool end)
 {
 	assert(m_socket != NULL);
+
+#if defined(USE_GPIO)
+	if (m_gpio != NULL)
+		m_gpio->setRCV(!end);
+#endif
 
 	char buffer[50U];
 	::strcpy(buffer, "RX");
