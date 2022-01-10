@@ -246,7 +246,6 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 			m_textBitMap = 0x00U;
 			m_callsigns.clear();
 			::memset(m_text, 0x00U, 4U * M17_META_LENGTH_BYTES);
-			m_rcv        = true;
 
 			addSilence(SILENCE_BLOCK_COUNT);
 
@@ -304,7 +303,6 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 			m_textBitMap = 0x00U;
 			m_callsigns.clear();
 			::memset(m_text, 0x00U, 4U * M17_META_LENGTH_BYTES);
-			m_rcv        = true;
 
 			addSilence(SILENCE_BLOCK_COUNT);
 
@@ -387,6 +385,8 @@ void CM17RX::end()
 		if (m_bleep)
 			addBleep();
 	}
+
+	m_rcv = true;
 
 	m_state = RS_RF_LISTENING;
 
