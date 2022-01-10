@@ -78,6 +78,7 @@ m_errs(0U),
 m_bits(0U),
 m_lsf(),
 m_running(),
+m_rcv(false),
 m_textBitMap(0x00U),
 m_text(NULL),
 m_callsigns(),
@@ -133,8 +134,16 @@ unsigned int CM17RX::read(float* audio, unsigned int len)
 	assert(audio != NULL);
 	assert(len > 0U);
 
-	if (m_queue.isEmpty())
+	if (m_queue.isEmpty()) {
+		if (m_rcv) {
+			if (m_callback != NULL)
+				m_callback->statusCallback(m_lsf.getSource(), m_lsf.getDest(), true);
+
+			m_rcv = false;
+		}
+
 		return 0U;
+	}
 
 	unsigned int amt = m_queue.dataSize();
 	if (len > amt)
@@ -237,6 +246,7 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 			m_textBitMap = 0x00U;
 			m_callsigns.clear();
 			::memset(m_text, 0x00U, 4U * M17_META_LENGTH_BYTES);
+			m_rcv        = true;
 
 			addSilence(SILENCE_BLOCK_COUNT);
 
@@ -294,6 +304,7 @@ bool CM17RX::write(unsigned char* data, unsigned int len)
 			m_textBitMap = 0x00U;
 			m_callsigns.clear();
 			::memset(m_text, 0x00U, 4U * M17_META_LENGTH_BYTES);
+			m_rcv        = true;
 
 			addSilence(SILENCE_BLOCK_COUNT);
 
@@ -375,9 +386,6 @@ void CM17RX::end()
 	if (m_state == RS_RF_AUDIO || m_state == RS_RF_AUDIO_DATA) {
 		if (m_bleep)
 			addBleep();
-
-		if (m_callback != NULL)
-			m_callback->statusCallback(m_lsf.getSource(), m_lsf.getDest(), true);
 	}
 
 	m_state = RS_RF_LISTENING;

@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2020,2021 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2020,2021,2022 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -63,6 +63,7 @@ private:
 	unsigned int         m_bits;
 	CM17LSF              m_lsf;
 	CM17LSF              m_running;
+	bool                 m_rcv;
 	uint8_t              m_textBitMap;
 	char*                m_text;
 	std::string          m_callsigns;
