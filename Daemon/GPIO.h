@@ -27,7 +27,7 @@
 
 class CGPIO {
 public:
-	CGPIO(unsigned int txPin, unsigned int rcvPin, bool pttInvert, unsigned int pttPin, bool volumeInvert, unsigned int volumeUpPin, unsigned int volumeDownPin);
+	CGPIO(unsigned int txPin, bool txInvert, unsigned int rcvPin, bool rcvInvert, unsigned int pttPin, bool pttInvert, unsigned int volumeUpPin, unsigned int volumeDownPin, bool volumeInvert);
 	~CGPIO();
 
 	bool open();
@@ -44,12 +44,14 @@ public:
 
 private:
 	unsigned int m_txPin;
+	bool         m_txInvert;
 	unsigned int m_rcvPin;
-	bool         m_pttInvert;
+	bool         m_rcvInvert;
 	unsigned int m_pttPin;
-	bool         m_volumeInvert;
+	bool         m_pttInvert;
 	unsigned int m_volumeUpPin;
 	unsigned int m_volumeDownPin;
+	bool         m_volumeInvert;
 	gpiod_chip*  m_chip;
 	gpiod_line*  m_tx;
 	gpiod_line*  m_rcv;

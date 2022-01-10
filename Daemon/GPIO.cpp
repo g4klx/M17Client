@@ -29,14 +29,16 @@
 
 #include "cerrno"
 
-CGPIO::CGPIO(unsigned int txPin, unsigned int rcvPin, bool pttInvert, unsigned int pttPin, bool volumeInvert, unsigned int volumeUpPin, unsigned int volumeDownPin) :
+CGPIO::CGPIO(unsigned int txPin, bool txInvert, unsigned int rcvPin, bool rcvInvert, unsigned int pttPin, bool pttInvert, unsigned int volumeUpPin, unsigned int volumeDownPin, bool volumeInvert) :
 m_txPin(txPin),
+m_txInvert(txInvert),
 m_rcvPin(rcvPin),
-m_pttInvert(pttInvert),
+m_rcvInvert(rcvInvert),
 m_pttPin(pttPin),
-m_volumeInvert(pttInvert),
+m_pttInvert(pttInvert),
 m_volumeUpPin(volumeUpPin),
 m_volumeDownPin(volumeDownPin),
+m_volumeInvert(volumeInvert),
 m_chip(NULL),
 m_tx(NULL),
 m_rcv(NULL),
@@ -70,6 +72,11 @@ bool CGPIO::open()
 			LogError("Unable to set the TX GPIO pin for output, errno=%d", errno);
 			return false;
 		}
+
+		if (m_txInvert)
+			::gpiod_line_set_value(m_tx, 1);
+		else
+			::gpiod_line_set_value(m_tx, 0);
 	}
 
 	if (m_rcvPin > 0U) {
@@ -84,6 +91,11 @@ bool CGPIO::open()
 			LogError("Unable to set the RCV GPIO pin for output, errno=%d", errno);
 			return false;
 		}
+
+		if (m_rcvInvert)
+			::gpiod_line_set_value(m_rcv, 1);
+		else
+			::gpiod_line_set_value(m_rcv, 0);
 	}
 
 	if (m_pttPin > 0U) {
@@ -136,7 +148,10 @@ void CGPIO::setTX(bool tx)
 	if (m_tx == NULL)
 		return;
 
-	::gpiod_line_set_value(m_tx, tx ? 1 : 0);
+	if (m_txInvert)
+		::gpiod_line_set_value(m_tx, tx ? 0 : 1);
+	else
+		::gpiod_line_set_value(m_tx, tx ? 1 : 0);
 }
 
 void CGPIO::setRCV(bool rcv)
@@ -144,7 +159,10 @@ void CGPIO::setRCV(bool rcv)
 	if (m_rcv == NULL)
 		return;
 
-	::gpiod_line_set_value(m_rcv, rcv ? 1 : 0);
+	if (m_rcvInvert)
+		::gpiod_line_set_value(m_rcv, rcv ? 0 : 1);
+	else
+		::gpiod_line_set_value(m_rcv, rcv ? 1 : 0);
 }
 
 bool CGPIO::getPTT()

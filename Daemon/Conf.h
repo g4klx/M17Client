@@ -77,12 +77,14 @@ public:
 	// The GPIO section
 	bool         getGPIOEnabled() const;
 	unsigned int getGPIOTXPin() const;
+	bool         getGPIOTXInvert() const;
 	unsigned int getGPIORCVPin() const;
-	bool         getGPIOPTTInvert() const;
+	bool         getGPIORCVInvert() const;
 	unsigned int getGPIOPTTPin() const;
-	bool         getGPIOVolumeInvert() const;
+	bool         getGPIOPTTInvert() const;
 	unsigned int getGPIOVolumeUpPin() const;
 	unsigned int getGPIOVolumeDownPin() const;
+	bool         getGPIOVolumeInvert() const;
 
 	// The HamLib section
 	bool	     getHamLibEnabled() const;
@@ -144,12 +146,14 @@ private:
 
 	bool         m_gpioEnabled;
 	unsigned int m_gpioTXPin;
+	bool         m_gpioTXInvert;
 	unsigned int m_gpioRCVPin;
-	bool         m_gpioPTTInvert;
+	bool         m_gpioRCVInvert;
 	unsigned int m_gpioPTTPin;
-	bool         m_gpioVolumeInvert;
+	bool         m_gpioPTTInvert;
 	unsigned int m_gpioVolumeUpPin;
 	unsigned int m_gpioVolumeDownPin;
+	bool         m_gpioVolumeInvert;
 
 	bool         m_hamLibEnabled;
 	std::string  m_hamLibRadioType;

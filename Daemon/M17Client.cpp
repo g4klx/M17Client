@@ -308,8 +308,10 @@ int CM17Client::run()
 
 #if defined(USE_GPIO)
 	if (m_conf.getGPIOEnabled()) {
-		m_gpio = new CGPIO(m_conf.getGPIOTXPin(), m_conf.getGPIORCVPin(), m_conf.getGPIOPTTInvert(), m_conf.getGPIOPTTPin(),
-				    m_conf.getGPIOVolumeInvert(), m_conf.getGPIOVolumeUpPin(), m_conf.getGPIOVolumeDownPin());
+		m_gpio = new CGPIO(m_conf.getGPIOTXPin(),  m_conf.getGPIOTXInvert(),
+				    m_conf.getGPIORCVPin(), m_conf.getGPIORCVInvert(),
+				    m_conf.getGPIOPTTPin(), m_conf.getGPIOPTTInvert(),
+				    m_conf.getGPIOVolumeUpPin(), m_conf.getGPIOVolumeDownPin(), m_conf.getGPIOVolumeInvert());
 		ret = m_gpio->open();
 		if (!ret) {
 			LogError("Unable to open GPIO");
