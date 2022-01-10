@@ -63,7 +63,6 @@ private:
 	unsigned int         m_bits;
 	CM17LSF              m_lsf;
 	CM17LSF              m_running;
-	bool                 m_rcv;
 	uint8_t              m_textBitMap;
 	char*                m_text;
 	std::string          m_callsigns;
@@ -98,6 +97,7 @@ private:
 	void end();
 
 	void addBleep();
+	void addEnd();
 };
 
 #endif

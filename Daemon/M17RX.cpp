@@ -29,6 +29,8 @@
 
 const float R = 6371.0F;
 
+const float END_MARK = 2000.0F;
+
 const unsigned int  SILENCE_BLOCK_COUNT = 5U;
 
 const unsigned int  BLEEP_FREQ   = 2000U;
@@ -78,7 +80,6 @@ m_errs(0U),
 m_bits(0U),
 m_lsf(),
 m_running(),
-m_rcv(false),
 m_textBitMap(0x00U),
 m_text(NULL),
 m_callsigns(),
@@ -134,22 +135,23 @@ unsigned int CM17RX::read(float* audio, unsigned int len)
 	assert(audio != NULL);
 	assert(len > 0U);
 
-	if (m_queue.isEmpty()) {
-		if (m_rcv) {
-			if (m_callback != NULL)
-				m_callback->statusCallback(m_lsf.getSource(), m_lsf.getDest(), true);
-
-			m_rcv = false;
-		}
-
+	if (m_queue.isEmpty())
 		return 0U;
-	}
 
 	unsigned int amt = m_queue.dataSize();
 	if (len > amt)
 		len = amt;
 
 	m_queue.getData(audio, len);
+
+	for (unsigned int i = 0U; i < len; i++) {
+		if (audio[i] == END_MARK) {
+			if (m_callback != NULL)
+				m_callback->statusCallback(m_lsf.getSource(), m_lsf.getDest(), true);
+
+			audio[i] = 0.0F;
+		}
+	}
 
 	return len;
 }
@@ -384,9 +386,12 @@ void CM17RX::end()
 	if (m_state == RS_RF_AUDIO || m_state == RS_RF_AUDIO_DATA) {
 		if (m_bleep)
 			addBleep();
-	}
 
-	m_rcv = true;
+		addEnd();
+	} else {
+		if (m_callback != NULL)
+			m_callback->statusCallback(m_lsf.getSource(), m_lsf.getDest(), true);
+	}
 
 	m_state = RS_RF_LISTENING;
 
@@ -629,6 +634,16 @@ void CM17RX::addBleep()
 		audio[i] = ::sinf(float(i) * step) * BLEEP_AMPL * m_volume;
 
 	writeQueue(audio, total);
+}
+
+void CM17RX::addEnd()
+{
+	float audio[1U];
+
+	// Invalid audio value
+	audio[0U] = END_MARK;
+
+	writeQueue(audio, 1U);
 }
 
 void CM17RX::addSilence(unsigned int n)
