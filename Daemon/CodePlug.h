@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2015,2016,2017,2019,2020,2021 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2015,2016,2017,2019,2020,2021,2022 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -28,13 +28,31 @@ public:
 	m_name(name),
 	m_txFrequency(txFrequency),
 	m_rxFrequency(rxFrequency),
+	m_txInvertSet(false),
+	m_rxInvertSet(false),
 	m_can(can),
 	m_mode(mode)
 	{}
 
+	void setTXInvert(bool invert)
+	{
+		m_txInvertSet = true;
+		m_txInvert    = invert;
+	}
+
+	void setRXInvert(bool invert)
+	{
+		m_rxInvertSet = true;
+		m_rxInvert    = invert;
+	}
+
 	std::string  m_name;
 	unsigned int m_txFrequency;
 	unsigned int m_rxFrequency;
+	bool         m_txInvertSet;
+	bool         m_txInvert;
+	bool         m_rxInvertSet;
+	bool         m_rxInvert;
 	unsigned int m_can;
 	unsigned int m_mode;
 };

@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2011-2018,2020,2021 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2011-2018,2020,2021,2022 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -122,7 +122,7 @@ const unsigned char CAP2_POCSAG = 0x01U;
 const unsigned char CAP2_AX25   = 0x02U;
 
 
-CModem::CModem(bool duplex, bool rxInvert, bool txInvert, bool pttInvert, unsigned int txDelay, unsigned int dmrDelay, bool useCOSAsLockout, bool trace, bool debug) :
+CModem::CModem(bool duplex, bool pttInvert, unsigned int txDelay, unsigned int dmrDelay, bool useCOSAsLockout, bool trace, bool debug) :
 m_protocolVersion(0U),
 m_dmrColorCode(0U),
 m_ysfLoDev(false),
@@ -131,8 +131,8 @@ m_p25TXHang(5U),
 m_nxdnTXHang(5U),
 m_m17TXHang(5U),
 m_duplex(duplex),
-m_rxInvert(rxInvert),
-m_txInvert(txInvert),
+m_rxInvert(false),
+m_txInvert(false),
 m_pttInvert(pttInvert),
 m_txDelay(txDelay),
 m_dmrDelay(dmrDelay),
@@ -271,20 +271,24 @@ void CModem::setPort(IModemPort* port)
 	m_port = port;
 }
 
-void CModem::setRFParams(unsigned int rxFrequency, int rxOffset, unsigned int txFrequency, int txOffset, int txDCOffset, int rxDCOffset, float rfLevel, unsigned int pocsagFrequency)
+void CModem::setRFParams(unsigned int rxFrequency, int rxOffset, bool rxInvert, unsigned int txFrequency, int txOffset, bool txInvert, int txDCOffset, int rxDCOffset, float rfLevel, unsigned int pocsagFrequency)
 {
 	m_rxFrequency     = rxFrequency + rxOffset;
 	m_txFrequency     = txFrequency + txOffset;
+	m_txInvert        = txInvert;
+	m_rxInvert        = rxInvert;
 	m_txDCOffset      = txDCOffset;
 	m_rxDCOffset      = rxDCOffset;
 	m_rfLevel         = rfLevel;
 	m_pocsagFrequency = pocsagFrequency + txOffset;
 }
 
-bool CModem::changeFrequency(unsigned int rxFrequency, int rxOffset, unsigned int txFrequency, int txOffset)
+bool CModem::changeFrequency(unsigned int rxFrequency, int rxOffset, bool rxInvert, unsigned int txFrequency, int txOffset, bool txInvert)
 {
 	m_rxFrequency = rxFrequency + rxOffset;
 	m_txFrequency = txFrequency + txOffset;
+	m_rxInvert    = rxInvert;
+	m_txInvert    = txInvert;
 
 	bool ret = setFrequency();
 	if (!ret) {

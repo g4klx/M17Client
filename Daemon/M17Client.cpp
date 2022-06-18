@@ -236,14 +236,21 @@ int CM17Client::run()
 	LogMessage("M17Client-%s is starting", VERSION);
 	LogMessage("Built %s %s (GitID #%.7s)", __TIME__, __DATE__, gitversion);
 
-	m_modem = new CModem(false, m_conf.getModemRXInvert(), m_conf.getModemTXInvert(), m_conf.getModemPTTInvert(), m_conf.getModemTXDelay(),
-			     0U, false, m_conf.getModemTrace(), m_conf.getModemDebug());
+	m_modem = new CModem(false, m_conf.getModemPTTInvert(), m_conf.getModemTXDelay(), 0U, false, m_conf.getModemTrace(), m_conf.getModemDebug());
 
 	m_modem->setPort(new CUARTController(m_conf.getModemPort(), m_conf.getModemSpeed()));
 
+	bool rxInvert = m_conf.getModemRXInvert();
+	if (m_codePlug->getData().at(0U).m_rxInvertSet)
+		rxInvert = m_codePlug->getData().at(0U).m_rxInvert;
+
+	bool txInvert = m_conf.getModemTXInvert();
+	if (m_codePlug->getData().at(0U).m_txInvertSet)
+		txInvert = m_codePlug->getData().at(0U).m_txInvert;
+
 	// By default use the first entry in the code plug file
-	m_modem->setRFParams(m_codePlug->getData().at(0U).m_rxFrequency, m_conf.getModemRXOffset(),
-			     m_codePlug->getData().at(0U).m_txFrequency, m_conf.getModemTXOffset(),
+	m_modem->setRFParams(m_codePlug->getData().at(0U).m_rxFrequency, m_conf.getModemRXOffset(), rxInvert,
+			     m_codePlug->getData().at(0U).m_txFrequency, m_conf.getModemTXOffset(), txInvert,
 			     m_conf.getModemTXDCOffset(), m_conf.getModemRXDCOffset(), m_conf.getModemRFLevel(), 0U);
 
 	// Only enable M17
@@ -581,9 +588,17 @@ bool CM17Client::processChannelRequest(const char* channel)
 			if (m_hamLib != NULL)
 				m_hamLib->setFrequency(chan.m_rxFrequency, chan.m_txFrequency);
 #endif
-			if (!m_modem->changeFrequency(chan.m_rxFrequency, m_conf.getModemRXOffset(),
-						      chan.m_txFrequency, m_conf.getModemTXOffset()))
-			    return false;
+			bool rxInvert = m_conf.getModemRXInvert();
+			if (chan.m_rxInvertSet)
+				rxInvert = chan.m_rxInvert;
+
+			bool txInvert = m_conf.getModemTXInvert();
+			if (chan.m_txInvertSet)
+				txInvert = chan.m_txInvert;
+
+			if (!m_modem->changeFrequency(chan.m_rxFrequency, m_conf.getModemRXOffset(), rxInvert,
+						      chan.m_txFrequency, m_conf.getModemTXOffset(), txInvert))
+				return false;
 
 			m_tx->setParams(chan.m_can, chan.m_mode);
 			return true;

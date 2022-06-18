@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2011-2018,2020,2021 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2011-2018,2020,2021,2022 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -42,11 +42,11 @@ enum SERIAL_STATE {
 
 class CModem {
 public:
-	CModem(bool duplex, bool rxInvert, bool txInvert, bool pttInvert, unsigned int txDelay, unsigned int dmrDelay, bool useCOSAsLockout, bool trace, bool debug);
+	CModem(bool duplex, bool pttInvert, unsigned int txDelay, unsigned int dmrDelay, bool useCOSAsLockout, bool trace, bool debug);
 	~CModem();
 
 	void setPort(IModemPort* port);
-	void setRFParams(unsigned int rxFrequency, int rxOffset, unsigned int txFrequency, int txOffset, int txDCOffset, int rxDCOffset, float rfLevel, unsigned int pocsagFrequency);
+	void setRFParams(unsigned int rxFrequency, int rxOffset, bool rxInvert, unsigned int txFrequency, int txOffset, bool txInvert, int txDCOffset, int rxDCOffset, float rfLevel, unsigned int pocsagFrequency);
 	void setModeParams(bool dstarEnabled, bool dmrEnabled, bool ysfEnabled, bool p25Enabled, bool nxdnEnabled, bool m17Enabled, bool pocsagEnabled, bool fmEnabled, bool ax25Enabled, unsigned char mode = MODE_IDLE);
 	void setLevels(float rxLevel, float cwIdTXLevel, float dstarTXLevel, float dmrTXLevel, float ysfTXLevel, float p25TXLevel, float nxdnTXLevel, float m17TXLevel, float pocsagLevel, float fmTXLevel, float ax25TXLevel);
 	void setDMRParams(unsigned int colorCode);
@@ -56,7 +56,7 @@ public:
 	void setM17Params(unsigned int txHang);
 	void setAX25Params(int rxTwist, unsigned int txDelay, unsigned int slotTime, unsigned int pPersist);
 	void setTransparentDataParams(unsigned int sendFrameType);
-	bool changeFrequency(unsigned int rxFrequency, int rxOffset, unsigned int txFrequency, int txOffset);
+	bool changeFrequency(unsigned int rxFrequency, int rxOffset, bool rxInvert, unsigned int txFrequency, int txOffset, bool txInvert);
 
 	void setFMCallsignParams(const std::string& callsign, unsigned int callsignSpeed, unsigned int callsignFrequency, unsigned int callsignTime, unsigned int callsignHoldoff, float callsignHighLevel, float callsignLowLevel, bool callsignAtStart, bool callsignAtEnd, bool callsignAtLatch);
 	void setFMAckParams(const std::string& rfAck, unsigned int ackSpeed, unsigned int ackFrequency, unsigned int ackMinTime, unsigned int ackDelay, float ackLevel);

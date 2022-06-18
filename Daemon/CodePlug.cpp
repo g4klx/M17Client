@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2015-2021 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2015-2022 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -47,6 +47,10 @@ bool CCodePlug::read()
 	std::string  name;
 	unsigned int txFrequency = 0U;
 	unsigned int rxFrequency = 0U;
+	bool         txInvertSet = false;
+	bool         txInvert    = false;
+	bool         rxInvertSet = false;
+	bool         rxInvert    = false;
 	unsigned int can  = 99U;
 	unsigned int mode = 99U;
 
@@ -59,6 +63,8 @@ bool CCodePlug::read()
 			name.clear();
 			txFrequency = 0U;
 			rxFrequency = 0U;
+			txInvertSet = false;
+			rxInvertSet = false;
 			can  = 99U;
 			mode = 99U;
 
@@ -97,18 +103,33 @@ bool CCodePlug::read()
 			txFrequency = (unsigned int)::atoi(value);
 		else if (::strcmp(key, "RXFrequency") == 0)
 			rxFrequency = (unsigned int)::atoi(value);
-		else if (::strcmp(key, "CAN") == 0)
+		else if (::strcmp(key, "TXInvert") == 0) {
+			txInvertSet = true;
+			txInvert    = ::atoi(value) == 1;
+		} else if (::strcmp(key, "RXInvert") == 0) {
+			rxInvertSet = true;
+			rxInvert    = ::atoi(value) == 1;
+		} else if (::strcmp(key, "CAN") == 0)
 			can = (unsigned int)::atoi(value);
 		else if (::strcmp(key, "Mode") == 0)
 			mode = (unsigned int)::atoi(value);
 
 		if (!name.empty() && txFrequency > 0U && rxFrequency > 0U && can != 99U && mode != 99U) {
 			CCodePlugData data(name, txFrequency, rxFrequency, can, mode);
+
+			if (txInvertSet)
+				data.setTXInvert(txInvert);
+
+			if (rxInvertSet)
+				data.setTXInvert(rxInvert);
+
 			m_data.push_back(data);
 
 			name.clear();
 			txFrequency = 0U;
 			rxFrequency = 0U;
+			txInvertSet = false;
+			rxInvertSet = false;
 			can  = 99U;
 			mode = 99U;
 		}
