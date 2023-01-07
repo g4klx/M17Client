@@ -46,6 +46,7 @@ m_callsign(),
 m_text(),
 m_bleep(true),
 m_daemon(false),
+m_hsboard(false),
 m_debug(false),
 m_destinations(),
 m_audioInputDevice(),
@@ -174,6 +175,8 @@ bool CConf::read()
 			else if (::strcmp(key, "Bleep") == 0)
 				m_bleep = ::atoi(value) == 1;
 			else if (::strcmp(key, "Daemon") == 0)
+				m_daemon = ::atoi(value) == 1;
+			else if (::strcmp(key, "Hsboard") == 0)
 				m_daemon = ::atoi(value) == 1;
 			else if (::strcmp(key, "Debug") == 0)
 				m_debug = ::atoi(value) == 1;
@@ -313,6 +316,11 @@ bool CConf::getBleep() const
 bool CConf::getDaemon() const
 {
 	return m_daemon;
+}
+
+bool CConf::getHsboard() const
+{
+	return m_hsboard;
 }
 
 bool CConf::getDebug() const

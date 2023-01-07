@@ -400,12 +400,13 @@ bool CModem::open()
 	}
 
 	ret = setFrequency();
-	if (!ret) {
-		m_port->close();
-		delete m_port;
-		m_port = NULL;
-		return false;
-	}
+	if (!ret) {						//Some modem boards do not respond to set frequency command.
+		//m_port->close();
+		//delete m_port;
+		//m_port = NULL;
+		::LogMessage("Unable to set Frequency");
+		//return false;
+	}		
 
 	ret = writeConfig();
 	if (!ret) {

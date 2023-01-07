@@ -35,6 +35,7 @@ public:
 	std::string  getText() const;
 	bool         getBleep() const;
 	bool         getDaemon() const;
+	bool         getHsboard() const;
 	bool         getDebug() const;
 
 	// The Destinations sections
@@ -110,6 +111,7 @@ private:
 	std::string  m_text;
 	bool         m_bleep;
 	bool         m_daemon;
+	bool		 m_hsboard;
 	bool         m_debug;
 
 	std::vector<std::string> m_destinations;
