@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2018,2020,2021 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2018,2020,2021,2022 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -85,7 +85,11 @@ bool CGPSD::getData(float& latitude, float& longitude, std::optional<float>& alt
 	if (m_timer.isRunning() && !m_timer.hasExpired())
 		return false;
 
+#if GPSD_API_MAJOR_VERSION >= 10
 	if (m_gpsdData.fix.status != STATUS_FIX)
+#else
+	if (m_gpsdData.status != STATUS_FIX)
+#endif
 		return false;
 
 	bool latlonSet = (m_gpsdData.set & LATLON_SET) == LATLON_SET;
