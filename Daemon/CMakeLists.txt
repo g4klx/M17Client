@@ -13,6 +13,10 @@ if(NOT AUDIO)
     endif()
 endif()   
 
+option(USE_HAMLIB "use HamLib" OFF)
+option(USE_GPSD "use GPSD" OFF)
+option(USE_GPIO "use GPIO for PTT" OFF)
+
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
@@ -40,6 +44,27 @@ else()
 endif()
 include_directories(${AUDIO_API_INCLUDE_DIRS})
 link_directories(${AUDIO_API_LIBRARY_DIRS})
+
+if(USE_HAMLIB)
+    pkg_check_modules(HAMLIB REQUIRED hamlib)
+    include_directories(${HAMLIB_INCLUDE_DIRS})
+    link_directories(${HAMLIB_LIBRARY_DIRS})
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_HAMLIB")
+endif()
+
+if(USE_GPSD)
+    pkg_check_modules(GPSD REQUIRED libgps)
+    include_directories(${GPSD_INCLUDE_DIRS})
+    link_directories(${GPSD_LIBRARY_DIRS})
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_GPSD")
+endif()
+
+if(USE_GPIO)
+    pkg_check_modules(GPIO REQUIRED libgpiod)
+    include_directories(${GPIO_INCLUDE_DIRS})
+    link_directories(${GPIO_LIBRARY_DIRS})
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_GPIO")
+endif()
 
 file(GLOB SRC
 	codec2/codebooks.cpp
@@ -77,4 +102,4 @@ file(GLOB SRC
 )
 
 add_executable(${PROJECT_NAME} ${SRC})
-target_link_libraries(${PROJECT_NAME} Threads::Threads ${LIBSAMPLERATE_LIBRARIES} ${AUDIO_API_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} Threads::Threads ${LIBSAMPLERATE_LIBRARIES} ${AUDIO_API_LIBRARIES} ${HAMLIB_LIBRARIES} ${GPSD_LIBRARIES} ${GPIO_LIBRARIES})
