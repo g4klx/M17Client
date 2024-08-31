@@ -56,13 +56,13 @@ bool CSoundPulse::open()
 	ss.rate = m_sampleRate;
 	ss.channels = 1;
 
-	pa_simple* playHandle = ::pa_simple_new(NULL, "M17Client", PA_STREAM_PLAYBACK, m_writeDevice.c_str(), "Receive", &ss, NULL, NULL, NULL);
+	pa_simple* playHandle = ::pa_simple_new(NULL, "M17Client", PA_STREAM_PLAYBACK, (m_writeDevice == "default") ? NULL : m_writeDevice.c_str(), "Receive", &ss, NULL, NULL, NULL);
 	if (!playHandle) {
 		LogError("Cannot open playback audio device %s", m_writeDevice.c_str());
 		return false;
 	}
 
-	pa_simple* recHandle = ::pa_simple_new(NULL, "M17Client", PA_STREAM_RECORD, m_readDevice.c_str(), "Transmit", &ss, NULL, NULL, NULL);
+	pa_simple* recHandle = ::pa_simple_new(NULL, "M17Client", PA_STREAM_RECORD, (m_readDevice == "default") ? NULL : m_readDevice.c_str(), "Transmit", &ss, NULL, NULL, NULL);
 	if (!recHandle) {
 		LogError("Cannot open capture audio device %s", m_readDevice.c_str());
 		return false;
