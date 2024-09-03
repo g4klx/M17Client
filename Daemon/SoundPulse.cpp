@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2006-2010,2015,2021 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2006-2010,2015,2021,2024 by Jonathan Naylor G4KLX
  *   Copyright (C) 2014 by John Wiseman, G8BPQ
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -21,6 +21,14 @@
 #include "Log.h"
 
 #include <cassert>
+
+#if defined(__linux__)
+#include <endian.h>
+#elif defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__NetBSD__)
+#include <sys/endian.h>
+#else
+#error Platform not supported
+#endif
 
 CSoundPulse::CSoundPulse(const std::string& readDevice, const std::string& writeDevice, unsigned int sampleRate, unsigned int blockSize) :
 m_readDevice(readDevice),
@@ -52,7 +60,11 @@ void CSoundPulse::setCallback(IAudioCallback* callback, int id)
 bool CSoundPulse::open()
 {
 	pa_sample_spec ss;
+#if __BYTE_ORDER == __LITTLE_ENDIAN
 	ss.format = PA_SAMPLE_FLOAT32LE;
+#else
+	ss.format = PA_SAMPLE_FLOAT32BE;
+#endif
 	ss.rate = m_sampleRate;
 	ss.channels = 1;
 
