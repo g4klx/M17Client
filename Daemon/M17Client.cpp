@@ -29,6 +29,8 @@
 
 #if defined(USE_PULSEAUDIO)
 #include "SoundPulse.h"
+#elif defined(USE_SNDIO)
+#include "SoundSndio.h"
 #else
 #include "SoundALSA.h"
 #endif
@@ -353,6 +355,8 @@ int CM17Client::run()
 
 #if defined(USE_PULSEAUDIO)
 	m_sound = new CSoundPulse(m_conf.getAudioInputDevice(), m_conf.getAudioOutputDevice(), SOUNDCARD_SAMPLE_RATE, SOUNDCARD_BLOCK_SIZE);
+#elif defined(USE_SNDIO)
+	m_sound = new CSoundSndio(m_conf.getAudioInputDevice(), m_conf.getAudioOutputDevice(), SOUNDCARD_SAMPLE_RATE, SOUNDCARD_BLOCK_SIZE);
 #else
 	m_sound = new CSoundALSA(m_conf.getAudioInputDevice(), m_conf.getAudioOutputDevice(), SOUNDCARD_SAMPLE_RATE, SOUNDCARD_BLOCK_SIZE);
 #endif
