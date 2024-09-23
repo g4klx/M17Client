@@ -207,7 +207,7 @@ m_samples(NULL)
 	assert(channels == 1U || channels == 2U);
 	assert(callback != NULL);
 
-	m_samples = new float[4U * blockSize];
+	m_samples = new float[blockSize];
 }
 
 CSoundALSAReader::~CSoundALSAReader()
@@ -259,7 +259,7 @@ m_samples(NULL)
 	assert(channels == 1U || channels == 2U);
 	assert(callback != NULL);
 
-	m_samples = new float[4U * blockSize];
+	m_samples = new float[2U * blockSize];
 }
 
 CSoundALSAWriter::~CSoundALSAWriter()
