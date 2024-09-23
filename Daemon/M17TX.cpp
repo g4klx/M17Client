@@ -380,7 +380,7 @@ void CM17TX::process()
 		if (m_mode == 1600U) {
 			m_1600.codec2_encode(payload + M17_FN_LENGTH_BYTES + 0U, audio + 0U);
 			m_1600.codec2_encode(payload + M17_FN_LENGTH_BYTES + 4U, audio + 160U);
-			::memset(payload + M17_FN_LENGTH_BYTES + 4U, 0x00U, 8U);
+			::memset(payload + M17_FN_LENGTH_BYTES + 8U, 0x00U, 8U);
 		} else {
 			m_3200.codec2_encode(payload + M17_FN_LENGTH_BYTES + 0U, audio + 0U);
 			m_3200.codec2_encode(payload + M17_FN_LENGTH_BYTES + 8U, audio + 160U);
